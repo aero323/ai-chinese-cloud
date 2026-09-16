@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f7f7fc">
+  <title>互动 2 · 问候翻翻乐</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="memory" data-requires-open="true">
+  <div class="app-shell">
+    <div class="status-bar" aria-hidden="true">
+      <span>11:20</span>
+      <span class="status-icons">5G <span class="battery"></span></span>
+    </div>
+
+    <header class="page-header">
+      <a class="icon-button" href="classroom.html" aria-label="返回课堂互动">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </a>
+      <h1>互动 2 · 翻牌配对<span class="header-subtitle">Aktivitas 2 · Memori</span></h1>
+      <span class="header-spacer"></span>
+    </header>
+
+    <main class="page page-content">
+      <div class="game-intro">
+        <div>
+          <h2>问候翻翻乐</h2>
+          <p>每次翻开两张卡，把中文问候语和正确的印尼语意思配成一对。<br>Balik dua kartu dan temukan pasangan yang cocok.</p>
+        </div>
+      </div>
+
+      <div class="memory-progress" data-memory-progress>已找到 0 / 4 对</div>
+
+      <section class="memory-grid" data-memory-grid aria-label="中文和印尼语问候语翻牌配对"></section>
+
+      <div class="helper-note">
+        <span aria-hidden="true">🧠</span>
+        <div>翻错的两张卡会再盖回去。记住位置，再试一次吧！<br>Kartu yang salah akan tertutup lagi. Ingat posisinya!</div>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-overlay hidden" data-memory-complete>
+    <section class="completion-modal" role="dialog" aria-modal="true" aria-labelledby="memory-complete-title">
+      <div class="modal-badge">👏</div>
+      <h3 id="memory-complete-title">四组问候全部配对成功！</h3>
+      <p class="id-copy">Semua pasangan berhasil ditemukan!</p>
+      <p class="modal-description">你已经完成今天的两个课堂互动，可以查看本次学习小结。</p>
+      <button type="button" class="primary-button" data-memory-next>查看完成页</button>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

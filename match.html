@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f7f7fc">
+  <title>互动 1 · 问候时间连线</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="match" data-requires-open="true">
+  <div class="app-shell">
+    <div class="status-bar" aria-hidden="true">
+      <span>11:20</span>
+      <span class="status-icons">5G <span class="battery"></span></span>
+    </div>
+
+    <header class="page-header">
+      <a class="icon-button" href="classroom.html" aria-label="返回课堂互动">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </a>
+      <h1>互动 1 · 连线题<span class="header-subtitle">Aktivitas 1 · Hubungkan</span></h1>
+      <span class="header-spacer"></span>
+    </header>
+
+    <main class="page page-content">
+      <div class="game-intro">
+        <div>
+          <h2>时间怎么说？</h2>
+          <p>先点左边的中文时间，再点右边正确的印尼语意思。<br>Ketuk kata waktu Mandarin, lalu arti bahasa Indonesianya.</p>
+        </div>
+        <span class="progress-pill" data-match-progress>0 / 4 组</span>
+      </div>
+
+      <section class="match-board" data-match-board aria-label="中文时间与印尼语配对题">
+        <svg class="match-lines" data-match-lines aria-hidden="true"></svg>
+
+        <div class="match-column">
+          <button type="button" class="match-item" data-side="left" data-key="morning">
+            <strong>早上</strong><span>zǎo shang</span>
+          </button>
+          <button type="button" class="match-item" data-side="left" data-key="noon">
+            <strong>中午</strong><span>zhōng wǔ</span>
+          </button>
+          <button type="button" class="match-item" data-side="left" data-key="afternoon">
+            <strong>下午</strong><span>xià wǔ</span>
+          </button>
+          <button type="button" class="match-item" data-side="left" data-key="evening">
+            <strong>晚上</strong><span>wǎn shang</span>
+          </button>
+        </div>
+
+        <div class="match-column">
+          <button type="button" class="match-item" data-side="right" data-key="evening">
+            <strong>malam</strong><span>🌙</span>
+          </button>
+          <button type="button" class="match-item" data-side="right" data-key="morning">
+            <strong>pagi</strong><span>🌅</span>
+          </button>
+          <button type="button" class="match-item" data-side="right" data-key="noon">
+            <strong>siang</strong><span>☀️</span>
+          </button>
+          <button type="button" class="match-item" data-side="right" data-key="afternoon">
+            <strong>sore</strong><span>🌤️</span>
+          </button>
+        </div>
+      </section>
+
+      <div class="helper-note">
+        <span aria-hidden="true">💡</span>
+        <div>连错也没关系，线条会消失，可以继续尝试。<br>Jika salah, garis akan hilang dan kamu bisa mencoba lagi.</div>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-overlay hidden" data-match-complete>
+    <section class="completion-modal" role="dialog" aria-modal="true" aria-labelledby="match-complete-title">
+      <div class="modal-badge">🌅</div>
+      <h3 id="match-complete-title">4 组全部连对！</h3>
+      <p class="id-copy">Semua pasangan benar!</p>
+      <p class="modal-description" data-match-next-copy>互动 1 已完成。互动 2 已解锁，可稍后回到课堂互动页继续。</p>
+      <button type="button" class="primary-button" data-match-return-home>返回首页</button>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f7f7fc">
+  <title>课堂互动 · AI Chinese Cloud</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="classroom">
+  <div class="app-shell">
+    <div class="status-bar" aria-hidden="true">
+      <span>11:20</span>
+      <span class="status-icons">5G <span class="battery"></span></span>
+    </div>
+
+    <header class="page-header">
+      <a class="icon-button" href="index.html" aria-label="返回首页">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </a>
+      <h1>课堂互动<span class="header-subtitle">Interaksi Kelas</span></h1>
+      <span class="header-spacer"></span>
+    </header>
+
+    <main class="page page-content classroom-page">
+      <section class="course-status-card" data-phase="live">
+        <div class="course-status-head">
+          <span class="course-state" data-classroom-status><span class="dot"></span>课堂互动进行中</span>
+          <span class="course-lesson">LESSON 1</span>
+        </div>
+        <h2>嗨！你好！</h2>
+        <p class="course-meta"><strong>中文大班课</strong> · Lina 老师 · <span data-classroom-detail>今天 10:00 - 10:40</span></p>
+        <div class="course-progress-row">
+          <span data-course-progress>0 / 2 已完成</span>
+          <span class="progress-dots" aria-hidden="true">
+            <span class="progress-dot" data-progress-dot></span>
+            <span class="progress-dot" data-progress-dot></span>
+          </span>
+        </div>
+      </section>
+
+      <section class="classroom-tip">
+        <span class="tip-icon">💡</span>
+        <div>
+          <strong data-classroom-tip-title>两个互动依次完成</strong>
+          <p data-classroom-description>互动 1 和互动 2 已开放，完成一个后再进入下一个。</p>
+        </div>
+      </section>
+
+      <div class="section-title-row">
+        <h3>今日互动</h3>
+        <span>Aktivitas hari ini</span>
+      </div>
+
+      <section class="task-list" aria-label="课堂互动任务">
+        <button type="button" class="task-card" data-task1-card>
+          <span class="task-number">1</span>
+          <span class="task-copy">
+            <h4>问候时间连线</h4>
+            <p data-task1-description>把中文时间和正确的印尼语意思连起来。</p>
+          </span>
+          <span class="task-status" data-task1-status>开始互动</span>
+        </button>
+
+        <button type="button" class="task-card is-locked" data-task2-card>
+          <span class="task-number">2</span>
+          <span class="task-copy">
+            <h4>问候翻翻乐</h4>
+            <p data-task2-description>完成互动 1 后自动解锁。</p>
+          </span>
+          <span class="task-status" data-task2-status>先完成 1</span>
+        </button>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
