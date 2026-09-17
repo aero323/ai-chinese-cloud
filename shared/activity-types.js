@@ -121,6 +121,106 @@
       tags: ["一分钟", "自动判分"],
       ready: true,
       legacy: false
+    },
+    {
+      type: "pinyin-match",
+      page: "interaction-pinyin-match.html",
+      icon: "🔤",
+      title: "拼音—汉字—含义匹配",
+      titleId: "Cocokkan pinyin, hanzi, arti",
+      cardTitle: "拼音—汉字—含义匹配",
+      cardDescription: "看拼音选汉字，再选它的意思，一组一组配起来。",
+      tags: ["闯关式", "自动判分"],
+      ready: true,
+      legacy: false
+    },
+    {
+      type: "category",
+      page: "interaction-category.html",
+      icon: "📦",
+      title: "分类归组",
+      titleId: "Kelompokkan kata",
+      cardTitle: "分类归组",
+      cardDescription: "把词语一个个放进正确的类别里，提交后看结果。",
+      tags: ["一分钟", "自动判分"],
+      ready: true,
+      legacy: false
+    },
+    {
+      type: "word-build",
+      page: "interaction-word-build.html",
+      icon: "🧱",
+      title: "拼字/组词",
+      titleId: "Susun hanzi jadi kata",
+      cardTitle: "拼字/组词",
+      cardDescription: "点字块，把词语拼进空格里。",
+      tags: ["一分钟", "自动判分"],
+      ready: true,
+      legacy: false
+    },
+    {
+      type: "correction",
+      page: "interaction-correction.html",
+      icon: "🔍",
+      title: "找错误/改错",
+      titleId: "Temukan yang salah",
+      cardTitle: "找错误/改错",
+      cardDescription: "读句子，点出用错的那个词，看看正确说法。",
+      tags: ["一分钟", "自动判分"],
+      ready: true,
+      legacy: false
+    },
+    {
+      type: "listening",
+      page: "interaction-listening.html",
+      icon: "🔊",
+      title: "听音选图/选词",
+      titleId: "Dengar dan pilih",
+      cardTitle: "听音选图/选词",
+      cardDescription: "听一听，从选项里选出你听到的内容。",
+      tags: ["一分钟", "自动判分"],
+      ready: true,
+      placeholder: true,
+      legacy: false
+    },
+    {
+      type: "read-aloud",
+      page: "interaction-read-aloud.html",
+      icon: "🎤",
+      title: "跟读模仿",
+      titleId: "Tirukan bacaan",
+      cardTitle: "跟读模仿",
+      cardDescription: "听一遍，然后跟着读，看看参考评分。",
+      tags: ["语音", "占位演示"],
+      ready: true,
+      placeholder: true,
+      legacy: false
+    },
+    {
+      type: "picture-talk",
+      page: "interaction-picture-talk.html",
+      icon: "🗣️",
+      title: "看图说话",
+      titleId: "Bicara dari gambar",
+      cardTitle: "看图说话",
+      cardDescription: "看一张图，用中文说一句话。",
+      tags: ["语音", "占位演示"],
+      ready: true,
+      placeholder: true,
+      legacy: false
+    },
+    {
+      type: "open-qa",
+      page: "interaction-open-qa.html",
+      icon: "❓",
+      title: "开放问答",
+      titleId: "Tanya jawab terbuka",
+      cardTitle: "开放问答",
+      cardDescription: "回答一个开放问题，说说你的想法。",
+      tags: ["语音", "占位演示"],
+      ready: true,
+      placeholder: true,
+      legacy: false
     }
   ];
 

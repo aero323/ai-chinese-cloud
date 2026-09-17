@@ -27,7 +27,10 @@
     }
 
     const back = document.querySelector("[data-activity-back]");
-    if (back) back.setAttribute("href", "classroom.html");
+    if (back) {
+      back.setAttribute("href", "classroom.html");
+      back.setAttribute("aria-label", ctx.mode === "class" ? "返回课堂互动" : "返回课堂");
+    }
 
     const status = document.querySelector("[data-activity-status]");
     const demo = document.querySelector("[data-activity-demo-finish]");
@@ -46,6 +49,14 @@
     if (meta2 && meta) {
       meta2.textContent = "题型标识：" + meta.type + " · 页面文件：" + meta.page;
     }
+
+    // 完成弹窗：点弹窗外的灰色区域可以关掉，回到页面继续看
+    document.addEventListener("click", function (event) {
+      const target = event.target;
+      if (!target || !target.classList || !target.classList.contains("modal-overlay")) return;
+      if (target.classList.contains("hidden")) return;
+      target.classList.add("hidden");
+    });
   }
 
   if (document.readyState === "loading") {

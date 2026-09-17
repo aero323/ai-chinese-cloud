@@ -98,6 +98,32 @@ npm run preview
 | 情景选择 | interaction-situation.html | 已完成，可体验 |
 | 对话补全 | interaction-dialogue.html | 已完成，可体验 |
 
+### 三期四个题型
+
+| 题型 | 页面文件 | 当前状态 |
+| --- | --- | --- |
+| 拼音—汉字—含义匹配 | interaction-pinyin-match.html | 已完成，可体验 |
+| 分类归组 | interaction-category.html | 已完成，可体验 |
+| 拼字/组词 | interaction-word-build.html | 已完成，可体验 |
+| 找错误/改错 | interaction-correction.html | 已完成，可体验 |
+
+详细规格见 `docs/题型任务书-第三批.md`；四条均已实现并点亮（`shared/activity-types.js` 里 `ready: true`）。
+
+### 四期四个题型（占位版）
+
+| 题型 | 页面文件 | 当前状态 |
+| --- | --- | --- |
+| 听音选图/选词 | interaction-listening.html | 已完成，可体验（占位） |
+| 跟读模仿 | interaction-read-aloud.html | 已完成，可体验（占位） |
+| 看图说话 | interaction-picture-talk.html | 已完成，可体验（占位） |
+| 开放问答 | interaction-open-qa.html | 已完成，可体验（占位） |
+
+这一批是「占位版」：页面骨架、交互流程、完成记账都做真的；声音播放、录音、语音识别先用假流程顶上（不接麦克风、不弹授权）。详细规格见 `docs/题型任务书-第四批（占位版）.md`。
+
+- 这 4 条数据里带 `placeholder: true`，题型清单里显示「可体验 · 占位」，和正式的「可体验」区分开。
+- 以后转正 = 去掉 `placeholder`（接上真音频、真录音），页面骨架不用重写。
+- 学生端不做随机抽题（见上文），占位版不需要处理相关逻辑。
+
 ### 每个页面的硬约定
 
 1. 文件名不要改，入口固定是 interaction-xxx.html。

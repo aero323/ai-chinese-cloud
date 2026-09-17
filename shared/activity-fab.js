@@ -17,7 +17,8 @@
       } else {
         row.setAttribute("aria-disabled", "true");
       }
-      row.innerHTML = "<span aria-hidden=\"true\">" + meta.icon + "</span><strong>" + meta.title + "</strong><em>" + (meta.ready ? "可体验" : "待认领") + "</em>";
+      const statusLabel = meta.ready ? (meta.placeholder === true ? "可体验 · 占位" : "可体验") : "待认领";
+      row.innerHTML = "<span aria-hidden=\"true\">" + meta.icon + "</span><strong>" + meta.title + "</strong><em>" + statusLabel + "</em>";
       list.appendChild(row);
     });
   }
@@ -76,7 +77,7 @@
       '    <p>挑一个题型单独体验：不计分，也不会影响课堂页那两道题的进度。</p>',
       '  </div>',
       '  <div class="demo-activity-list" data-activity-list></div>',
-      '  <p class="activity-sheet-note">灰底的行还在认领中，做完会自动出现在这里。</p>',
+      '  <p class="activity-sheet-note">灰底的行还在认领中，做完会自动出现在这里；标「占位」的行是占位演示。</p>',
       '  <button type="button" class="demo-reset" data-activity-close>关闭</button>',
       '</section>'
     ].join("");

@@ -12,19 +12,27 @@ describe("student activity library", () => {
     window.history.replaceState({}, "", "/");
   });
 
-  it("registers the admin player types plus the phase-2 batch", () => {
+  it("registers every student activity type", () => {
     const keys = types.all().map((item: any) => item.type).sort();
     expect(keys).toEqual([
+      "category",
       "choice",
+      "correction",
       "dialogue",
       "fill",
+      "listening",
       "match",
       "memory",
+      "open-qa",
       "order",
       "picture",
       "picture-match",
+      "picture-talk",
+      "pinyin-match",
       "poll",
-      "situation"
+      "read-aloud",
+      "situation",
+      "word-build"
     ]);
     const pages = types.all().map((item: any) => item.page);
     expect(new Set(pages).size).toBe(keys.length);
