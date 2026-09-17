@@ -33,7 +33,7 @@
       title: "补全句子",
       titleId: "Lengkapi kalimat",
       cardTitle: "补全句子",
-      cardDescription: "在句子的空格里输入词语，答案支持多种写法。",
+      cardDescription: "从词库点选词语，把句子补完整，提交后看结果。",
       tags: ["一分钟", "自动判分"],
       ready: true,
       legacy: false
