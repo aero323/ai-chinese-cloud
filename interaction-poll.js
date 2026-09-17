@@ -135,12 +135,7 @@
 
   if (submitButton) submitButton.addEventListener("click", submitAnswer);
 
-  /* 顶栏返回：href 由 shared/activity-page.js 填成课堂页，体验模式按约定改回首页 */
-  const backLink = document.querySelector("[data-activity-back]");
-  if (backLink && !inClass) {
-    backLink.setAttribute("href", "index.html");
-    backLink.setAttribute("aria-label", "返回首页");
-  }
+  /* 顶栏返回：统一回课堂页，href 与文案由 shared/activity-page.js 负责 */
 
   /* 题型角标取自题型清单，不在页面里另写一份文案 */
   const meta = types && typeof types.get === "function" ? types.get(type) : null;

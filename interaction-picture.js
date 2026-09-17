@@ -108,8 +108,8 @@
     const back = document.querySelector("[data-activity-back]");
     if (back) {
       const isClass = mode() === "class";
-      back.setAttribute("href", isClass ? "classroom.html" : "index.html");
-      back.setAttribute("aria-label", isClass ? "返回课堂互动" : "返回首页");
+      back.setAttribute("href", "classroom.html");
+      back.setAttribute("aria-label", isClass ? "返回课堂互动" : "返回课堂");
     }
   }
 
