@@ -1,0 +1,347 @@
+/* 补全句子 · interaction-fill.html 专用样式（词库填空版）
+   只在本题型页面加载；公共文件 styles.css 保持不变。 */
+
+.fill-card {
+  padding: 18px 16px 18px;
+  border: 1px solid #ece9f8;
+  border-radius: 22px;
+  background: #ffffff;
+  box-shadow: var(--shadow-soft);
+}
+
+.fill-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.fill-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  color: var(--purple-deep);
+  background: var(--purple-soft);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.fill-count {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.fill-sentence {
+  margin: 0;
+  color: var(--ink);
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 2.6;
+  letter-spacing: 0.01em;
+  overflow-wrap: break-word;
+  word-break: keep-all;
+}
+
+/* 一个空 = 下划线格子 + 提交后出现在下方的正确答案提示 */
+.fill-slot {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  vertical-align: baseline;
+  margin: 0 3px;
+}
+
+/* 格子宽度按两个字，三个空一样宽 */
+.fill-blank {
+  width: calc(2em + 22px);
+  height: 36px;
+  padding: 0 4px;
+  border: 0;
+  border-bottom: 2px solid var(--purple);
+  border-radius: 8px 8px 0 0;
+  color: var(--purple-deep);
+  background: rgba(101, 82, 255, 0.08);
+  font: inherit;
+  font-weight: 900;
+  text-align: center;
+  appearance: none;
+  cursor: default;
+  transition: background .18s ease, border-color .18s ease, box-shadow .18s ease, transform .12s ease;
+}
+
+/* 已经填了词的格子可以点：点一下就放回词库 */
+.fill-blank.is-filled {
+  cursor: pointer;
+  background: #f3f0ff;
+}
+
+.fill-blank.is-filled:hover {
+  border-color: var(--purple-deep);
+  box-shadow: 0 8px 18px rgba(101, 82, 255, 0.16);
+}
+
+.fill-blank.is-filled:active {
+  transform: translateY(1px);
+}
+
+/* 空的格子和提交后锁定的格子都不要出现浏览器默认的灰 */
+.fill-blank:disabled {
+  color: var(--purple-deep);
+  opacity: 1;
+}
+
+.fill-blank.is-correct {
+  color: #158a67;
+  border-color: var(--success);
+  background: rgba(34, 173, 131, 0.1);
+}
+
+.fill-blank.is-wrong {
+  color: #c9414c;
+  border-color: var(--danger);
+  background: #fff0f1;
+  animation: shake .35s ease;
+}
+
+/* 对错不只靠颜色：每个空右上角再给一个符号角标 */
+.fill-slot.is-correct::after,
+.fill-slot.is-wrong::after {
+  position: absolute;
+  top: -6px;
+  right: -7px;
+  display: grid;
+  width: 18px;
+  height: 18px;
+  place-items: center;
+  border-radius: 50%;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.fill-slot.is-correct::after {
+  content: "✓";
+  background: var(--success);
+  box-shadow: 0 5px 10px rgba(34, 173, 131, 0.24);
+}
+
+.fill-slot.is-wrong::after {
+  content: "✕";
+  background: var(--danger);
+  box-shadow: 0 5px 10px rgba(239, 95, 105, 0.24);
+}
+
+.fill-blank-hint {
+  margin-top: 5px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  color: #c9414c;
+  background: #fff0f1;
+  font-size: 10px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+/* 词库：横排、可换行，词块宽度跟着内容走 */
+.fill-bank {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed #e8e5f4;
+}
+
+.fill-word {
+  display: inline-flex;
+  border-radius: 14px;
+  transition: background .18s ease, box-shadow .18s ease;
+}
+
+/* 词被填进句子后，原位置留一个浅灰占位框，其余词块不动 */
+.fill-word.is-empty {
+  background: #f1eff8;
+  box-shadow: inset 0 0 0 2px #e9e6f5;
+}
+
+.fill-chip {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  min-height: 48px;
+  padding: 7px 13px;
+  border: 2px solid #e8e5f4;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 6px 16px rgba(58, 48, 116, 0.08);
+  font: inherit;
+  cursor: pointer;
+  transition: transform .12s ease, border-color .18s ease, background .18s ease, opacity .18s ease;
+}
+
+.fill-chip strong {
+  font-size: 18px;
+  line-height: 1.15;
+}
+
+.fill-chip span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.fill-chip:not(:disabled):hover {
+  border-color: #b9afff;
+  background: #f8f6ff;
+}
+
+.fill-chip:not(:disabled):active {
+  transform: translateY(1px);
+}
+
+/* 已经填进句子的词：占位的尺寸还在，但看不见也点不到 */
+.fill-chip.is-placed {
+  visibility: hidden;
+}
+
+/* 提交后词库整体锁定 */
+.fill-bank.is-locked .fill-chip {
+  opacity: .5;
+}
+
+.fill-bank.is-locked .fill-word.is-empty {
+  opacity: .6;
+}
+
+.fill-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.fill-actions .fill-clear {
+  flex: 0 0 32%;
+}
+
+.fill-actions .fill-submit {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.fill-actions .fill-clear:disabled {
+  color: #a49fb8;
+  background: #f2f1f8;
+  cursor: not-allowed;
+}
+
+.fill-submit:disabled {
+  cursor: not-allowed;
+  background: linear-gradient(135deg, #d3cfe6, #c6c1dc);
+  box-shadow: none;
+}
+
+.fill-progress-note {
+  margin: 9px 0 0;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  text-align: center;
+}
+
+/* 给读屏用的播报区，视觉上不占地方 */
+.fill-live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.fill-feedback {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-top: 14px;
+  padding: 13px 15px;
+  border-radius: 17px;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.fill-feedback.is-correct {
+  color: #158a67;
+  background: var(--mint-soft);
+}
+
+.fill-feedback.is-wrong {
+  color: #c9414c;
+  background: #fff0f1;
+}
+
+.fill-feedback strong {
+  display: block;
+  font-size: 13px;
+}
+
+.fill-feedback-icon {
+  font-size: 18px;
+  line-height: 1.25;
+}
+
+.fill-feedback-copy p {
+  margin: 4px 0 0;
+}
+
+.fill-full-sentence {
+  color: #12694f;
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.7;
+}
+
+.fill-answer-line {
+  color: #4c4557;
+  font-weight: 900;
+}
+
+.fill-explanation {
+  color: #6e6984;
+}
+
+.fill-modal-link {
+  display: grid;
+  place-items: center;
+  text-decoration: none;
+}
+
+.fill-modal-link:active {
+  transform: translateY(1px);
+}
+
+@media (max-width: 360px) {
+  .fill-sentence {
+    font-size: 18px;
+    line-height: 2.5;
+  }
+
+  .fill-blank {
+    height: 32px;
+  }
+
+  .fill-chip {
+    min-height: 44px;
+    padding: 6px 11px;
+  }
+}

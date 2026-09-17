@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f7f7fc">
+  <title>课堂投票 · AI Chinese Cloud</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="interaction-poll.css">
+</head>
+<body data-page="activity" data-activity-type="poll">
+  <div class="app-shell">
+    <div class="status-bar" aria-hidden="true">
+      <span>11:20</span>
+      <span class="status-icons">5G <span class="battery"></span></span>
+    </div>
+
+    <header class="page-header">
+      <a class="icon-button" href="classroom.html" data-activity-back aria-label="返回课堂互动">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </a>
+      <h1><span data-activity-title>课堂投票</span><span class="header-subtitle" data-activity-subtitle>Polling kelas</span></h1>
+      <span class="header-spacer"></span>
+    </header>
+
+    <main class="page page-content poll-page">
+      <div class="game-intro">
+        <div>
+          <h2 id="poll-question">下课后你最喜欢做什么？</h2>
+          <p>Setelah kelas, kamu paling suka melakukan apa?</p>
+        </div>
+        <span class="progress-pill" data-poll-progress>第 1 / 1 题</span>
+      </div>
+
+      <section class="poll-card" data-poll-card data-activity-slot aria-labelledby="poll-question">
+        <div class="poll-card-head">
+          <span class="poll-type-badge" data-poll-badge><span aria-hidden="true">📊</span><span>课堂投票</span></span>
+          <span class="poll-step-chip" data-activity-step>题型体验</span>
+        </div>
+        <p class="poll-card-note" data-activity-task>点选你的想法并提交，不计分，老师查看统计。</p>
+
+        <figure class="poll-figure" data-poll-figure>
+          <svg viewBox="0 0 320 128" role="img" aria-label="下课以后：听音乐、打篮球、看中文动画、和朋友聊天">
+            <defs>
+              <linearGradient id="poll-sky" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#eee9ff"/>
+                <stop offset="1" stop-color="#f9f6ff"/>
+              </linearGradient>
+            </defs>
+            <rect width="320" height="128" rx="20" fill="url(#poll-sky)"/>
+            <circle cx="286" cy="26" r="14" fill="#ffd86d"/>
+            <path d="M0 96c56-12 116-8 176-2s104 6 144-2v36H0z" fill="#e3f4eb"/>
+            <path d="M52 78V56l20-4v22" fill="none" stroke="#8d79ff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="47" cy="78" r="5.6" fill="#8d79ff"/>
+            <circle cx="67" cy="74" r="5.6" fill="#8d79ff"/>
+            <circle cx="112" cy="86" r="11" fill="#ffad67" stroke="#ffffff" stroke-width="2"/>
+            <path d="M105 79c5 5 5 9 0 14M119 79c-5 5-5 9 0 14" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round"/>
+            <rect x="150" y="50" width="4" height="50" rx="2" fill="#c9c4e0"/>
+            <rect x="126" y="44" width="28" height="20" rx="4" fill="#ffffff" stroke="#ded9f3" stroke-width="2"/>
+            <path d="M132 64h16" stroke="#ff9d5c" stroke-width="3.4" stroke-linecap="round"/>
+            <path d="M133 66l3.5 8h6l3.5-8" fill="none" stroke="#ffc79a" stroke-width="2" stroke-linejoin="round"/>
+            <rect x="176" y="58" width="34" height="24" rx="5" fill="#ffffff" stroke="#ded9f3" stroke-width="2"/>
+            <path d="M190 64.5l9.5 5.5-9.5 5.5z" fill="#8d79ff"/>
+            <rect x="236" y="48" width="34" height="22" rx="11" fill="#ffffff" stroke="#ded9f3" stroke-width="2"/>
+            <circle cx="246" cy="59" r="2.2" fill="#b9b3d8"/>
+            <circle cx="253" cy="59" r="2.2" fill="#b9b3d8"/>
+            <circle cx="260" cy="59" r="2.2" fill="#b9b3d8"/>
+            <rect x="264" y="76" width="26" height="18" rx="9" fill="#eeeaff"/>
+            <circle cx="272" cy="85" r="1.9" fill="#a79ee0"/>
+            <circle cx="278" cy="85" r="1.9" fill="#a79ee0"/>
+            <circle cx="284" cy="85" r="1.9" fill="#a79ee0"/>
+          </svg>
+        </figure>
+
+        <div class="poll-options" role="radiogroup" aria-labelledby="poll-question">
+          <label class="poll-option" data-poll-option>
+            <input class="poll-option-input" type="radio" name="poll-choice" value="music">
+            <span class="poll-radio" aria-hidden="true"></span>
+            <span class="poll-option-body">
+              <strong>听音乐</strong>
+              <small>Mendengarkan musik</small>
+            </span>
+            <span class="poll-option-state" data-poll-option-state aria-hidden="true">选择</span>
+          </label>
+
+          <label class="poll-option" data-poll-option>
+            <input class="poll-option-input" type="radio" name="poll-choice" value="basketball">
+            <span class="poll-radio" aria-hidden="true"></span>
+            <span class="poll-option-body">
+              <strong>打篮球</strong>
+              <small>Bermain basket</small>
+            </span>
+            <span class="poll-option-state" data-poll-option-state aria-hidden="true">选择</span>
+          </label>
+
+          <label class="poll-option" data-poll-option>
+            <input class="poll-option-input" type="radio" name="poll-choice" value="animation">
+            <span class="poll-radio" aria-hidden="true"></span>
+            <span class="poll-option-body">
+              <strong>看中文动画</strong>
+              <small>Menonton animasi Mandarin</small>
+            </span>
+            <span class="poll-option-state" data-poll-option-state aria-hidden="true">选择</span>
+          </label>
+
+          <label class="poll-option" data-poll-option>
+            <input class="poll-option-input" type="radio" name="poll-choice" value="chat">
+            <span class="poll-radio" aria-hidden="true"></span>
+            <span class="poll-option-body">
+              <strong>和朋友聊天</strong>
+              <small>Mengobrol dengan teman</small>
+            </span>
+            <span class="poll-option-state" data-poll-option-state aria-hidden="true">选择</span>
+          </label>
+        </div>
+
+        <p class="poll-feedback" data-poll-feedback role="status"></p>
+
+        <button type="button" class="primary-button poll-submit" data-poll-submit disabled>提交</button>
+      </section>
+
+      <p class="activity-status" data-activity-status>待作答：先选一个选项，再点下面的「提交」。 / Belum memilih: pilih satu opsi lalu tekan kirim.</p>
+      <p class="activity-meta" data-activity-meta></p>
+
+      <div class="helper-note">
+        <span aria-hidden="true">🗳️</span>
+        <div>没有对错，选一个最像你的想法。<br>Tidak ada benar atau salah, pilih yang paling sesuai.</div>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-overlay hidden" data-poll-complete>
+    <section class="completion-modal" role="dialog" aria-modal="true" aria-labelledby="poll-complete-title">
+      <div class="modal-badge">🗳️</div>
+      <h3 id="poll-complete-title">投票已提交！</h3>
+      <p class="id-copy">Suaramu sudah tercatat!</p>
+      <p class="modal-description" data-poll-complete-copy>你的选择已记录，不计分；老师会在课堂上看到全班的统计。</p>
+      <div class="poll-modal-actions">
+        <a class="primary-button" href="classroom.html?activities=1" data-poll-more>换一个题型</a>
+        <a class="secondary-button" href="classroom.html" data-poll-back>返回课堂</a>
+      </div>
+    </section>
+  </div>
+
+  <script type="module" src="shared/activity-types.js"></script>
+  <script type="module" src="shared/activity-fab.js"></script>
+  <script type="module" src="shared/activity-bridge.js"></script>
+  <script type="module" src="app.js"></script>
+  <script type="module" src="shared/activity-page.js"></script>
+  <script type="module" src="interaction-poll.js"></script>
+</body>
+</html>

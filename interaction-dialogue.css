@@ -1,0 +1,377 @@
+/* 对话补全 · interaction-dialogue.html 专用样式
+   公共外壳（app-shell / page-header / game-intro / progress-pill / helper-note /
+   modal-overlay / completion-modal / primary-button）全部复用 styles.css，
+   这里只写本页面自己的部件：对话气泡、候选句、反馈区和完成弹窗按钮排列。
+   以后要加可选的场景小图槽（72×72）时直接用 .dialogue-slot，布局不用改。 */
+
+.page-content {
+  padding-bottom: 190px;
+}
+
+.dialogue-card {
+  padding: 16px 15px;
+  border-radius: 24px;
+  background: #ffffff;
+  box-shadow: var(--shadow-soft);
+}
+
+.dialogue-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.dialogue-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 6px 11px;
+  border-radius: 999px;
+  color: var(--purple-deep);
+  background: var(--purple-soft);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.dialogue-card-head .progress-pill {
+  flex: 0 0 auto;
+}
+
+.dialogue-question {
+  margin: 0 0 13px;
+  font-size: 17px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+/* 预留给以后的可选场景小图槽：本批不渲染，尺寸和字号先定好（72×72、emoji 32px） */
+.dialogue-slot {
+  display: grid;
+  width: 72px;
+  height: 72px;
+  place-items: center;
+  border-radius: 16px;
+  background: linear-gradient(160deg, #f6f4ff, #ece7ff);
+  overflow: hidden;
+}
+
+.dialogue-slot-emoji {
+  font-size: 32px;
+  line-height: 1;
+}
+
+.dialogue-slot img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 对话区：对方在左（浅色气泡），自己在右（主色气泡，提交前只放「？」占位） */
+.dialogue-thread {
+  display: grid;
+  gap: 13px;
+  margin: 0 0 15px;
+  padding: 0;
+  list-style: none;
+}
+
+.dialogue-turn {
+  display: grid;
+  gap: 5px;
+}
+
+.dialogue-turn.is-them {
+  justify-items: start;
+}
+
+.dialogue-turn.is-me {
+  justify-items: end;
+}
+
+.dialogue-speaker {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.dialogue-bubble {
+  max-width: 100%;
+  margin: 0;
+  padding: 11px 14px;
+  border-radius: 18px;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.is-them .dialogue-bubble {
+  border-bottom-left-radius: 6px;
+  color: #4f4775;
+  background: #f3f1fa;
+}
+
+.is-me .dialogue-bubble {
+  border-bottom-right-radius: 6px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #735dff, #503be5);
+  box-shadow: 0 10px 22px rgba(79, 58, 224, 0.2);
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dialogue-bubble.is-placeholder {
+  min-width: 58px;
+  color: rgba(255, 255, 255, 0.86);
+  text-align: center;
+}
+
+.dialogue-me-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  max-width: 100%;
+}
+
+.dialogue-mark {
+  flex: 0 0 auto;
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 50%;
+  color: #ffffff;
+  background: var(--success);
+  font-size: 13px;
+  font-weight: 900;
+  animation: dialoguePop 0.28s ease;
+}
+
+/* 选错时把选中的句子标红（同时还有 ✗ 和无障碍播报，不只靠颜色区分） */
+.dialogue-bubble.is-wrong {
+  background: linear-gradient(135deg, #f2707a, #df4753);
+  box-shadow: 0 10px 22px rgba(223, 71, 83, 0.24);
+  animation: dialogueShake 0.35s ease;
+}
+
+.dialogue-correct-line {
+  max-width: 100%;
+  margin: 7px 0 0;
+  padding: 9px 12px;
+  border: 1px dashed rgba(239, 95, 105, 0.45);
+  border-radius: 13px;
+  color: #c23a45;
+  background: #fff0f1;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  animation: dialoguePop 0.28s ease;
+}
+
+@keyframes dialoguePop {
+  from { opacity: 0; transform: scale(0.86); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes dialogueShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+.dialogue-options {
+  display: grid;
+  gap: 9px;
+  margin-bottom: 14px;
+}
+
+.dialogue-option {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  min-height: 54px;
+  padding: 10px 13px;
+  border: 2px solid #e8e5f4;
+  border-radius: 19px;
+  background: #ffffff;
+  box-shadow: 0 6px 18px rgba(58, 48, 116, 0.07);
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+.dialogue-option:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+.dialogue-option:disabled {
+  cursor: default;
+}
+
+.dialogue-letter {
+  flex: 0 0 auto;
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 11px;
+  color: var(--purple-deep);
+  background: var(--purple-soft);
+  font-size: 12px;
+  font-weight: 900;
+  transition: color 0.18s ease, background 0.18s ease;
+}
+
+.dialogue-option-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.dialogue-option.selected {
+  border-color: var(--purple);
+  background: var(--purple-soft);
+  box-shadow: 0 10px 24px rgba(89, 68, 225, 0.16);
+}
+
+.dialogue-option.selected .dialogue-letter {
+  color: #ffffff;
+  background: var(--purple);
+}
+
+.dialogue-option.correct {
+  border-color: rgba(34, 173, 131, 0.55);
+  background: #e9faf4;
+}
+
+.dialogue-option.correct .dialogue-letter {
+  color: #ffffff;
+  background: var(--success);
+}
+
+.dialogue-option.wrong {
+  border-color: var(--danger);
+  background: #fff0f1;
+  animation: dialogueShake 0.35s ease;
+}
+
+.dialogue-option.wrong .dialogue-letter {
+  color: #ffffff;
+  background: var(--danger);
+}
+
+.dialogue-option.correct::after,
+.dialogue-option.wrong::after {
+  flex: 0 0 auto;
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border-radius: 50%;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.dialogue-option.correct::after {
+  content: "✓";
+  background: var(--success);
+}
+
+.dialogue-option.wrong::after {
+  content: "✗";
+  background: var(--danger);
+}
+
+.dialogue-submit[disabled] {
+  opacity: 0.5;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.dialogue-feedback {
+  margin-top: 13px;
+  padding: 13px 14px;
+  border: 1.5px solid transparent;
+  border-radius: 18px;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.dialogue-feedback:focus {
+  outline: none;
+}
+
+.dialogue-feedback.is-correct {
+  border-color: rgba(34, 173, 131, 0.32);
+  background: #e9faf4;
+}
+
+.dialogue-feedback.is-wrong {
+  border-color: rgba(239, 95, 105, 0.32);
+  background: #fff0f1;
+}
+
+.dialogue-feedback-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.dialogue-feedback.is-correct .dialogue-feedback-title {
+  color: #17836a;
+}
+
+.dialogue-feedback.is-wrong .dialogue-feedback-title {
+  color: #c23a45;
+}
+
+.dialogue-feedback-answer {
+  margin: 7px 0 0;
+  color: #3f3a5c;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.dialogue-feedback-copy {
+  margin: 5px 0 0;
+  color: #6e6984;
+}
+
+.dialogue-modal-actions {
+  display: grid;
+  gap: 9px;
+}
+
+.dialogue-modal-actions .primary-button,
+.dialogue-modal-actions .secondary-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+@media (max-width: 360px) {
+  .dialogue-question {
+    font-size: 16px;
+  }
+
+  .dialogue-bubble {
+    font-size: 13px;
+  }
+
+  .dialogue-option-text {
+    font-size: 13px;
+  }
+}

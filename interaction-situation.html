@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f7f7fc">
+  <title>情景选择 · AI Chinese Cloud</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="interaction-situation.css">
+</head>
+<body data-page="activity" data-activity-type="situation">
+  <div class="app-shell">
+    <div class="status-bar" aria-hidden="true">
+      <span>11:20</span>
+      <span class="status-icons">5G <span class="battery"></span></span>
+    </div>
+
+    <header class="page-header">
+      <a class="icon-button" href="classroom.html" data-activity-back aria-label="返回课堂互动">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </a>
+      <h1><span data-activity-title>情景选择</span><span class="header-subtitle" data-activity-subtitle>Situasi dan ucapan</span></h1>
+      <span class="header-spacer"></span>
+    </header>
+
+    <main class="page page-content">
+      <div class="game-intro">
+        <div>
+          <h2 data-activity-task>看场景，选出这个场合里最得体的说法。</h2>
+          <p>先看场景，再挑最得体的一句，选好点提交。<br>Lihat situasinya, pilih ucapan yang paling sopan, lalu kirim.</p>
+        </div>
+        <span class="progress-pill" data-activity-step>题型体验</span>
+      </div>
+
+      <section class="situation-card" data-situation-card aria-labelledby="situation-scene">
+        <div class="situation-card-head">
+          <span class="situation-type-badge">
+            <span aria-hidden="true" data-situation-type-icon>🙋</span>
+            <strong data-situation-type-name>情景选择</strong>
+          </span>
+          <span class="progress-pill" data-situation-step>第 1 / 1 题</span>
+        </div>
+
+        <div class="situation-stem">
+          <figure class="situation-figure">
+            <div class="situation-slot" data-situation-slot></div>
+            <figcaption class="situation-slot-label">场景 Gambaran</figcaption>
+          </figure>
+          <div class="situation-scene">
+            <p class="situation-scene-id" data-situation-scene-id></p>
+            <h3 class="situation-scene-text" id="situation-scene" data-situation-scene-text></h3>
+          </div>
+        </div>
+
+        <div class="situation-options" role="group" aria-labelledby="situation-scene" data-situation-options></div>
+
+        <button type="button" class="primary-button situation-submit" data-situation-submit disabled>提交答案</button>
+
+        <div class="situation-feedback hidden" role="status" aria-live="polite" tabindex="-1" data-situation-feedback>
+          <strong class="situation-feedback-title">
+            <span aria-hidden="true" data-situation-feedback-icon></span>
+            <span data-situation-feedback-title></span>
+          </strong>
+          <p class="situation-feedback-answer" data-situation-feedback-answer></p>
+          <p class="situation-feedback-copy" data-situation-feedback-copy></p>
+        </div>
+      </section>
+
+      <div class="helper-note">
+        <span aria-hidden="true">💡</span>
+        <div>想一想，哪种说法最得体。<br>Pikirkan, ucapan mana yang paling sopan.</div>
+      </div>
+
+      <p class="activity-status" data-activity-status>当前状态：待作答</p>
+      <p class="activity-meta" data-activity-meta></p>
+    </main>
+  </div>
+
+  <div class="modal-overlay hidden" data-situation-complete>
+    <section class="completion-modal" role="dialog" aria-modal="true" aria-labelledby="situation-complete-title">
+      <div class="modal-badge" data-situation-modal-badge>🎉</div>
+      <h3 id="situation-complete-title" data-situation-modal-title>答对了，真棒！</h3>
+      <p class="id-copy" data-situation-modal-id>Bagus! Jawabanmu benar.</p>
+      <p class="modal-description" data-situation-modal-copy>本题已完成，可以换一个题型再练一练，或者回到课堂。</p>
+      <div class="situation-modal-actions">
+        <a class="primary-button" href="classroom.html?activities=1" data-situation-change>换一个题型</a>
+        <a class="secondary-button" href="classroom.html" data-situation-return>返回课堂</a>
+      </div>
+    </section>
+  </div>
+
+  <script type="module" src="shared/activity-types.js"></script>
+  <script type="module" src="shared/activity-fab.js"></script>
+  <script type="module" src="shared/activity-bridge.js"></script>
+  <script type="module" src="app.js"></script>
+  <script type="module" src="shared/activity-page.js"></script>
+  <script type="module" src="interaction-situation.js"></script>
+</body>
+</html>

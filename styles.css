@@ -1693,3 +1693,133 @@ a:focus-visible {
   font-weight: 850;
   text-decoration: none;
 }
+
+/* Activity placeholder page */
+.activity-slot {
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  padding: 26px 18px;
+  border: 2px dashed #ded9f3;
+  border-radius: 22px;
+  background: #ffffff;
+  text-align: center;
+  box-shadow: var(--shadow-soft);
+}
+
+.activity-slot-icon {
+  font-size: 26px;
+}
+
+.activity-slot strong {
+  font-size: 14px;
+}
+
+.activity-slot p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.activity-status,
+.activity-meta {
+  margin: 14px 0 0;
+  color: #6e6984;
+  font-size: 10px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.activity-meta {
+  margin-top: 6px;
+  color: #9a95ad;
+}
+
+/* Activity picker */
+.activity-fab {
+  position: fixed;
+  z-index: 82;
+  right: max(12px, calc((100vw - 430px) / 2 + 12px));
+  bottom: 132px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  color: #ffffff;
+  background: linear-gradient(145deg, #7460ff, #523ee4);
+  box-shadow: 0 12px 26px rgba(71, 57, 142, 0.28);
+  font-size: 10px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform .18s ease;
+}
+
+.activity-fab:active {
+  transform: scale(0.97);
+}
+
+.activity-sheet-note {
+  margin: 10px 0 0;
+  color: #8d88a0;
+  font-size: 9px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.demo-activity-list {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.demo-activity-row {
+  display: grid;
+  grid-template-columns: 24px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  color: inherit;
+  background: #ffffff;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.demo-activity-row span {
+  font-size: 15px;
+}
+
+.demo-activity-row strong {
+  font-size: 11px;
+}
+
+.demo-activity-row em {
+  color: var(--success);
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.demo-activity-row.is-pending {
+  color: #8d88a0;
+  background: #f5f4fa;
+  cursor: default;
+}
+
+.demo-activity-row.is-pending em {
+  color: #a09bb2;
+}
+
+/* 题型清单长高以后（二期 10 个题型），小屏手机上清单内部滚动，避免顶部被顶出屏幕 */
+.activity-sheet .demo-activity-list {
+  max-height: calc(100vh - 210px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 2px;
+}

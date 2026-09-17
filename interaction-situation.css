@@ -1,0 +1,329 @@
+/* 情景选择 · interaction-situation.html 专用样式
+   公共外壳（app-shell / page-header / game-intro / progress-pill / helper-note /
+   modal-overlay / completion-modal / primary-button）全部复用 styles.css，
+   这里只写本页面自己的部件：场景图槽、场景说明、说法选项、反馈区、完成弹窗按钮排列。 */
+
+/* helper-note 和 activity-status 在卡片外面，页面底部留出空间，
+   滚到底时不会贴住右下角那两个悬浮按钮 */
+.page-content {
+  padding-bottom: 195px;
+}
+
+.situation-card {
+  padding: 16px 15px;
+  border-radius: 24px;
+  background: #ffffff;
+  box-shadow: var(--shadow-soft);
+}
+
+.situation-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 13px;
+}
+
+.situation-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 6px 11px;
+  border-radius: 999px;
+  color: var(--purple-deep);
+  background: var(--purple-soft);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.situation-card-head .progress-pill {
+  flex: 0 0 auto;
+}
+
+/* 场景说明：左边一个正方形图槽（固定 160×160），右边中文场景 ＋ 印尼语对照 */
+.situation-stem {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-bottom: 15px;
+}
+
+.situation-figure {
+  flex: 0 0 auto;
+  width: 160px;
+  margin: 0;
+}
+
+/* 正方形图槽 160×160，emoji 和真图共用同一个槽位：
+   以后把数据里的 image 填上真图，布局和样式都不用动 */
+.situation-slot {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border: 1px solid #ebe8f8;
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at 30% 22%, #ffffff 0%, rgba(255, 255, 255, 0) 58%),
+    linear-gradient(160deg, #f6f4ff, #ece7ff);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6), 0 10px 22px rgba(71, 57, 142, 0.07);
+  overflow: hidden;
+}
+
+.situation-slot-emoji {
+  font-size: 64px;
+  line-height: 1;
+}
+
+.situation-slot img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.situation-slot-label {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.situation-scene {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.situation-scene-id {
+  margin: 0 0 5px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.situation-scene-text {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.situation-options {
+  display: grid;
+  gap: 9px;
+  margin-bottom: 14px;
+}
+
+.situation-option {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  min-height: 54px;
+  padding: 10px 13px;
+  border: 2px solid #e8e5f4;
+  border-radius: 19px;
+  background: #ffffff;
+  box-shadow: 0 6px 18px rgba(58, 48, 116, 0.07);
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease, opacity 0.18s ease;
+}
+
+.situation-option:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+.situation-option:disabled {
+  cursor: default;
+}
+
+.situation-letter {
+  flex: 0 0 auto;
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 11px;
+  color: var(--purple-deep);
+  background: var(--purple-soft);
+  font-size: 12px;
+  font-weight: 900;
+  transition: color 0.18s ease, background 0.18s ease;
+}
+
+.situation-option-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.situation-option.selected {
+  border-color: var(--purple);
+  background: var(--purple-soft);
+  box-shadow: 0 10px 24px rgba(89, 68, 225, 0.16);
+}
+
+.situation-option.selected .situation-letter {
+  color: #ffffff;
+  background: var(--purple);
+}
+
+.situation-option.correct {
+  border-color: rgba(34, 173, 131, 0.55);
+  background: #e9faf4;
+}
+
+.situation-option.correct .situation-letter {
+  color: #ffffff;
+  background: var(--success);
+}
+
+.situation-option.wrong {
+  border-color: var(--danger);
+  background: #fff0f1;
+  animation: situationShake 0.35s ease;
+}
+
+.situation-option.wrong .situation-letter {
+  color: #ffffff;
+  background: var(--danger);
+}
+
+.situation-option.correct::after,
+.situation-option.wrong::after {
+  flex: 0 0 auto;
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border-radius: 50%;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.situation-option.correct::after {
+  content: "✓";
+  background: var(--success);
+}
+
+.situation-option.wrong::after {
+  content: "✗";
+  background: var(--danger);
+}
+
+@keyframes situationShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+/* 提交按钮留在正常位置；卡片底部留 26px 呼吸位，
+   与右下角两个悬浮按钮之间保持可点、可读的间隔 */
+.situation-submit {
+  margin-bottom: 26px;
+}
+
+.situation-submit[disabled] {
+  opacity: 0.5;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.situation-feedback {
+  margin-top: 13px;
+  padding: 13px 14px;
+  border: 1.5px solid transparent;
+  border-radius: 18px;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.situation-feedback:focus {
+  outline: none;
+}
+
+.situation-feedback.is-correct {
+  border-color: rgba(34, 173, 131, 0.32);
+  background: #e9faf4;
+}
+
+.situation-feedback.is-wrong {
+  border-color: rgba(239, 95, 105, 0.32);
+  background: #fff0f1;
+}
+
+.situation-feedback-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.situation-feedback.is-correct .situation-feedback-title {
+  color: #17836a;
+}
+
+.situation-feedback.is-wrong .situation-feedback-title {
+  color: #c23a45;
+}
+
+.situation-feedback-answer {
+  margin: 7px 0 0;
+  color: #3f3a5c;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+/* 全对时把那句得体的话单独放一行，和结论一起出现 */
+.situation-feedback-quote {
+  display: block;
+  margin-top: 3px;
+  color: #17836a;
+  font-size: 13px;
+}
+
+/* 解析单独起一段并加分隔线：本题型的重点，要写清楚另外两句为什么不合适 */
+.situation-feedback-copy {
+  margin: 8px 0 0;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(110, 105, 132, 0.28);
+  color: #6e6984;
+}
+
+.situation-modal-actions {
+  display: grid;
+  gap: 9px;
+}
+
+.situation-modal-actions .primary-button,
+.situation-modal-actions .secondary-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+@media (max-width: 380px) {
+  .situation-stem {
+    gap: 11px;
+  }
+
+  .situation-scene-text {
+    font-size: 15px;
+  }
+
+  .situation-option-text {
+    font-size: 13px;
+  }
+}
+

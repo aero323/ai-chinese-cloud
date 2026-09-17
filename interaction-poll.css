@@ -1,0 +1,253 @@
+/* 课堂投票 · interaction-poll.html 专用样式
+   只在本题型页面生效：不要改 styles.css（多个题型并行开发） */
+
+/* 待作答 / 已选择 / 已提交 三种状态都靠 .poll-card 上的类名切换 */
+.poll-card {
+  display: block;
+}
+
+/* 题型角标 + 课堂模式标记 */
+.poll-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.poll-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  color: var(--purple-deep);
+  background: var(--purple-soft);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.poll-step-chip {
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: #8d88a0;
+  background: #ffffff;
+  font-size: 9px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.poll-card-note {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+/* 题面配图 */
+.poll-figure {
+  margin: 0 0 14px;
+}
+
+.poll-figure svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 20px;
+  box-shadow: 0 6px 18px rgba(58, 48, 116, 0.07);
+}
+
+/* 选项：纵向排列，单选圆点 */
+.poll-options {
+  display: grid;
+  gap: 9px;
+}
+
+.poll-option {
+  position: relative;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 62px;
+  padding: 12px 13px;
+  border: 2px solid #e8e5f4;
+  border-radius: 19px;
+  background: #ffffff;
+  box-shadow: 0 6px 18px rgba(58, 48, 116, 0.07);
+  cursor: pointer;
+  transition: transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease, opacity .18s ease;
+}
+
+.poll-option:active {
+  transform: scale(.99);
+}
+
+.poll-option.is-selected {
+  transform: translateY(-2px);
+  border-color: var(--purple);
+  background: var(--purple-soft);
+  box-shadow: 0 10px 24px rgba(89, 68, 225, 0.18);
+}
+
+/* 真正接收点击和键盘操作的单选框：铺满整行，但不可见 */
+.poll-option-input {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+
+.poll-radio {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border: 2px solid #cfcade;
+  border-radius: 50%;
+  background: #ffffff;
+  transition: border-color .18s ease, box-shadow .18s ease;
+}
+
+.poll-radio::after {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--purple);
+  transform: scale(0);
+  transition: transform .18s ease;
+}
+
+.poll-option.is-selected .poll-radio {
+  border-color: var(--purple);
+}
+
+.poll-option.is-selected .poll-radio::after {
+  transform: scale(1);
+}
+
+.poll-option-input:focus-visible + .poll-radio {
+  border-color: var(--purple);
+  box-shadow: 0 0 0 4px rgba(101, 82, 255, 0.28);
+}
+
+.poll-option:has(.poll-option-input:focus-visible) {
+  border-color: var(--purple);
+  box-shadow: 0 0 0 4px rgba(101, 82, 255, 0.18);
+}
+
+.poll-option-body {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.poll-option-body strong {
+  font-size: 14px;
+  line-height: 1.25;
+}
+
+.poll-option-body small {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.poll-option-state {
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: #8d88a0;
+  background: #f3f1fa;
+  font-size: 9px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.poll-option.is-selected .poll-option-state {
+  color: #ffffff;
+  background: var(--purple);
+}
+
+/* 提交按钮：三种状态都不一样（文字 + 颜色） */
+.poll-submit {
+  margin-top: 14px;
+}
+
+.poll-submit:disabled {
+  color: #ffffff;
+  background: #d8d4ea;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+/* 反馈区：投票没有对错，只用中性的紫色提示 */
+.poll-feedback {
+  display: grid;
+  gap: 3px;
+  margin: 13px 0 0;
+  padding: 12px 14px;
+  border: 1px solid #ded8ff;
+  border-radius: 16px;
+  color: var(--purple-deep);
+  background: var(--purple-soft);
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1.4;
+}
+
+.poll-feedback:empty {
+  display: none;
+}
+
+.poll-feedback span {
+  color: #7c6ce0;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* 提交后锁定：没选的那几项淡出，选中的一项保持高亮 */
+.poll-card.is-submitted .poll-option {
+  cursor: default;
+}
+
+.poll-card.is-submitted .poll-option:not(.is-selected) {
+  opacity: .6;
+}
+
+/* 完成弹窗里的两个按钮 */
+.poll-modal-actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.poll-modal-actions .primary-button,
+.poll-modal-actions .secondary-button {
+  display: grid;
+  place-items: center;
+  text-decoration: none;
+}
+
+@media (max-width: 360px) {
+  .poll-option {
+    gap: 8px;
+    padding: 11px;
+  }
+
+  .poll-option-body strong {
+    font-size: 13px;
+  }
+
+  .poll-option-state {
+    padding: 3px 6px;
+    font-size: 8px;
+  }
+}

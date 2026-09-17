@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f7f7fc">
+  <title>看图单选 · AI Chinese Cloud</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="interaction-picture.css">
+</head>
+<body data-page="activity" data-activity-type="picture">
+  <div class="app-shell">
+    <div class="status-bar" aria-hidden="true">
+      <span>11:20</span>
+      <span class="status-icons">5G <span class="battery"></span></span>
+    </div>
+
+    <header class="page-header">
+      <a class="icon-button" href="index.html" data-activity-back aria-label="返回首页">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </a>
+      <h1><span data-activity-title>看图单选</span><span class="header-subtitle" data-activity-subtitle>Pilih gambar</span></h1>
+      <span class="header-spacer"></span>
+    </header>
+
+    <main class="page page-content">
+      <div class="game-intro">
+        <div>
+          <h2 data-activity-task>看一张图，从选项里选出正确的词。</h2>
+          <p>看图，从选项里选出正确的词，选好再点提交。<br>Lihat gambar, pilih kata yang tepat, lalu kirim.</p>
+        </div>
+        <span class="progress-pill" data-activity-step>题型体验</span>
+      </div>
+
+      <section class="picture-card" data-picture-card aria-labelledby="picture-question">
+        <div class="picture-card-head">
+          <span class="picture-type-badge">
+            <span aria-hidden="true" data-picture-type-icon>🖼️</span>
+            <strong data-picture-type-name>看图单选</strong>
+          </span>
+          <span class="progress-pill" data-picture-step>第 1 / 1 题</span>
+        </div>
+
+        <div class="picture-stem">
+          <p class="picture-pinyin" data-picture-pinyin>Zhè shì shénme?</p>
+          <h3 class="picture-question" id="picture-question" data-picture-question>这是什么？</h3>
+        </div>
+
+        <figure class="picture-figure">
+          <div class="picture-slot" data-picture-slot></div>
+          <figcaption class="picture-answer hidden" data-picture-answer>
+            <strong data-picture-answer-word></strong>
+            <span data-picture-answer-pinyin></span>
+          </figcaption>
+        </figure>
+
+        <div class="picture-options" role="group" aria-labelledby="picture-question" data-picture-options></div>
+
+        <button type="button" class="primary-button picture-submit" data-picture-submit disabled>提交答案</button>
+
+        <div class="picture-feedback hidden" role="status" aria-live="polite" tabindex="-1" data-picture-feedback>
+          <strong class="picture-feedback-title">
+            <span aria-hidden="true" data-picture-feedback-icon></span>
+            <span data-picture-feedback-title></span>
+          </strong>
+          <p class="picture-feedback-answer hidden" data-picture-feedback-answer></p>
+          <p class="picture-feedback-copy" data-picture-feedback-copy></p>
+        </div>
+      </section>
+
+      <div class="helper-note">
+        <span aria-hidden="true">💡</span>
+        <div>看图片，选出正确的词。<br>Lihat gambar, pilih kata yang tepat.</div>
+      </div>
+
+      <p class="activity-status" data-activity-status>当前状态：待作答</p>
+      <p class="activity-meta" data-activity-meta></p>
+    </main>
+  </div>
+
+  <div class="modal-overlay hidden" data-picture-complete>
+    <section class="completion-modal" role="dialog" aria-modal="true" aria-labelledby="picture-complete-title">
+      <div class="modal-badge" data-picture-modal-badge>🎉</div>
+      <h3 id="picture-complete-title" data-picture-modal-title>答对了，真棒！</h3>
+      <p class="id-copy" data-picture-modal-id>Bagus! Jawabanmu benar.</p>
+      <p class="modal-description" data-picture-modal-copy>本题已完成，可以换一个题型再练一练，或者回到课堂。</p>
+      <div class="picture-modal-actions">
+        <a class="primary-button" href="classroom.html?activities=1" data-picture-change>换一个题型</a>
+        <a class="secondary-button" href="classroom.html" data-picture-return>返回课堂</a>
+      </div>
+    </section>
+  </div>
+
+  <script type="module" src="shared/activity-types.js"></script>
+  <script type="module" src="shared/activity-fab.js"></script>
+  <script type="module" src="shared/activity-bridge.js"></script>
+  <script type="module" src="app.js"></script>
+  <script type="module" src="shared/activity-page.js"></script>
+  <script type="module" src="interaction-picture.js"></script>
+</body>
+</html>
