@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f7f7fc">
+  <title>跟读模仿 · AI Chinese Cloud</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="interaction-read-aloud.css">
+</head>
+<body data-page="activity" data-activity-type="read-aloud">
+  <div class="app-shell">
+    <div class="status-bar" aria-hidden="true">
+      <span>11:20</span>
+      <span class="status-icons">5G <span class="battery"></span></span>
+    </div>
+
+    <header class="page-header">
+      <a class="icon-button" href="index.html" data-activity-back aria-label="返回首页">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </a>
+      <h1><span data-activity-title>跟读模仿</span><span class="header-subtitle" data-activity-subtitle>Tirukan bacaan</span></h1>
+      <span class="header-spacer"></span>
+    </header>
+
+    <main class="page page-content">
+      <div class="game-intro">
+        <div>
+          <h2 data-activity-task>听一遍，然后跟着读，看看参考评分。</h2>
+          <p>先点「听范读」看正确读音，再按住「按住说话」读完松开。<br>Ketuk 「听范读」 untuk bacaan contoh, lalu tahan 「按住说话」 sambil membaca.</p>
+        </div>
+        <span class="progress-pill" data-activity-step>题型体验</span>
+      </div>
+
+      <section class="read-aloud-card" aria-labelledby="read-aloud-prompt">
+        <div class="read-aloud-card-head">
+          <span class="read-aloud-type-badge">
+            <span aria-hidden="true" data-read-aloud-type-icon>🎤</span>
+            <strong data-read-aloud-type-name>跟读模仿</strong>
+          </span>
+          <span class="progress-pill" data-read-aloud-step>第 1 / 1 题</span>
+        </div>
+
+        <div class="read-aloud-stem">
+          <h3 class="read-aloud-prompt" id="read-aloud-prompt" data-read-aloud-prompt>听一遍，然后跟着读</h3>
+          <p class="read-aloud-prompt-id" lang="id" data-read-aloud-prompt-id>Dengarkan dulu, lalu tirukan bacaannya.</p>
+        </div>
+
+        <div class="read-aloud-target">
+          <p class="read-aloud-target-label">今天要读的内容 · Bacaan hari ini</p>
+          <p class="read-aloud-text" lang="zh-CN" data-read-aloud-text>你好</p>
+          <p class="read-aloud-pinyin" data-read-aloud-pinyin>nǐ hǎo</p>
+        </div>
+
+        <div class="read-aloud-listen">
+          <button type="button" class="read-aloud-listen-button" data-read-aloud-listen>
+            <span aria-hidden="true">🔊</span>
+            <span>听范读</span>
+          </button>
+          <!-- 占位：现在不发声；接入真人范读录音后，这个按钮改成真播放即可 -->
+          <p class="read-aloud-listen-hint" data-read-aloud-listen-hint aria-hidden="true"><span data-read-aloud-listen-hint-text></span></p>
+        </div>
+
+        <div class="read-aloud-record">
+          <button type="button" class="read-aloud-record-button" data-read-aloud-record aria-pressed="false" aria-busy="false">
+            <span class="read-aloud-record-icon" aria-hidden="true" data-read-aloud-record-icon>🎤</span>
+            <span class="read-aloud-record-label" data-read-aloud-record-label>按住说话</span>
+          </button>
+          <!-- 假音量波形：CSS 动画，不接麦克风 -->
+          <div class="read-aloud-wave" data-read-aloud-wave aria-hidden="true">
+            <span></span><span></span><span></span><span></span><span></span>
+          </div>
+          <p class="read-aloud-record-hint">按住读完再松开；也可以点一下开始，再点一下结束。<br>Tahan sambil membaca lalu lepaskan; bisa juga ketuk sekali untuk mulai dan ketuk lagi untuk selesai.</p>
+        </div>
+
+        <div class="read-aloud-result hidden" data-read-aloud-result role="status" aria-live="polite" tabindex="-1">
+          <p class="read-aloud-flag">
+            <span aria-hidden="true">🧩</span>
+            <span data-read-aloud-flag>占位演示 · 不是真实评分</span>
+          </p>
+          <p class="read-aloud-reference-label">参考朗读 · Bacaan contoh</p>
+          <p class="read-aloud-reference" lang="zh-CN" data-read-aloud-reference>你好，nǐ hǎo</p>
+          <p class="read-aloud-reference-note" data-read-aloud-reference-note>第一声 ＋ 第三声 · Nada pertama + nada ketiga</p>
+          <ul class="read-aloud-scores" data-read-aloud-scores></ul>
+          <p class="read-aloud-disclaimer" data-read-aloud-disclaimer>分数为占位示例，接入语音识别后替换。</p>
+          <p class="read-aloud-disclaimer-id" lang="id" data-read-aloud-disclaimer-id></p>
+          <button type="button" class="primary-button read-aloud-finish" data-read-aloud-finish>完成</button>
+        </div>
+      </section>
+
+      <p class="read-aloud-announcer" data-read-aloud-announcer role="status" aria-live="polite"></p>
+
+      <div class="helper-note">
+        <span aria-hidden="true">🎤</span>
+        <div>按住按钮读完再松开。<br>Tahan tombol, baca, lalu lepaskan.</div>
+      </div>
+
+      <p class="activity-status" data-activity-status>当前状态：待朗读</p>
+      <p class="activity-meta" data-activity-meta></p>
+    </main>
+  </div>
+
+  <p class="read-aloud-placeholder-tag">🧩 占位演示</p>
+
+  <div class="modal-overlay hidden" data-read-aloud-complete>
+    <section class="completion-modal" role="dialog" aria-modal="true" aria-labelledby="read-aloud-complete-title">
+      <div class="modal-badge">🎧</div>
+      <h3 id="read-aloud-complete-title">本题已完成</h3>
+      <p class="id-copy">Aktivitas ini sudah selesai.</p>
+      <p class="modal-description">可以换一个题型再练一练，或者回到课堂。</p>
+      <div class="read-aloud-modal-actions">
+        <a class="primary-button" href="classroom.html?activities=1" data-read-aloud-change>换一个题型</a>
+        <a class="secondary-button" href="classroom.html" data-read-aloud-return>返回课堂</a>
+      </div>
+    </section>
+  </div>
+
+  <script type="module" src="shared/activity-types.js"></script>
+  <script type="module" src="shared/activity-fab.js"></script>
+  <script type="module" src="shared/activity-bridge.js"></script>
+  <script type="module" src="app.js"></script>
+  <script type="module" src="shared/activity-page.js"></script>
+  <script type="module" src="interaction-read-aloud.js"></script>
+</body>
+</html>

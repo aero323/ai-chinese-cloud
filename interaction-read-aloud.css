@@ -1,0 +1,439 @@
+/* 跟读模仿（占位版）· interaction-read-aloud.html 专用样式
+   假流程的状态（录音中 / 识别中 / 波形）都在这里，全部是 CSS 动画，不接麦克风。 */
+
+/* 给左下角固定的「占位演示」标签和底部提示文字留出空隙，别互相压住 */
+.page-content {
+  padding-bottom: 230px;
+}
+
+.read-aloud-card {
+  padding: 16px 15px;
+  border-radius: 24px;
+  background: #ffffff;
+  box-shadow: var(--shadow-soft);
+}
+
+.read-aloud-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.read-aloud-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 6px 11px;
+  border-radius: 999px;
+  color: var(--purple-deep);
+  background: var(--purple-soft);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.read-aloud-card-head .progress-pill {
+  flex: 0 0 auto;
+}
+
+.read-aloud-stem {
+  margin-bottom: 14px;
+}
+
+.read-aloud-prompt {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.read-aloud-prompt-id {
+  margin: 4px 0 0;
+  color: var(--purple);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+/* 要读的内容：大字 + 拼音，这一块是真的，不是占位 */
+.read-aloud-target {
+  margin-bottom: 14px;
+  padding: 16px 14px 17px;
+  border: 2px solid #e6e1ff;
+  border-radius: 20px;
+  background: linear-gradient(160deg, #f4f1ff, #eef4ff);
+  text-align: center;
+}
+
+.read-aloud-target-label {
+  margin: 0;
+  color: #8d88a0;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  line-height: 1.5;
+}
+
+.read-aloud-text {
+  margin: 10px 0 0;
+  color: var(--ink);
+  font-size: 42px;
+  font-weight: 900;
+  line-height: 1.2;
+  letter-spacing: 0.08em;
+  overflow-wrap: anywhere;
+}
+
+.read-aloud-pinyin {
+  margin: 6px 0 0;
+  color: var(--purple-deep);
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1.35;
+  letter-spacing: 0.06em;
+  overflow-wrap: anywhere;
+}
+
+/* 听范读：不发声，点完只在按钮下面出一行占位小字（2 秒淡出，可反复点） */
+.read-aloud-listen {
+  margin-bottom: 13px;
+  text-align: center;
+}
+
+.read-aloud-listen-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 52px;
+  padding: 0 16px;
+  border: 2px solid #d8d1ff;
+  border-radius: 20px;
+  color: var(--purple-deep);
+  background: #ffffff;
+  box-shadow: 0 8px 20px rgba(89, 68, 225, 0.1);
+  font-size: 15px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform .18s ease, border-color .18s ease;
+}
+
+.read-aloud-listen-button:active {
+  transform: scale(0.99);
+}
+
+.read-aloud-listen-hint {
+  display: flex;
+  justify-content: center;
+  min-height: 23px;
+  margin: 8px 0 0;
+  opacity: 0;
+  transition: opacity .35s ease;
+}
+
+.read-aloud-listen-hint span {
+  padding: 3px 10px;
+  border-radius: 999px;
+  color: #a75d15;
+  background: #fff1de;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.read-aloud-listen-hint.is-visible {
+  opacity: 1;
+}
+
+@media (hover: hover) {
+  .read-aloud-listen-button:hover {
+    border-color: #b9adff;
+  }
+}
+
+/* 说话按钮：按住 / 点一下都能走假流程；录音态、识别态各有自己的样子 */
+.read-aloud-record {
+  text-align: center;
+}
+
+.read-aloud-record-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 78px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 26px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #735dff, #503be5);
+  box-shadow: 0 15px 30px rgba(79, 58, 224, 0.26);
+  font-size: 18px;
+  font-weight: 900;
+  cursor: pointer;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  transition: transform .18s ease, background .18s ease, box-shadow .18s ease;
+}
+
+.read-aloud-record-button:active {
+  transform: scale(0.99);
+}
+
+.read-aloud-record-button.is-recording {
+  background: linear-gradient(135deg, #ff7280, #e2465a);
+  box-shadow: 0 15px 30px rgba(226, 70, 90, 0.28);
+}
+
+.read-aloud-record-button.is-recognizing {
+  background: linear-gradient(135deg, #8d79ff, #6a55e8);
+  animation: readAloudWait 1s ease-in-out infinite;
+}
+
+.read-aloud-record-label {
+  overflow-wrap: anywhere;
+}
+
+@keyframes readAloudWait {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.78; }
+}
+
+/* 假音量波形：只是 CSS 动画，不代表真的收到声音 */
+.read-aloud-wave {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 4px;
+  height: 34px;
+  margin-top: 12px;
+  opacity: 0;
+  transition: opacity .2s ease;
+}
+
+.read-aloud-wave.is-visible {
+  opacity: 1;
+}
+
+.read-aloud-wave span {
+  width: 6px;
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #ff9aa4, #e2465a);
+  animation: readAloudWave 900ms ease-in-out infinite;
+}
+
+.read-aloud-wave span:nth-child(2) { animation-delay: .12s; }
+.read-aloud-wave span:nth-child(3) { animation-delay: .24s; }
+.read-aloud-wave span:nth-child(4) { animation-delay: .36s; }
+.read-aloud-wave span:nth-child(5) { animation-delay: .48s; }
+
+@keyframes readAloudWave {
+  0%, 100% { height: 10px; }
+  50% { height: 30px; }
+}
+
+.read-aloud-record-hint {
+  margin: 10px 0 0;
+  color: #8d88a0;
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+/* 占位结果卡：整组评分都是固定示例，不是真实评分 */
+.read-aloud-result {
+  margin-top: 15px;
+  padding: 14px 14px 16px;
+  border: 2px solid #d8d1ff;
+  border-radius: 20px;
+  background: #f8f6ff;
+  animation: readAloudResultIn .28s cubic-bezier(.2, .85, .25, 1);
+}
+
+.read-aloud-result:focus {
+  outline: none;
+}
+
+@keyframes readAloudResultIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.read-aloud-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 12px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  color: #a75d15;
+  background: #fff1de;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.read-aloud-reference-label {
+  margin: 0;
+  color: #8d88a0;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.read-aloud-reference {
+  margin: 6px 0 0;
+  color: var(--ink);
+  font-size: 21px;
+  font-weight: 900;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.read-aloud-reference-note {
+  margin: 4px 0 0;
+  color: #8d88a0;
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.read-aloud-scores {
+  display: grid;
+  gap: 8px;
+  margin: 13px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.read-aloud-score {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.read-aloud-score-name {
+  min-width: 0;
+}
+
+.read-aloud-score-name strong {
+  display: block;
+  color: #3f3a5c;
+  font-size: 12px;
+}
+
+.read-aloud-score-name small {
+  display: block;
+  margin-top: 2px;
+  color: #9a95ad;
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.read-aloud-stars {
+  flex: 0 0 auto;
+  font-size: 14px;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+
+.read-aloud-stars-on {
+  color: #ffb020;
+}
+
+.read-aloud-stars-off {
+  color: #ddd9e8;
+}
+
+.read-aloud-disclaimer {
+  margin: 12px 0 0;
+  color: #8d88a0;
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.read-aloud-disclaimer-id {
+  margin: 3px 0 0;
+  color: #9a95ad;
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.read-aloud-finish {
+  width: 100%;
+  margin-top: 14px;
+}
+
+.read-aloud-announcer {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  border: 0;
+  white-space: nowrap;
+}
+
+.read-aloud-modal-actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.read-aloud-modal-actions .primary-button,
+.read-aloud-modal-actions .secondary-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
+  line-height: 1.3;
+  text-align: center;
+  text-decoration: none;
+}
+
+/* 固定占位标签：放左下角，躲开右下角的「演示」「题型体验」两个悬浮按钮；
+   比听音页再往上让一点，底部提示文字不会被压住 */
+.read-aloud-placeholder-tag {
+  position: fixed;
+  z-index: 79;
+  left: max(12px, calc((100vw - 430px) / 2 + 12px));
+  bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+  margin: 0;
+  padding: 6px 11px;
+  border: 1px dashed #c9c1ff;
+  border-radius: 999px;
+  color: #6e6984;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 6px 16px rgba(58, 48, 116, 0.12);
+  font-size: 10px;
+  font-weight: 900;
+  pointer-events: none;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+@media (max-width: 360px) {
+  .read-aloud-text {
+    font-size: 36px;
+  }
+
+  .read-aloud-record-button {
+    min-height: 70px;
+    font-size: 16px;
+  }
+
+  .read-aloud-listen-button {
+    min-height: 48px;
+    font-size: 14px;
+  }
+}

@@ -1,0 +1,397 @@
+/* 听音选图/选词（占位版）· interaction-listening.html 专用样式 */
+
+.page-content {
+  padding-bottom: 190px;
+}
+
+.listening-card {
+  padding: 16px 15px;
+  border-radius: 24px;
+  background: #ffffff;
+  box-shadow: var(--shadow-soft);
+}
+
+.listening-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.listening-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 6px 11px;
+  border-radius: 999px;
+  color: var(--purple-deep);
+  background: var(--purple-soft);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.listening-card-head .progress-pill {
+  flex: 0 0 auto;
+}
+
+.listening-stem {
+  margin-bottom: 14px;
+}
+
+.listening-prompt {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.listening-prompt-id {
+  margin: 4px 0 0;
+  color: var(--purple);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+/* 播放区：大播放按钮 + 占位小字（不放声音，只走真状态） */
+.listening-player {
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.listening-play {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 64px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 22px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #735dff, #503be5);
+  box-shadow: 0 13px 28px rgba(79, 58, 224, 0.26);
+  font-size: 17px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+
+.listening-play:active {
+  transform: scale(0.99);
+}
+
+.listening-play.is-playing .listening-play-icon {
+  animation: listeningPulse 1s ease-in-out infinite;
+}
+
+@keyframes listeningPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.18); }
+}
+
+.listening-play-hint {
+  display: flex;
+  justify-content: center;
+  min-height: 23px;
+  margin: 8px 0 0;
+  opacity: 0;
+  transition: opacity .35s ease;
+}
+
+.listening-play-hint span {
+  padding: 3px 10px;
+  border-radius: 999px;
+  color: #a75d15;
+  background: #fff1de;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.listening-play-hint.is-visible {
+  opacity: 1;
+}
+
+/* 选项：纵排，提交前可改选，提交后锁定 */
+.listening-options {
+  display: grid;
+  gap: 9px;
+  margin-bottom: 14px;
+}
+
+.listening-option {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  min-height: 56px;
+  padding: 10px 13px;
+  border: 2px solid #e8e5f4;
+  border-radius: 19px;
+  background: #ffffff;
+  box-shadow: 0 6px 18px rgba(58, 48, 116, 0.07);
+  text-align: left;
+  cursor: pointer;
+  transition: transform .18s ease, border-color .18s ease, background .18s ease;
+}
+
+.listening-option:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+.listening-option:disabled {
+  cursor: default;
+}
+
+.listening-letter {
+  flex: 0 0 auto;
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 11px;
+  color: var(--purple-deep);
+  background: var(--purple-soft);
+  font-size: 12px;
+  font-weight: 900;
+  transition: color .18s ease, background .18s ease;
+}
+
+.listening-option-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.listening-option.selected {
+  border-color: var(--purple);
+  background: var(--purple-soft);
+  box-shadow: 0 10px 24px rgba(89, 68, 225, 0.16);
+}
+
+.listening-option.selected .listening-letter {
+  color: #ffffff;
+  background: var(--purple);
+}
+
+.listening-option.correct {
+  border-color: rgba(34, 173, 131, 0.55);
+  background: #e9faf4;
+}
+
+.listening-option.correct .listening-letter {
+  color: #ffffff;
+  background: var(--success);
+}
+
+.listening-option.wrong {
+  border-color: var(--danger);
+  background: #fff0f1;
+  animation: listeningShake .35s ease;
+}
+
+.listening-option.wrong .listening-letter {
+  color: #ffffff;
+  background: var(--danger);
+}
+
+@keyframes listeningShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+.listening-option.correct::after,
+.listening-option.wrong::after {
+  flex: 0 0 auto;
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border-radius: 50%;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.listening-option.correct::after {
+  content: "✓";
+  background: var(--success);
+}
+
+.listening-option.wrong::after {
+  content: "✗";
+  background: var(--danger);
+}
+
+.listening-submit[disabled] {
+  opacity: 0.5;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+@media (hover: hover) {
+  .listening-option:hover:not(:disabled) {
+    border-color: #c9c1ff;
+  }
+}
+
+/* 反馈区：提交后才出现，绿对红错 */
+.listening-feedback {
+  margin-top: 13px;
+  padding: 13px 14px;
+  border: 2px solid transparent;
+  border-radius: 18px;
+}
+
+.listening-feedback:focus {
+  outline: none;
+}
+
+.listening-feedback.is-correct {
+  border-color: rgba(34, 173, 131, 0.45);
+  background: #eafaf5;
+}
+
+.listening-feedback.is-wrong {
+  border-color: rgba(239, 95, 105, 0.45);
+  background: #fff0f1;
+}
+
+.listening-feedback-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.listening-feedback-icon {
+  display: grid;
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border-radius: 50%;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.listening-feedback.is-correct .listening-feedback-title {
+  color: #14805f;
+}
+
+.listening-feedback.is-correct .listening-feedback-icon {
+  background: var(--success);
+}
+
+.listening-feedback.is-wrong .listening-feedback-title {
+  color: #c33f48;
+}
+
+.listening-feedback.is-wrong .listening-feedback-icon {
+  background: var(--danger);
+}
+
+.listening-feedback-title-id {
+  margin: 4px 0 0;
+  color: #8d88a0;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.listening-feedback-answer {
+  margin: 10px 0 0;
+  color: #3f3a5c;
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.listening-feedback-copy {
+  margin: 7px 0 0;
+  color: #4f4775;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.listening-feedback-id {
+  margin: 3px 0 0;
+  color: #8d88a0;
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.listening-announcer {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  border: 0;
+  white-space: nowrap;
+}
+
+.listening-modal-actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.listening-modal-actions .primary-button,
+.listening-modal-actions .secondary-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
+  line-height: 1.3;
+  text-align: center;
+  text-decoration: none;
+}
+
+/* 固定占位标签：放左下角，躲开右下角的「演示」「题型体验」两个悬浮按钮 */
+.listening-placeholder-tag {
+  position: fixed;
+  z-index: 79;
+  left: max(12px, calc((100vw - 430px) / 2 + 12px));
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  margin: 0;
+  padding: 6px 11px;
+  border: 1px dashed #c9c1ff;
+  border-radius: 999px;
+  color: #6e6984;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 6px 16px rgba(58, 48, 116, 0.12);
+  font-size: 10px;
+  font-weight: 900;
+  pointer-events: none;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+@media (max-width: 360px) {
+  .listening-play {
+    min-height: 58px;
+    font-size: 15px;
+  }
+
+  .listening-option {
+    min-height: 52px;
+    padding: 9px 11px;
+  }
+
+  .listening-option-text {
+    font-size: 17px;
+  }
+}

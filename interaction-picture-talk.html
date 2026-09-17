@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f7f7fc">
+  <title>看图说话 · AI Chinese Cloud</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="interaction-picture-talk.css">
+</head>
+<body data-page="activity" data-activity-type="picture-talk">
+  <div class="app-shell">
+    <div class="status-bar" aria-hidden="true">
+      <span>11:20</span>
+      <span class="status-icons">5G <span class="battery"></span></span>
+    </div>
+
+    <header class="page-header">
+      <a class="icon-button" href="index.html" data-activity-back aria-label="返回首页">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </a>
+      <h1><span data-activity-title>看图说话</span><span class="header-subtitle" data-activity-subtitle>Bicara dari gambar</span></h1>
+      <span class="header-spacer"></span>
+    </header>
+
+    <main class="page page-content">
+      <div class="game-intro">
+        <div>
+          <h2 data-activity-task>看一张图，用中文说一句话。</h2>
+          <p>先看看图上有什么，再按住话筒用中文说一句完整的话。<br>Lihat gambarnya, lalu ucapkan satu kalimat lengkap dalam bahasa Mandarin.</p>
+        </div>
+        <span class="progress-pill" data-activity-step>题型体验</span>
+      </div>
+
+      <section class="picture-talk-card" aria-labelledby="picture-talk-prompt">
+        <div class="picture-talk-card-head">
+          <span class="picture-talk-type-badge">
+            <span aria-hidden="true" data-picture-talk-type-icon>🗣️</span>
+            <strong data-picture-talk-type-name>看图说话</strong>
+          </span>
+          <span class="progress-pill">第 1 / 1 题</span>
+        </div>
+
+        <div class="picture-talk-stem">
+          <h3 class="picture-talk-prompt" id="picture-talk-prompt" data-picture-talk-prompt>看这张图，用中文说一句话。</h3>
+          <p class="picture-talk-prompt-id" lang="id" data-picture-talk-prompt-id>Lihat gambar ini, ucapkan satu kalimat dalam bahasa Mandarin.</p>
+        </div>
+
+        <div class="picture-talk-figure">
+          <!-- 图槽内容由脚本渲染：现在是 emoji 占位，以后数据里填上 image 路径就换成真图 -->
+          <div class="picture-talk-slot" data-picture-talk-slot></div>
+        </div>
+
+        <p class="picture-talk-hint" data-picture-talk-hint></p>
+
+        <button type="button" class="picture-talk-mic" data-picture-talk-mic aria-pressed="false">
+          <span class="picture-talk-mic-icon" aria-hidden="true">🎤</span>
+          <span class="picture-talk-mic-label" data-picture-talk-mic-label>按住说话</span>
+        </button>
+
+        <!-- 假波形：只在录音态显示，不接麦克风、不发声音 -->
+        <div class="picture-talk-wave" aria-hidden="true" data-picture-talk-wave>
+          <span class="picture-talk-wave-bar"></span>
+          <span class="picture-talk-wave-bar"></span>
+          <span class="picture-talk-wave-bar"></span>
+          <span class="picture-talk-wave-bar"></span>
+          <span class="picture-talk-wave-bar"></span>
+        </div>
+
+        <div class="picture-talk-result hidden" role="status" aria-live="polite" tabindex="-1" data-picture-talk-result>
+          <p class="picture-talk-result-tag"><span aria-hidden="true">🧩</span> 占位演示 · 不是真实评分</p>
+          <p class="picture-talk-result-label">参考答案 · Jawaban contoh</p>
+          <p class="picture-talk-answer" data-picture-talk-answer></p>
+          <p class="picture-talk-answer-id" lang="id" data-picture-talk-answer-id></p>
+          <ul class="picture-talk-scores" data-picture-talk-scores></ul>
+          <p class="picture-talk-result-note">分数为占位示例，接入语音识别后替换</p>
+          <button type="button" class="primary-button picture-talk-done" data-picture-talk-done>完成</button>
+        </div>
+      </section>
+
+      <p class="picture-talk-announcer" data-picture-talk-announcer role="status" aria-live="polite"></p>
+
+      <div class="helper-note">
+        <span aria-hidden="true">💬</span>
+        <div>看图画，说一句完整的话。<br>Lihat gambar, ucapkan satu kalimat lengkap.</div>
+      </div>
+
+      <p class="activity-status" data-activity-status>当前状态：待作答</p>
+      <p class="activity-meta" data-activity-meta></p>
+    </main>
+  </div>
+
+  <p class="picture-talk-placeholder-tag">🧩 占位演示</p>
+
+  <div class="modal-overlay hidden" data-picture-talk-complete>
+    <section class="completion-modal" role="dialog" aria-modal="true" aria-labelledby="picture-talk-complete-title">
+      <div class="modal-badge">🎯</div>
+      <h3 id="picture-talk-complete-title">本题已完成</h3>
+      <p class="id-copy">Aktivitas ini sudah selesai.</p>
+      <p class="modal-description">可以换一个题型再练一练，或者回到课堂。</p>
+      <div class="picture-talk-modal-actions">
+        <a class="primary-button" href="classroom.html?activities=1" data-picture-talk-change>换一个题型</a>
+        <a class="secondary-button" href="classroom.html" data-picture-talk-return>返回课堂</a>
+      </div>
+    </section>
+  </div>
+
+  <script type="module" src="shared/activity-types.js"></script>
+  <script type="module" src="shared/activity-fab.js"></script>
+  <script type="module" src="shared/activity-bridge.js"></script>
+  <script type="module" src="app.js"></script>
+  <script type="module" src="shared/activity-page.js"></script>
+  <script type="module" src="interaction-picture-talk.js"></script>
+</body>
+</html>
