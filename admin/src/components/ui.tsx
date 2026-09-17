@@ -1,0 +1,204 @@
+import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes } from "react";
+import { createPortal } from "react-dom";
+import { X } from "lucide-react";
+
+type Tone = "purple" | "mint" | "orange" | "pink" | "blue" | "danger" | "neutral";
+
+export function Button({
+  variant = "primary",
+  size = "md",
+  className = "",
+  children,
+  ...props
+}: ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: "primary" | "secondary" | "ghost" | "danger" | "soft";
+  size?: "sm" | "md" | "lg" | "icon";
+}) {
+  return (
+    <button className={`button button-${variant} button-${size} ${className}`} {...props}>
+      {children}
+    </button>
+  );
+}
+
+export function Badge({ tone = "neutral", children, className = "" }: { tone?: Tone; children: ReactNode; className?: string }) {
+  return <span className={`badge badge-${tone} ${className}`}>{children}</span>;
+}
+
+export function ProgressBar({ value, tone = "purple" }: { value: number; tone?: Tone }) {
+  return (
+    <div className="progress-track" aria-label={`${Math.round(value)}%`}>
+      <span className={`progress-value tone-${tone}`} style={{ width: `${Math.min(100, Math.max(0, value))}%` }} />
+    </div>
+  );
+}
+
+export function StatCard({
+  label,
+  value,
+  detail,
+  icon,
+  tone = "purple",
+  progress
+}: {
+  label: string;
+  value: ReactNode;
+  detail?: ReactNode;
+  icon?: ReactNode;
+  tone?: Tone;
+  progress?: number;
+}) {
+  return (
+    <article className="stat-card">
+      <div className={`stat-icon tone-bg-${tone}`}>{icon}</div>
+      <div className="stat-copy">
+        <span className="stat-label">{label}</span>
+        <strong className="stat-value">{value}</strong>
+        {detail && <span className="stat-detail">{detail}</span>}
+      </div>
+      {typeof progress === "number" && <ProgressBar value={progress} tone={tone} />}
+    </article>
+  );
+}
+
+export function PageHeader({
+  eyebrow,
+  title,
+  description,
+  actions
+}: {
+  eyebrow?: string;
+  title: string;
+  description?: string;
+  actions?: ReactNode;
+}) {
+  return (
+    <header className="page-heading">
+      <div>
+        {eyebrow && <span className="eyebrow">{eyebrow}</span>}
+        <h1>{title}</h1>
+        {description && <p>{description}</p>}
+      </div>
+      {actions && <div className="page-actions">{actions}</div>}
+    </header>
+  );
+}
+
+export function Card({ children, className = "", interactive = false, style }: { children: ReactNode; className?: string; interactive?: boolean; style?: React.CSSProperties }) {
+  return <section className={`card ${interactive ? "card-interactive" : ""} ${className}`} style={style}>{children}</section>;
+}
+
+export function EmptyState({ title, description, action }: { title: string; description?: string; action?: ReactNode }) {
+  return (
+    <div className="empty-state">
+      <div className="empty-orbit" />
+      <strong>{title}</strong>
+      {description && <p>{description}</p>}
+      {action}
+    </div>
+  );
+}
+
+export function Modal({
+  open,
+  title,
+  onClose,
+  children,
+  footer,
+  width = "560px"
+}: {
+  open: boolean;
+  title: string;
+  onClose: () => void;
+  children: ReactNode;
+  footer?: ReactNode;
+  width?: string;
+}) {
+  if (!open) return null;
+  return createPortal(
+    <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+      <section className="modal-panel" role="dialog" aria-modal="true" aria-label={title} style={{ maxWidth: width }}>
+        <header className="modal-header">
+          <h2>{title}</h2>
+          <Button size="icon" variant="ghost" onClick={onClose} aria-label="关闭">
+            <X size={18} />
+          </Button>
+        </header>
+        <div className="modal-content">{children}</div>
+        {footer && <footer className="modal-footer">{footer}</footer>}
+      </section>
+    </div>,
+    document.body
+  );
+}
+
+export function Field({
+  label,
+  hint,
+  children,
+  className = ""
+}: {
+  label: string;
+  hint?: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <label className={`field ${className}`}>
+      <span className="field-label">{label}</span>
+      {children}
+      {hint && <small>{hint}</small>}
+    </label>
+  );
+}
+
+export function TextInput({ className = "", ...props }: InputHTMLAttributes<HTMLInputElement>) {
+  return <input className={`input ${className}`} {...props} />;
+}
+
+export function Select({ className = "", children, ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
+  return (
+    <select className={`input select ${className}`} {...props}>
+      {children}
+    </select>
+  );
+}
+
+export function Tabs<T extends string>({
+  items,
+  value,
+  onChange,
+  compact = false
+}: {
+  items: Array<{ value: T; label: string; count?: number }>;
+  value: T;
+  onChange: (value: T) => void;
+  compact?: boolean;
+}) {
+  return (
+    <div className={`tabs ${compact ? "tabs-compact" : ""}`} role="tablist">
+      {items.map((item) => (
+        <button
+          key={item.value}
+          className={item.value === value ? "active" : ""}
+          onClick={() => onChange(item.value)}
+          role="tab"
+          aria-selected={item.value === value}
+        >
+          {item.label}
+          {typeof item.count === "number" && <span>{item.count}</span>}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export function Avatar({ label, size = "md", tone = "purple" }: { label: string; size?: "sm" | "md" | "lg"; tone?: Tone }) {
+  return <span className={`avatar avatar-${size} avatar-${tone}`}>{label.slice(0, 2)}</span>;
+}
+
+export function SourceBadge({ source }: { source: string }) {
+  const tone: Tone = source === "operator" ? "orange" : source === "waitlist" ? "blue" : "mint";
+  const label = source === "operator" ? "运营代约" : source === "waitlist" ? "候补转正" : "学生预约";
+  return <Badge tone={tone}>{label}</Badge>;
+}

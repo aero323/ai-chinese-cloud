@@ -2,6 +2,8 @@
   "use strict";
 
   const STORAGE_KEY = "ai-chinese-cloud-classroom-demo-v1";
+  const platformStore = window.AICloudPlatformStore;
+  const adminBase = "admin/";
   const DEFAULT_STATE = Object.freeze({
     phase: "live",
     task1Done: false,
@@ -126,6 +128,7 @@
             </button>
           `).join("")}
         </div>
+        <a class="demo-admin-link" href="admin/">打开三角色管理后台 →</a>
         <button type="button" class="demo-reset" data-demo-reset>重置两项互动进度</button>
       </section>
     `;
@@ -184,6 +187,57 @@
     renderActive();
   }
 
+  function currentPlatformSnapshot() {
+    if (!platformStore) return null;
+    try {
+      const platformState = platformStore.getState();
+      const student = platformState.users.find((user) => user.id === platformState.currentUserId && user.role === "student")
+        || platformState.users.find((user) => user.role === "student");
+      if (!student) return null;
+      const bookings = platformState.bookings
+        .filter((booking) => booking.studentId === student.id && booking.status === "booked")
+        .map((booking) => platformState.sessions.find((session) => session.id === booking.sessionId))
+        .filter(Boolean)
+        .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
+      const nextSession = bookings.find((session) => new Date(session.endAt).getTime() > Date.now()) || bookings.at(-1);
+      if (!nextSession) return null;
+      const lesson = platformState.lessons.find((item) => item.id === nextSession.lessonId);
+      const teacher = platformState.users.find((item) => item.id === nextSession.teacherId);
+      return { platformState, student, nextSession, lesson, teacher };
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function openPlatformLesson() {
+    const snapshot = currentPlatformSnapshot();
+    if (!snapshot) {
+      showToast("当前没有已预约的课节");
+      return;
+    }
+    const now = Date.now();
+    const start = new Date(snapshot.nextSession.startAt).getTime();
+    const end = new Date(snapshot.nextSession.endAt).getTime();
+    const phase = now > end ? "review" : now >= start - 10 * 60 * 1000 ? "live" : "preview";
+    window.location.href = `${adminBase}#/student/lesson/${snapshot.nextSession.lessonId}?sessionId=${snapshot.nextSession.id}&phase=${phase}`;
+  }
+
+  function recordPlatformCompletion(taskIndex) {
+    const snapshot = currentPlatformSnapshot();
+    if (!snapshot) return;
+    platformStore.recordAttempt({
+      setId: "set-greetings-live",
+      studentId: snapshot.student.id,
+      sessionId: snapshot.nextSession.id,
+      phase: "live",
+      answers: {},
+      score: 100,
+      timeSpentSeconds: taskIndex === 1 ? 62 : 84,
+      wrongItemIds: [],
+      pollAnswers: {}
+    });
+  }
+
   function goToClassroom() {
     if (phase().open) {
       window.location.href = "classroom.html";
@@ -215,6 +269,27 @@
     document.querySelectorAll("[data-classroom-entry]").forEach((button) => {
       button.addEventListener("click", goToClassroom);
     });
+
+    document.querySelectorAll("[data-platform-lesson]").forEach((button) => {
+      button.addEventListener("click", openPlatformLesson);
+    });
+
+    const snapshot = currentPlatformSnapshot();
+    if (snapshot) {
+      const card = document.querySelector(".lesson-card");
+      const badge = card && card.querySelector(".lesson-badge");
+      const title = card && card.querySelector("h3");
+      const subtitle = card && card.querySelector(".lesson-sub");
+      const phrases = card && card.querySelector(".lesson-phrases");
+      const action = card && card.querySelector("[data-platform-lesson]");
+      if (badge) badge.textContent = `LESSON · ${snapshot.lesson?.title || "今日大班课"}`;
+      if (title) title.textContent = snapshot.lesson?.title || snapshot.nextSession.title;
+      if (subtitle) subtitle.textContent = `${snapshot.lesson?.subtitle || "Mandarin class"} · ${snapshot.teacher?.name || "老师"}`;
+      if (phrases) {
+        phrases.innerHTML = (snapshot.lesson?.tags || ["中文", "大班课", "互动"]).map((tag) => `<span>${tag}</span>`).join("");
+      }
+      if (action) action.textContent = "打开后台课节内容 →";
+    }
 
     document.querySelectorAll("[data-demo-feature]").forEach((button) => {
       button.addEventListener("click", () => showToast("这个入口在原型中暂未展开"));
@@ -430,6 +505,7 @@
 
           if (matched.size === leftItems.length) {
             updateState({ task1Done: true });
+            recordPlatformCompletion(1);
             window.setTimeout(() => {
               if (modal) {
                 modal.classList.remove("hidden");
@@ -567,6 +643,7 @@
 
         if (matchedPairs === pairs.length) {
           updateState({ task2Done: true });
+          recordPlatformCompletion(2);
           window.setTimeout(() => modal && modal.classList.remove("hidden"), 520);
         }
         return;
