@@ -4,15 +4,12 @@
 (() => {
   "use strict";
 
-  const types = window.AICloudActivityTypes;
   const bridge = window.AICloudActivity;
 
   const card = document.querySelector("[data-poll-card]");
   const options = Array.from(document.querySelectorAll("[data-poll-option]"));
   const submitButton = document.querySelector("[data-poll-submit]");
   const feedback = document.querySelector("[data-poll-feedback]");
-  const statusLine = document.querySelector("[data-activity-status]");
-  const badge = document.querySelector("[data-poll-badge]");
   const completeModal = document.querySelector("[data-poll-complete]");
   const completeCopy = document.querySelector("[data-poll-complete-copy]");
   const moreButton = document.querySelector("[data-poll-more]");
@@ -40,10 +37,6 @@
       zh: zh ? zh.textContent.trim() : "",
       id: id ? id.textContent.trim() : ""
     };
-  };
-
-  const setStatus = (text) => {
-    if (statusLine) statusLine.textContent = text;
   };
 
   /* 圆点、边框、右侧的小标签一起变，不只靠颜色 */
@@ -100,20 +93,13 @@
     }
 
     const seconds = Math.max(1, Math.round((Date.now() - startedAt) / 1000));
-    const outcome = bridge && typeof bridge.finish === "function"
-      ? bridge.finish({ correct: true, seconds, detail: `投票：${picked.zh}`, delay: inClass ? 900 : 0 })
-      : { recorded: false, next: "" };
-
-    if (inClass) {
-      /* 课堂模式：公共脚本记进度并跳转，页面不自己写跳转 */
-      setStatus(outcome.next === "complete.html"
-        ? "已提交：本题已完成，正在进入完成页… / Sudah dikirim, membuka halaman selesai…"
-        : "已提交：本题已完成，正在返回课堂继续下一题… / Sudah dikirim, kembali ke kelas…");
-      return;
+    if (bridge && typeof bridge.finish === "function") {
+      /* 课堂模式：公共脚本按 delay 记进度并跳转，页面不自己写跳转 */
+      bridge.finish({ correct: true, seconds, detail: `投票：${picked.zh}`, delay: inClass ? 900 : 0 });
     }
+    if (inClass) return;
 
     /* 体验模式：不记账、不跳转，自己弹完成弹窗 */
-    setStatus("已提交：每题只能提交一次，不能再改了。 / Sudah dikirim dan tidak bisa diubah.");
     window.setTimeout(() => {
       if (!completeModal) return;
       completeModal.classList.remove("hidden");
@@ -128,8 +114,6 @@
       if (submitted) return;
       paintOptions();
       refreshSubmit();
-      const picked = textOf(option);
-      setStatus(`已选择：${picked.zh}。改主意就点别的那个，然后点「提交」。 / Sudah memilih: ${picked.id}.`);
     });
   });
 
@@ -137,19 +121,6 @@
 
   /* 顶栏返回：统一回课堂页，href 与文案由 shared/activity-page.js 负责 */
 
-  /* 题型角标取自题型清单，不在页面里另写一份文案 */
-  const meta = types && typeof types.get === "function" ? types.get(type) : null;
-  if (badge && meta) {
-    badge.textContent = "";
-    const icon = document.createElement("span");
-    icon.setAttribute("aria-hidden", "true");
-    icon.textContent = meta.icon || "📊";
-    const name = document.createElement("span");
-    name.textContent = meta.title || "课堂投票";
-    badge.append(icon, name);
-  }
-
   paintOptions();
   refreshSubmit();
-  setStatus("待作答：先选一个选项，再点下面的「提交」。 / Belum memilih: pilih satu opsi lalu tekan kirim.");
 })();

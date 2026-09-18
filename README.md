@@ -134,8 +134,8 @@ npm run preview
        AICloudActivity.finish({ correct: true, seconds: 12 });
 
    体验模式（网址里只有 type 参数）：不记账，页面自己弹完成弹窗。
-   课堂模式（网址带 mode=class 和 slot）：写入进度，第 1 题回课堂页，第 2 题进完成页。
-   体验模式弹窗里的「换一个题型」指向 `classroom.html?activities=1`，「返回课堂」指向 `classroom.html`。
+   课堂模式（网址带 mode=class 和 slot）：写入进度，任何一题做完都回课堂页；两题都完成后回到课堂页弹一次大恭喜。
+   体验模式弹窗正在分批换成公共模具：换好的页面按钮是【返回课堂】（指向 `classroom.html`）＋【再练一次】（就地重开）；还没换的页面维持旧样。新接线一律按 `docs/视觉打磨规范-v0.2.md` 来（第五节 = 弹窗规格，第九节 = 接线进度；传 tier、不自己画弹窗）。
 5. 页面里可以随时用 AICloudActivity.context() 拿到当前是第几题、哪种题型。
 6. 做完之后，把 shared/activity-types.js 里自己那条的 ready 改成 true，题型清单里就会变成“可体验”。
 

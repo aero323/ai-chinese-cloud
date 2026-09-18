@@ -1424,6 +1424,19 @@ a:focus-visible {
   -webkit-backdrop-filter: blur(8px);
 }
 
+.celebrate-overlay .complete-card {
+  width: min(100%, 340px);
+  margin: 0;
+}
+
+.celebrate-overlay .complete-actions {
+  margin-top: 18px;
+}
+
+.celebrate-overlay .complete-card:focus {
+  outline: none;
+}
+
 .completion-modal {
   width: min(100%, 340px);
   padding: 26px 22px 22px;
@@ -1467,6 +1480,123 @@ a:focus-visible {
   color: var(--muted);
   font-size: 11px;
   line-height: 1.55;
+}
+
+/* 弹窗模具（只作用于接入了 shared/feedback-modal.js 的页面） */
+[data-feedback-modal] .completion-modal {
+  padding: 34px 22px 26px;
+}
+
+[data-feedback-modal] .completion-modal:focus {
+  outline: none;
+}
+
+[data-feedback-modal] .modal-badge {
+  position: relative;
+  width: 98px;
+  height: 98px;
+  margin: 0 auto 18px;
+  font-size: 56px;
+  animation: modalBadgePop .3s cubic-bezier(.2, .9, .3, 1.45);
+}
+
+[data-feedback-modal][data-tier="correct"] .modal-badge {
+  background: #ffefc9;
+  box-shadow: 0 0 0 14px rgba(255, 196, 86, 0.16);
+}
+
+[data-feedback-modal][data-tier="correctFirstTry"] .modal-badge {
+  background: #ffefc9;
+  box-shadow: 0 0 0 22px rgba(255, 196, 86, 0.18);
+}
+
+[data-feedback-modal][data-tier="wrong"] .modal-badge {
+  background: #e9eef8;
+  box-shadow: 0 0 0 14px rgba(139, 160, 196, 0.14);
+}
+
+[data-feedback-modal] .modal-spark {
+  position: absolute;
+  opacity: 0;
+  color: #c9c4de;
+  animation: modalSparkIn .5s ease .18s forwards;
+}
+
+[data-feedback-modal] .modal-spark.s1 {
+  top: -4px;
+  left: -8px;
+  font-size: 17px;
+}
+
+[data-feedback-modal] .modal-spark.s2 {
+  right: -10px;
+  bottom: 0;
+  font-size: 12px;
+}
+
+[data-feedback-modal] .modal-spark.s3 {
+  display: none;
+  top: -6px;
+  right: -8px;
+  font-size: 14px;
+}
+
+[data-feedback-modal][data-tier="correctFirstTry"] .modal-spark.s3 {
+  display: block;
+}
+
+[data-feedback-modal][data-tier="correct"] .modal-spark,
+[data-feedback-modal][data-tier="correctFirstTry"] .modal-spark {
+  color: #ffc761;
+}
+
+[data-feedback-modal][data-tier="wrong"] .modal-spark {
+  color: #9fb3d6;
+}
+
+[data-feedback-modal] .completion-modal h3 {
+  font-size: 36px;
+  font-weight: 900;
+  color: #221a3d;
+  letter-spacing: .3px;
+}
+
+[data-feedback-modal] .complete-actions {
+  margin-top: 26px;
+}
+
+[data-feedback-modal] .complete-actions .primary-button,
+[data-feedback-modal] .complete-actions .secondary-button {
+  min-height: 54px;
+}
+
+[data-feedback-modal] .action-icon {
+  margin-right: 6px;
+  font-weight: 900;
+}
+
+@keyframes modalBadgePop {
+  from {
+    opacity: 0;
+    transform: scale(.55);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes modalSparkIn {
+  from {
+    opacity: 0;
+    transform: scale(.4);
+  }
+
+  to {
+    opacity: .85;
+    transform: scale(1);
+  }
 }
 
 .toast {

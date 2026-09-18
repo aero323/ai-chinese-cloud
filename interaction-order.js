@@ -11,13 +11,11 @@
 
   const BANK_ORDER = ["apple", "me", "one", "want", "buy"];
   const CORRECT_ORDER = ["me", "want", "buy", "one", "apple"];
-  const EXPLAIN_ZH = "中文语序是「谁 ＋ 想做什么 ＋ 做什么」；数量词「一个」放在名词「苹果」前面。";
-  const EXPLAIN_ID = "Urutan bahasa Mandarin: subjek dulu, lalu keinginan dan kata kerja; kata jumlah diletakkan sebelum kata benda.";
   const MODAL_DELAY = 1400;
   const CLASS_REDIRECT_DELAY = 2600;
 
-  const types = global.AICloudActivityTypes;
   const bridge = global.AICloudActivity;
+  const copy = global.AICloudFeedbackCopy || {};
   const startedAt = Date.now();
 
   const answerNode = document.querySelector("[data-order-answer]");
@@ -26,11 +24,11 @@
   const clearNode = document.querySelector("[data-order-clear]");
   const feedbackNode = document.querySelector("[data-order-feedback]");
   const announcerNode = document.querySelector("[data-order-announcer]");
-  const statusNode = document.querySelector("[data-activity-status]");
-  const modalNode = document.querySelector("[data-order-complete]");
+  const modal = global.AICloudFeedbackModal || null;
 
   let picked = [];
   let submitted = false;
+  let attempts = 0;
 
   function itemFor(id) {
     return ITEMS.filter(function (entry) { return entry.id === id; })[0] || null;
@@ -43,10 +41,6 @@
 
   function sentence(ids) {
     return ids.map(textFor).join(" ");
-  }
-
-  function setText(node, text) {
-    if (node) node.textContent = text;
   }
 
   function announce(message) {
@@ -177,105 +171,107 @@
     announce("已清空答案行，词已全部放回词库，已选 0 个词");
   }
 
-  function feedbackHead(iconText, label) {
+  function feedbackHead(iconText) {
     const head = document.createElement("p");
     head.className = "order-feedback-head";
     const icon = document.createElement("span");
     icon.className = "order-feedback-icon";
     icon.setAttribute("aria-hidden", "true");
     icon.textContent = iconText;
-    const text = document.createElement("span");
-    text.textContent = label;
     head.appendChild(icon);
-    head.appendChild(text);
     return head;
   }
 
-  function buildAnswerList() {
-    const list = document.createElement("ol");
-    list.className = "order-feedback-list";
-    CORRECT_ORDER.forEach(function (id, index) {
+  function buildAnswerLabel() {
+    const label = document.createElement("p");
+    label.className = "order-feedback-label";
+    label.textContent = "正确顺序";
+    const labelId = document.createElement("span");
+    labelId.className = "order-feedback-label-id";
+    labelId.lang = "id";
+    labelId.textContent = "Urutan yang benar";
+    label.appendChild(labelId);
+    return label;
+  }
+
+  function buildAnswerRow() {
+    const row = document.createElement("div");
+    row.className = "order-feedback-answer";
+    CORRECT_ORDER.forEach(function (id) {
       const entry = itemFor(id) || { text: id, pinyin: "" };
-      const line = document.createElement("li");
-      const badge = document.createElement("span");
-      badge.setAttribute("aria-hidden", "true");
-      badge.textContent = String(index + 1);
-      const word = document.createElement("strong");
-      word.textContent = entry.text;
-      const pinyin = document.createElement("small");
-      pinyin.textContent = entry.pinyin;
-      line.appendChild(badge);
-      line.appendChild(word);
-      line.appendChild(pinyin);
-      list.appendChild(line);
+      const chip = document.createElement("span");
+      chip.className = "order-tile order-tile-static";
+      fillTile(chip, entry);
+      row.appendChild(chip);
     });
-    return list;
+    return row;
   }
 
   function showFeedback(correct) {
     if (!feedbackNode) return;
     feedbackNode.textContent = "";
-    feedbackNode.classList.remove("hidden", "is-correct", "is-wrong");
-    feedbackNode.classList.add(correct ? "is-correct" : "is-wrong");
-    feedbackNode.appendChild(feedbackHead(correct ? "✓" : "✕", correct ? "排对了！" : "再想想"));
-
+    feedbackNode.classList.remove("is-correct", "is-wrong");
     if (correct) {
-      const line = document.createElement("p");
-      line.className = "order-feedback-sentence";
-      line.textContent = sentence(picked);
-      feedbackNode.appendChild(line);
-    } else {
-      const label = document.createElement("p");
-      label.className = "order-feedback-label";
-      label.textContent = "正确顺序：";
-      feedbackNode.appendChild(label);
-      feedbackNode.appendChild(buildAnswerList());
+      feedbackNode.classList.add("hidden");
+      return;
     }
-
-    const explain = document.createElement("p");
-    explain.className = "order-feedback-explain";
-    explain.textContent = "解析：" + EXPLAIN_ZH;
-    feedbackNode.appendChild(explain);
-
-    const explainId = document.createElement("p");
-    explainId.className = "order-feedback-id";
-    explainId.lang = "id";
-    explainId.textContent = EXPLAIN_ID;
-    feedbackNode.appendChild(explainId);
-
+    feedbackNode.classList.remove("hidden");
+    feedbackNode.classList.add("is-wrong");
+    feedbackNode.appendChild(feedbackHead("✕"));
+    feedbackNode.appendChild(buildAnswerLabel());
+    feedbackNode.appendChild(buildAnswerRow());
     if (typeof feedbackNode.focus === "function") feedbackNode.focus();
   }
 
-  function openModal(correct) {
-    if (!modalNode) return;
-    if (correct) {
-      setText(modalNode.querySelector("[data-order-complete-badge]"), "🎉");
-      setText(modalNode.querySelector("[data-order-complete-title]"), "排对了，真棒！");
-      setText(modalNode.querySelector("[data-order-complete-id]"), "Susunanmu benar!");
-      setText(modalNode.querySelector("[data-order-complete-copy]"), "你把词块排成了一句通顺的中文。可以换一个题型，也可以回课堂看看。");
-    } else {
-      setText(modalNode.querySelector("[data-order-complete-badge]"), "💪");
-      setText(modalNode.querySelector("[data-order-complete-title]"), "本题已提交");
-      setText(modalNode.querySelector("[data-order-complete-id]"), "Sudah dikirim, lihat urutan yang benar ya!");
-      setText(modalNode.querySelector("[data-order-complete-copy]"), "正确顺序是「" + sentence(CORRECT_ORDER) + "」。再读一遍，下次一定排得对。");
+  function openModal(tier, praise) {
+    if (!modal || typeof modal.open !== "function") return;
+    const backToClassroom = {
+      label: "返回课堂",
+      onSelect: function () {
+        if (global.location) global.location.href = "classroom.html";
+      }
+    };
+    const retry = { label: "再练一次", icon: "↻", onSelect: restartRound };
+    modal.open({
+      tier: tier,
+      badge: praise ? praise.emoji : "",
+      titleZh: praise ? praise.zh : "",
+      titleId: praise ? praise.id : "",
+      actions: [backToClassroom, retry]
+    });
+  }
+
+  function restartRound() {
+    picked = [];
+    submitted = false;
+    if (feedbackNode) {
+      feedbackNode.textContent = "";
+      feedbackNode.classList.add("hidden");
+      feedbackNode.classList.remove("is-correct", "is-wrong");
     }
-    modalNode.classList.remove("hidden");
-    const nextLink = modalNode.querySelector(".primary-button");
-    if (nextLink && typeof nextLink.focus === "function") nextLink.focus();
+    if (modal && typeof modal.close === "function") modal.close();
+    render();
+    announce("已清空，可以重新排一次。");
   }
 
   function submit() {
     if (submitted || picked.length === 0) return;
     submitted = true;
+    attempts += 1;
     const correct = picked.length === CORRECT_ORDER.length && picked.every(function (id, index) {
       return id === CORRECT_ORDER[index];
     });
+    const firstTry = correct && attempts === 1;
+    const tier = correct ? (firstTry ? "correctFirstTry" : "correct") : "wrong";
     const seconds = Math.max(1, Math.round((Date.now() - startedAt) / 1000));
+    const praise = copy && typeof copy.draw === "function"
+      ? copy.draw(correct ? (firstTry ? "correctFirstTry" : "correct") : "wrong")
+      : null;
     render();
     showFeedback(correct);
     announce(correct
-      ? "排对了！" + EXPLAIN_ZH
-      : "再想想。正确顺序是：" + sentence(CORRECT_ORDER) + "。" + EXPLAIN_ZH);
+      ? (praise && praise.zh) || "全对！"
+      : "正确顺序是：" + sentence(CORRECT_ORDER) + "。");
 
     const ctx = bridge && bridge.context ? bridge.context() : { mode: "solo" };
     const outcome = bridge && bridge.finish
@@ -287,24 +283,9 @@
       })
       : null;
 
-    if (outcome && outcome.recorded) {
-      if (statusNode) {
-        statusNode.classList.remove("hidden");
-        statusNode.textContent = outcome.next === "complete.html"
-          ? "本题已记录，正在进入完成页…"
-          : "本题已记录，正在返回课堂继续下一题…";
-      }
-      return;
-    }
+    if (outcome && outcome.recorded) return;
 
-    global.setTimeout(function () { openModal(correct); }, MODAL_DELAY);
-  }
-
-  function initBadge() {
-    const meta = types && types.get ? types.get("order") : null;
-    if (!meta) return;
-    setText(document.querySelector("[data-order-badge-icon]"), meta.icon);
-    setText(document.querySelector("[data-order-badge-text]"), meta.title);
+    global.setTimeout(function () { openModal(tier, praise); }, MODAL_DELAY);
   }
 
   if (bankNode) {
@@ -325,7 +306,5 @@
 
   if (submitNode) submitNode.addEventListener("click", submit);
   if (clearNode) clearNode.addEventListener("click", clearAll);
-
-  initBadge();
   render();
 })(typeof window !== "undefined" ? window : globalThis);

@@ -25,41 +25,17 @@
     </header>
 
     <main class="page page-content">
-      <div class="game-intro">
-        <div>
-          <h2 data-activity-task>把下面的词放到对应的类别里。</h2>
-          <p>先点一个词，再点它该去的类别，全部放好再提交。<br>Ketuk satu kata, lalu ketuk kategorinya, lalu kirim.</p>
-        </div>
-        <span class="progress-pill" data-activity-step>题型体验</span>
-      </div>
-
       <section class="category-card" aria-labelledby="category-prompt">
-        <div class="category-card-head">
-          <span class="category-type-badge">
-            <span aria-hidden="true" data-category-badge-icon>📦</span>
-            <span class="category-type-badge-text">
-              <strong data-category-badge-name>分类归组</strong>
-              <small lang="id" data-category-badge-id>Kelompokkan kata</small>
-            </span>
-          </span>
-          <span class="category-head-pills">
-            <span class="progress-pill" data-category-step>第 1 / 1 题</span>
-            <span class="progress-pill" data-category-progress>已归类 0 / 6</span>
-          </span>
-        </div>
-
         <div class="category-prompt-block">
-          <h3 class="category-prompt" id="category-prompt">把下面的词放到对应的类别里。</h3>
-          <p class="category-prompt-id" lang="id">Kelompokkan kata di bawah ini ke kategori yang tepat.</p>
+          <h3 class="category-prompt" id="category-prompt"><span aria-hidden="true">🐼</span>把下面的词放进对应的类别里吧！</h3>
+          <p class="category-prompt-id" lang="id">Ayo, kelompokkan kata-kata di bawah ini ke kategori yang tepat!</p>
         </div>
 
         <div class="category-pool-block">
-          <p class="category-area-label">待归类 <span lang="id">Belum dikelompokkan</span></p>
           <div class="category-pool" role="group" aria-label="待归类的词" data-category-pool></div>
           <p class="category-pool-done hidden" data-category-pool-done>词都归好类了，点「提交」看看结果。<br><span lang="id">Semua kata sudah masuk kategori, tekan Kirim.</span></p>
         </div>
 
-        <p class="category-area-label">类别 <span lang="id">Kategori</span></p>
         <div class="category-groups" data-category-groups></div>
 
         <div class="category-actions">
@@ -90,14 +66,7 @@
         </div>
       </section>
 
-      <div class="helper-note">
-        <span aria-hidden="true">💡</span>
-        <div>先点一个词，再点它该去的类别。<br>Ketuk satu kata, lalu ketuk kategorinya.</div>
-      </div>
-
       <p class="category-announcer" role="status" aria-live="polite" data-category-announcer></p>
-      <p class="activity-status" data-activity-status>当前状态：待作答</p>
-      <p class="activity-meta" data-activity-meta></p>
     </main>
   </div>
 

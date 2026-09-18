@@ -85,7 +85,6 @@
     el.submitLabel = document.querySelector("[data-category-submit-label]");
     el.submitLabelId = document.querySelector("[data-category-submit-label-id]");
     el.reset = document.querySelector("[data-category-reset]");
-    el.progress = document.querySelector("[data-category-progress]");
     el.feedback = document.querySelector("[data-category-feedback]");
     el.feedbackIcon = document.querySelector("[data-category-feedback-icon]");
     el.feedbackTitle = document.querySelector("[data-category-feedback-title]");
@@ -95,10 +94,6 @@
     el.feedbackExplain = document.querySelector("[data-category-feedback-explain]");
     el.feedbackExplainId = document.querySelector("[data-category-feedback-explain-id]");
     el.announcer = document.querySelector("[data-category-announcer]");
-    el.status = document.querySelector("[data-activity-status]");
-    el.badgeIcon = document.querySelector("[data-category-badge-icon]");
-    el.badgeName = document.querySelector("[data-category-badge-name]");
-    el.badgeId = document.querySelector("[data-category-badge-id]");
     el.modal = document.querySelector("[data-category-complete]");
     el.modalBadge = document.querySelector("[data-category-modal-badge]");
     el.modalTitle = document.querySelector("[data-category-modal-title]");
@@ -113,13 +108,6 @@
     return global.AICloudActivity || null;
   }
 
-  function activityMeta() {
-    const types = global.AICloudActivityTypes;
-    const type = document.body.dataset.activityType || "category";
-    if (!types || typeof types.get !== "function") return null;
-    return types.get(type);
-  }
-
   /* 体验模式还是课堂模式，一律问公共脚本，页面不自己解析网址参数 */
   function mode() {
     const bridge = activityBridge();
@@ -127,13 +115,8 @@
     return bridge.context().mode;
   }
 
-  /* 题型角标文案取自题型清单，不在页面里另写一份 */
+  /* 页头文案由公共脚本填；这里只按模式决定返回箭头指向哪里 */
   function applyShellText() {
-    const meta = activityMeta();
-    if (!meta) return;
-    setText(el.badgeIcon, meta.icon);
-    setText(el.badgeName, meta.title);
-    setText(el.badgeId, meta.titleId);
     const back = document.querySelector("[data-activity-back]");
     if (back) {
       const isClass = mode() === "class";
@@ -144,15 +127,6 @@
 
   function announce(message) {
     setText(el.announcer, message);
-  }
-
-  function updateStatus() {
-    if (!el.status) return;
-    let text = "当前状态：待作答";
-    if (submitted) text = lastCorrect ? "当前状态：已提交（全对）" : "当前状态：已提交（有错）";
-    else if (selectedId) text = "当前状态：已选择「" + wordText(selectedId) + "」";
-    else if (placedTotal() > 0) text = "当前状态：已归类 " + placedTotal() + " / " + WORDS.length;
-    setText(el.status, text);
   }
 
   /* 一个词块：待归类区、类别框、提交后的对错状态都用它 */
@@ -303,10 +277,6 @@
     });
   }
 
-  function renderProgress() {
-    setText(el.progress, "已归类 " + placedTotal() + " / " + WORDS.length);
-  }
-
   function syncControls() {
     if (el.submit) el.submit.disabled = submitted || !allPlaced();
     if (el.reset) el.reset.disabled = submitted;
@@ -330,9 +300,7 @@
     focusRequest = focus || null;
     renderPool();
     renderGroups();
-    renderProgress();
     syncControls();
-    updateStatus();
     applyFocus();
   }
 
@@ -475,12 +443,8 @@
       : "再想想。" + wrong.length + " 个词放错了，已经放回待归类区。" + EXPLAIN_ZH);
 
     const outcome = completeOnce();
-    if (outcome && outcome.recorded) {
-      setText(el.status, outcome.next === "complete.html"
-        ? "已提交，正在进入完成页…"
-        : "已提交，正在返回课堂继续下一题…");
-      return;
-    }
+    // 课堂模式：公共脚本负责记账并在延迟后跳转；体验模式才由本页弹完成弹窗
+    if (outcome && outcome.recorded) return;
     modalTimer = global.setTimeout(showModal, SOLO_MODAL_DELAY);
   }
 

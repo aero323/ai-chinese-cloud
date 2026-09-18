@@ -90,7 +90,7 @@
     if (ctx.mode !== "class" || ctx.slot <= 0) return outcome;
     recordResult(Object.assign({}, result || {}, { slot: ctx.slot, type: ctx.type }));
     outcome.recorded = true;
-    outcome.next = ctx.slot === 1 ? "classroom.html" : "complete.html";
+    outcome.next = "classroom.html";
     const delay = Math.max(0, Number(result && result.delay) || 0);
     if (typeof global.setTimeout === "function" && global.location) {
       global.setTimeout(function () {

@@ -6,39 +6,9 @@
   display: block;
 }
 
-/* 题型角标 + 课堂模式标记 */
-.poll-card-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.poll-type-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 6px 11px;
-  border-radius: 999px;
-  color: var(--purple-deep);
-  background: var(--purple-soft);
-  font-size: 10px;
-  font-weight: 900;
-}
-
-.poll-step-chip {
-  padding: 6px 10px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  color: #8d88a0;
-  background: #ffffff;
-  font-size: 9px;
-  font-weight: 900;
-  white-space: nowrap;
-}
-
+/* 卡片第一行：把「没有对错」这句提示留在选项上方 */
 .poll-card-note {
-  margin: 0 0 12px;
+  margin: 0 0 14px;
   color: var(--muted);
   font-size: 10px;
   line-height: 1.55;

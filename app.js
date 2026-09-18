@@ -4,10 +4,12 @@
   const STORAGE_KEY = "ai-chinese-cloud-classroom-demo-v1";
   const platformStore = window.AICloudPlatformStore;
   const adminBase = "admin/";
+  const TASK_STATE_KEYS = ["task1Done", "task2Done"];
   const DEFAULT_STATE = Object.freeze({
     phase: "live",
     task1Done: false,
-    task2Done: false
+    task2Done: false,
+    celebrated: false
   });
 
   const PHASES = {
@@ -60,7 +62,8 @@
       return {
         phase: PHASES[parsed.phase] ? parsed.phase : DEFAULT_STATE.phase,
         task1Done: Boolean(parsed.task1Done),
-        task2Done: Boolean(parsed.task2Done)
+        task2Done: Boolean(parsed.task2Done),
+        celebrated: Boolean(parsed.celebrated)
       };
     } catch (error) {
       return { ...DEFAULT_STATE };
@@ -173,12 +176,12 @@
     });
 
     overlay.querySelector("[data-demo-reset]").addEventListener("click", () => {
-      updateState({ task1Done: false, task2Done: false });
+      updateState({ task1Done: false, task2Done: false, celebrated: false });
       showToast("两项互动进度已重置");
       renderActive();
       close();
       const currentPage = document.body.dataset.page;
-      if (currentPage === "memory" || currentPage === "complete") {
+      if (currentPage === "memory") {
         window.setTimeout(() => { window.location.href = "classroom.html"; }, 450);
       }
     });
@@ -319,7 +322,7 @@
 
     const render = () => {
       const current = phase();
-      const completed = Number(appState.task1Done) + Number(appState.task2Done);
+      const completed = TASK_STATE_KEYS.filter((key) => appState[key]).length;
       const open = current.open;
 
       if (statusNode) {
@@ -329,7 +332,7 @@
       if (detailNode) detailNode.textContent = current.detail;
       if (descriptionNode) descriptionNode.textContent = current.description;
       if (metaCard) metaCard.dataset.phase = appState.phase;
-      if (progressText) progressText.textContent = `${completed} / 2 已完成`;
+      if (progressText) progressText.textContent = `${completed} / ${TASK_STATE_KEYS.length} 已完成`;
       dots.forEach((dot, index) => dot.classList.toggle("done", index < completed));
 
       if (task1) task1.classList.toggle("is-locked", !open);
@@ -386,8 +389,30 @@
       });
     }
 
-    window.addEventListener("classroom-state-change", render);
+    const celebrateOverlay = document.querySelector("[data-celebrate-overlay]");
+    const celebrateCard = document.querySelector("[data-celebrate-card]");
+    const celebrateButton = document.querySelector("[data-celebrate-ok]");
+
+    const allTasksDone = () => TASK_STATE_KEYS.every((key) => Boolean(appState[key]));
+    const maybeCelebrate = () => {
+      if (!celebrateOverlay || appState.celebrated || !allTasksDone()) return;
+      celebrateOverlay.classList.remove("hidden");
+      if (celebrateCard && typeof celebrateCard.focus === "function") celebrateCard.focus();
+    };
+
+    if (celebrateButton) {
+      celebrateButton.addEventListener("click", () => {
+        if (celebrateOverlay) celebrateOverlay.classList.add("hidden");
+        updateState({ celebrated: true });
+      });
+    }
+
+    window.addEventListener("classroom-state-change", () => {
+      render();
+      maybeCelebrate();
+    });
     render();
+    maybeCelebrate();
 
     const lockedReason = new URLSearchParams(window.location.search).get("locked");
     if (lockedReason) {
@@ -427,7 +452,8 @@
     const svg = document.querySelector("[data-match-lines]");
     const progress = document.querySelector("[data-match-progress]");
     const modal = document.querySelector("[data-match-complete]");
-    const returnHomeButton = document.querySelector("[data-match-return-home]");
+    const classroomButton = document.querySelector("[data-match-classroom]");
+    const retryButton = document.querySelector("[data-match-retry]");
     if (!board || !svg) return;
 
     const matched = new Set();
@@ -532,9 +558,28 @@
       });
     });
 
-    if (returnHomeButton) {
-      returnHomeButton.addEventListener("click", () => {
-        window.location.href = "index.html";
+    const restartRound = () => {
+      matched.clear();
+      selected = null;
+      resolving = false;
+      board.querySelectorAll(".match-item").forEach((item) => {
+        item.disabled = false;
+        item.classList.remove("correct", "selected", "wrong");
+      });
+      updateProgress();
+      redraw();
+    };
+
+    if (classroomButton) {
+      classroomButton.addEventListener("click", () => {
+        window.location.href = "classroom.html";
+      });
+    }
+
+    if (retryButton) {
+      retryButton.addEventListener("click", () => {
+        restartRound();
+        if (modal) modal.classList.add("hidden");
       });
     }
 
@@ -558,7 +603,8 @@
     const grid = document.querySelector("[data-memory-grid]");
     const progress = document.querySelector("[data-memory-progress]");
     const modal = document.querySelector("[data-memory-complete]");
-    const nextButton = document.querySelector("[data-memory-next]");
+    const classroomButton = document.querySelector("[data-memory-classroom]");
+    const retryButton = document.querySelector("[data-memory-retry]");
     if (!grid) return;
 
     if (!appState.task1Done) {
@@ -583,7 +629,7 @@
     let resolving = false;
     let matchedPairs = 0;
 
-    cards.forEach((card) => {
+    const buildCard = (card) => {
       const button = document.createElement("button");
       button.type = "button";
       button.className = "memory-card";
@@ -600,8 +646,15 @@
           </span>
         </span>
       `;
-      grid.appendChild(button);
-    });
+      return button;
+    };
+
+    const renderGrid = () => {
+      grid.textContent = "";
+      cards.forEach((card) => grid.appendChild(buildCard(card)));
+    };
+
+    renderGrid();
 
     const updateProgress = () => {
       if (progress) progress.textContent = `已找到 ${matchedPairs} / 4 对`;
@@ -655,36 +708,29 @@
       window.setTimeout(clearTurn, 850);
     });
 
-    if (nextButton) {
-      nextButton.addEventListener("click", () => {
-        window.location.href = "complete.html";
+    const restartRound = () => {
+      const reshuffled = shuffle(cards.slice());
+      cards.splice(0, cards.length, ...reshuffled);
+      clearTurn();
+      matchedPairs = 0;
+      updateProgress();
+      renderGrid();
+    };
+
+    if (classroomButton) {
+      classroomButton.addEventListener("click", () => {
+        window.location.href = "classroom.html";
+      });
+    }
+
+    if (retryButton) {
+      retryButton.addEventListener("click", () => {
+        restartRound();
+        if (modal) modal.classList.add("hidden");
       });
     }
 
     updateProgress();
-  }
-
-  function initComplete() {
-    if (!appState.task2Done) {
-      window.location.replace(appState.task1Done ? "memory.html" : "classroom.html");
-      return;
-    }
-
-    const reset = document.querySelector("[data-replay-all]");
-    const home = document.querySelector("[data-go-home]");
-
-    if (reset) {
-      reset.addEventListener("click", () => {
-        updateState({ task1Done: false, task2Done: false });
-        window.location.href = "match.html";
-      });
-    }
-
-    if (home) {
-      home.addEventListener("click", () => {
-        window.location.href = "index.html";
-      });
-    }
   }
 
   function init() {
@@ -697,7 +743,6 @@
     if (page === "classroom") initClassroom();
     if (page === "match") initMatch();
     if (page === "memory") initMemory();
-    if (page === "complete") initComplete();
   }
 
   if (document.readyState === "loading") {
