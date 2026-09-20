@@ -33,8 +33,6 @@
       </div>
 
       <section class="poll-card" data-poll-card data-activity-slot aria-labelledby="poll-question">
-        <p class="poll-card-note">没有对错，选一个最像你的想法。<br>Tidak ada benar atau salah, pilih yang paling sesuai.</p>
-
         <figure class="poll-figure" data-poll-figure>
           <svg viewBox="0 0 320 128" role="img" aria-label="下课以后：听音乐、打篮球、看中文动画、和朋友聊天">
             <defs>
@@ -71,63 +69,47 @@
         <div class="poll-options" role="radiogroup" aria-labelledby="poll-question">
           <label class="poll-option" data-poll-option>
             <input class="poll-option-input" type="radio" name="poll-choice" value="music">
-            <span class="poll-radio" aria-hidden="true"></span>
+            <span class="poll-emoji" aria-hidden="true">🎧</span>
             <span class="poll-option-body">
               <strong>听音乐</strong>
               <small>Mendengarkan musik</small>
             </span>
-            <span class="poll-option-state" data-poll-option-state aria-hidden="true">选择</span>
           </label>
 
           <label class="poll-option" data-poll-option>
             <input class="poll-option-input" type="radio" name="poll-choice" value="basketball">
-            <span class="poll-radio" aria-hidden="true"></span>
+            <span class="poll-emoji" aria-hidden="true">🏀</span>
             <span class="poll-option-body">
               <strong>打篮球</strong>
               <small>Bermain basket</small>
             </span>
-            <span class="poll-option-state" data-poll-option-state aria-hidden="true">选择</span>
           </label>
 
           <label class="poll-option" data-poll-option>
             <input class="poll-option-input" type="radio" name="poll-choice" value="animation">
-            <span class="poll-radio" aria-hidden="true"></span>
+            <span class="poll-emoji" aria-hidden="true">📺</span>
             <span class="poll-option-body">
               <strong>看中文动画</strong>
               <small>Menonton animasi Mandarin</small>
             </span>
-            <span class="poll-option-state" data-poll-option-state aria-hidden="true">选择</span>
           </label>
 
           <label class="poll-option" data-poll-option>
             <input class="poll-option-input" type="radio" name="poll-choice" value="chat">
-            <span class="poll-radio" aria-hidden="true"></span>
+            <span class="poll-emoji" aria-hidden="true">💬</span>
             <span class="poll-option-body">
               <strong>和朋友聊天</strong>
               <small>Mengobrol dengan teman</small>
             </span>
-            <span class="poll-option-state" data-poll-option-state aria-hidden="true">选择</span>
           </label>
         </div>
 
-        <p class="poll-feedback" data-poll-feedback role="status"></p>
-
-        <button type="button" class="primary-button poll-submit" data-poll-submit disabled>提交</button>
+        <button type="button" class="primary-button poll-submit btn-stacked" data-poll-submit disabled>
+          <span data-poll-submit-label>提交</span>
+          <span class="btn-id" lang="id" data-poll-submit-label-id>Kirim</span>
+        </button>
       </section>
     </main>
-  </div>
-
-  <div class="modal-overlay hidden" data-poll-complete>
-    <section class="completion-modal" role="dialog" aria-modal="true" aria-labelledby="poll-complete-title">
-      <div class="modal-badge">🗳️</div>
-      <h3 id="poll-complete-title">投票已提交！</h3>
-      <p class="id-copy">Suaramu sudah tercatat!</p>
-      <p class="modal-description" data-poll-complete-copy>你的选择已记录，不计分；老师会在课堂上看到全班的统计。</p>
-      <div class="poll-modal-actions">
-        <a class="primary-button" href="classroom.html?activities=1" data-poll-more>换一个题型</a>
-        <a class="secondary-button" href="classroom.html" data-poll-back>返回课堂</a>
-      </div>
-    </section>
   </div>
 
   <script type="module" src="shared/activity-types.js"></script>
@@ -135,6 +117,8 @@
   <script type="module" src="shared/activity-bridge.js"></script>
   <script type="module" src="app.js"></script>
   <script type="module" src="shared/activity-page.js"></script>
+  <script type="module" src="shared/feedback-copy.js"></script>
+  <script type="module" src="shared/feedback-modal.js"></script>
   <script type="module" src="interaction-poll.js"></script>
 </body>
 </html>

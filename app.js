@@ -4,11 +4,12 @@
   const STORAGE_KEY = "ai-chinese-cloud-classroom-demo-v1";
   const platformStore = window.AICloudPlatformStore;
   const adminBase = "admin/";
-  const TASK_STATE_KEYS = ["task1Done", "task2Done"];
+  const TASK_STATE_KEYS = ["task1Done", "task2Done", "task3Done"];
   const DEFAULT_STATE = Object.freeze({
     phase: "live",
     task1Done: false,
     task2Done: false,
+    task3Done: false,
     celebrated: false
   });
 
@@ -27,7 +28,7 @@
       shortLabel: "课中",
       status: "课堂互动进行中",
       detail: "今天 10:00 - 10:40",
-      description: "互动 1 和互动 2 已开放，完成一个后再进入下一个。",
+      description: "互动 1、2、3 已开放，完成一个后再进入下一个。",
       open: true,
       cardClass: ""
     },
@@ -63,6 +64,7 @@
         phase: PHASES[parsed.phase] ? parsed.phase : DEFAULT_STATE.phase,
         task1Done: Boolean(parsed.task1Done),
         task2Done: Boolean(parsed.task2Done),
+        task3Done: Boolean(parsed.task3Done),
         celebrated: Boolean(parsed.celebrated)
       };
     } catch (error) {
@@ -132,7 +134,7 @@
           `).join("")}
         </div>
         <a class="demo-admin-link" href="admin/">打开三角色管理后台 →</a>
-        <button type="button" class="demo-reset" data-demo-reset>重置两项互动进度</button>
+        <button type="button" class="demo-reset" data-demo-reset>重置三关互动进度</button>
       </section>
     `;
     document.body.appendChild(overlay);
@@ -176,14 +178,10 @@
     });
 
     overlay.querySelector("[data-demo-reset]").addEventListener("click", () => {
-      updateState({ task1Done: false, task2Done: false, celebrated: false });
-      showToast("两项互动进度已重置");
+      updateState({ task1Done: false, task2Done: false, task3Done: false, celebrated: false });
+      showToast("三关互动进度已重置");
       renderActive();
       close();
-      const currentPage = document.body.dataset.page;
-      if (currentPage === "memory") {
-        window.setTimeout(() => { window.location.href = "classroom.html"; }, 450);
-      }
     });
 
     window.addEventListener("classroom-state-change", renderActive);
@@ -306,104 +304,160 @@
     render();
   }
 
+  const CLASSROOM_LEVELS = [
+    { href: "interaction-choice.html?type=choice&mode=class&slot=1" },
+    { href: "interaction-picture.html?type=picture&mode=class&slot=2" },
+    { href: "match.html" }
+  ];
+
   function initClassroom() {
-    const statusNode = document.querySelector("[data-classroom-status]");
-    const detailNode = document.querySelector("[data-classroom-detail]");
-    const descriptionNode = document.querySelector("[data-classroom-description]");
-    const metaCard = document.querySelector(".course-status-card");
-    const progressText = document.querySelector("[data-course-progress]");
-    const dots = [...document.querySelectorAll("[data-progress-dot]")];
-    const task1 = document.querySelector("[data-task1-card]");
-    const task2 = document.querySelector("[data-task2-card]");
-    const task1Status = document.querySelector("[data-task1-status]");
-    const task2Status = document.querySelector("[data-task2-status]");
-    const task1Description = document.querySelector("[data-task1-description]");
-    const task2Description = document.querySelector("[data-task2-description]");
-
-    const render = () => {
-      const current = phase();
-      const completed = TASK_STATE_KEYS.filter((key) => appState[key]).length;
-      const open = current.open;
-
-      if (statusNode) {
-        statusNode.textContent = current.status;
-        statusNode.classList.toggle("is-locked", !open);
-      }
-      if (detailNode) detailNode.textContent = current.detail;
-      if (descriptionNode) descriptionNode.textContent = current.description;
-      if (metaCard) metaCard.dataset.phase = appState.phase;
-      if (progressText) progressText.textContent = `${completed} / ${TASK_STATE_KEYS.length} 已完成`;
-      dots.forEach((dot, index) => dot.classList.toggle("done", index < completed));
-
-      if (task1) task1.classList.toggle("is-locked", !open);
-      if (task1) task1.classList.toggle("is-complete", appState.task1Done);
-      if (task1Status) {
-        task1Status.textContent = !open
-          ? (appState.phase === "before" ? "等待开课" : "已关闭")
-          : appState.task1Done ? "再练一次" : "开始互动";
-      }
-      if (task1Description) {
-        task1Description.textContent = appState.task1Done
-          ? "已全部连对，可以重新练习或继续下一项。"
-          : "把中文时间和正确的印尼语意思连起来。";
-      }
-
-      const task2Unlocked = open && appState.task1Done;
-      if (task2) task2.classList.toggle("is-locked", !task2Unlocked);
-      if (task2) task2.classList.toggle("is-complete", appState.task2Done);
-      if (task2Status) {
-        task2Status.textContent = !open
-          ? (appState.phase === "before" ? "等待开课" : "已关闭")
-          : !appState.task1Done ? "先完成 1" : appState.task2Done ? "再练一次" : "开始挑战";
-      }
-      if (task2Description) {
-        task2Description.textContent = task2Unlocked
-          ? appState.task2Done
-            ? "四组问候全部配对成功，可以再次挑战。"
-            : "翻开卡片，找到中文和印尼语问候语配对。"
-          : "完成互动 1 后自动解锁。";
-      }
-    };
-
-    if (task1) {
-      task1.addEventListener("click", () => {
-        if (!phase().open) {
-          showToast(appState.phase === "before" ? "请在开课后进入互动" : "互动入口已关闭");
-          return;
-        }
-        window.location.href = "match.html";
-      });
-    }
-
-    if (task2) {
-      task2.addEventListener("click", () => {
-        if (!phase().open) {
-          showToast(appState.phase === "before" ? "请在开课后进入互动" : "互动入口已关闭");
-          return;
-        }
-        if (!appState.task1Done) {
-          showToast("先完成互动 1，才能解锁翻牌配对");
-          return;
-        }
-        window.location.href = "memory.html";
-      });
-    }
-
+    const strip = document.querySelector(".cls-strip");
+    const stars = [...document.querySelectorAll("[data-stars] .cls-star")];
+    const resetButton = document.querySelector("[data-classroom-reset]");
     const celebrateOverlay = document.querySelector("[data-celebrate-overlay]");
     const celebrateCard = document.querySelector("[data-celebrate-card]");
     const celebrateButton = document.querySelector("[data-celebrate-ok]");
 
+    const PLAY_ICON = `<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"><path d="M8 4.6v14.8l12.2-7.4z"/></svg>`;
+    const AGAIN_ICON = `<svg viewBox="-2 -2 28 28" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>`;
+    const LOCK_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4.8" y="10.6" width="14.4" height="9.2" rx="2.9" fill="currentColor" stroke="none"/><path d="M8.4 10.6V8.3a3.6 3.6 0 0 1 7.2 0v2.3"/></svg>`;
+    const CHECK_ICON = `<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#1fbf8f" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5.4 12.9l4.4 4.4L18.7 7.9"/></svg>`;
+
+    const levels = [...document.querySelectorAll(".cls-level")].map((node) => {
+      const index = Number(node.dataset.level) || 0;
+      return {
+        node,
+        index,
+        key: TASK_STATE_KEYS[index - 1],
+        href: (CLASSROOM_LEVELS[index - 1] || {}).href || "",
+        badge: node.querySelector("[data-badge]"),
+        action: node.querySelector("[data-action]"),
+        count: node.querySelector("[data-level-count]")
+      };
+    });
+
+    const unlockedBefore = (index) => TASK_STATE_KEYS
+      .slice(0, Math.max(0, index - 1))
+      .every((key) => Boolean(appState[key]));
+
+    /* 演示用：每关"大家都在做"的人数，关卡开放后开始往上涨（真实版由老师端推送数据） */
+    const startLevelCount = (el) => {
+      if (!el || el.dataset.started) return;
+      const num = el.querySelector("[data-count-num]");
+      if (!num) return;
+      el.dataset.started = "1";
+      const TOTAL = 30;
+      let value = Number(el.dataset.start || 0);
+      num.textContent = String(value);
+      const tick = () => {
+        if (value >= TOTAL) return;
+        value += 1;
+        num.textContent = String(value);
+        num.classList.remove("is-bump");
+        void num.offsetWidth;
+        num.classList.add("is-bump");
+        if (value >= TOTAL) {
+          el.classList.add("is-full");
+          const flag = document.createElement("span");
+          flag.className = "cls-count-flag";
+          flag.textContent = "🎉";
+          el.appendChild(flag);
+          return;
+        }
+        window.setTimeout(tick, 1500 + Math.random() * 2200 + (value / TOTAL) * 1500);
+      };
+      window.setTimeout(tick, 1200 + Math.random() * 1600);
+    };
+
+    const render = () => {
+      const current = phase();
+      const completed = TASK_STATE_KEYS.filter((key) => Boolean(appState[key])).length;
+      const open = current.open;
+
+      if (strip) strip.dataset.phase = appState.phase;
+      stars.forEach((star, index) => star.classList.toggle("is-on", index < completed));
+
+      levels.forEach((level) => {
+        const done = Boolean(appState[level.key]);
+        const canPlay = open && unlockedBefore(level.index);
+        const state = done ? "done" : canPlay ? "todo" : "locked";
+        level.node.dataset.state = state;
+        if (level.badge) level.badge.innerHTML = done ? CHECK_ICON : String(level.index);
+        if (level.action) {
+          level.action.classList.toggle("is-play", !done && canPlay);
+          level.action.classList.toggle("is-lock", !done && !canPlay);
+          level.action.innerHTML = done ? AGAIN_ICON : canPlay ? PLAY_ICON : LOCK_ICON;
+        }
+        if (level.count) {
+          const visible = done || canPlay;
+          level.count.hidden = !visible;
+          if (visible) startLevelCount(level.count);
+        }
+      });
+    };
+
+    levels.forEach((level) => {
+      level.node.addEventListener("click", () => {
+        if (!phase().open) {
+          showToast(appState.phase === "before" ? "请在开课后进入互动" : "互动入口已关闭");
+          return;
+        }
+        if (!unlockedBefore(level.index)) {
+          showToast(`先完成第 ${level.index - 1} 关，才能解锁这一关`);
+          return;
+        }
+        window.location.href = level.href;
+      });
+    });
+
+    let celebrateTimer = null;
     const allTasksDone = () => TASK_STATE_KEYS.every((key) => Boolean(appState[key]));
     const maybeCelebrate = () => {
       if (!celebrateOverlay || appState.celebrated || !allTasksDone()) return;
-      celebrateOverlay.classList.remove("hidden");
-      if (celebrateCard && typeof celebrateCard.focus === "function") celebrateCard.focus();
+      if (celebrateTimer !== null || !celebrateOverlay.classList.contains("hidden")) return;
+      /* 三星齐庆祝：亮齐后三颗一起跳一下、各扫一遍白光，然后才盖海报（走 WAAPI，保证能重播） */
+      celebrateTimer = window.setTimeout(() => {
+        stars.forEach((star) => {
+          if (!star.classList.contains("is-on")) return;
+          if (typeof star.animate === "function") {
+            star.animate([
+              { transform: "translateY(0) scale(1.16)" },
+              { transform: "translateY(-8px) scale(1.22)", offset: 0.38 },
+              { transform: "translateY(0) scale(1.16)", offset: 0.72 },
+              { transform: "translateY(-3px) scale(1.17)", offset: 0.86 },
+              { transform: "translateY(0) scale(1.16)" }
+            ], { duration: 550, easing: "cubic-bezier(.3, 1.4, .5, 1)" });
+          }
+          const shine = star.querySelector(".cls-shine");
+          if (shine && typeof shine.animate === "function") {
+            shine.animate([
+              { transform: "translateX(-8px) skewX(-18deg)", opacity: 0 },
+              { opacity: 0.95, offset: 0.25 },
+              { opacity: 0.9, offset: 0.7 },
+              { transform: "translateX(26px) skewX(-18deg)", opacity: 0 }
+            ], { duration: 500, easing: "ease-in-out" });
+          }
+        });
+        celebrateTimer = window.setTimeout(() => {
+          celebrateTimer = null;
+          celebrateOverlay.classList.remove("hidden");
+          if (celebrateCard && typeof celebrateCard.focus === "function") celebrateCard.focus();
+        }, 880);
+      }, 1250);
     };
 
     if (celebrateButton) {
       celebrateButton.addEventListener("click", () => {
         if (celebrateOverlay) celebrateOverlay.classList.add("hidden");
         updateState({ celebrated: true });
+      });
+    }
+
+    if (resetButton) {
+      resetButton.addEventListener("click", () => {
+        if (celebrateOverlay) celebrateOverlay.classList.add("hidden");
+        updateState({ task1Done: false, task2Done: false, task3Done: false, celebrated: false });
+        showToast("三关互动进度已重置");
       });
     }
 
@@ -416,10 +470,7 @@
 
     const lockedReason = new URLSearchParams(window.location.search).get("locked");
     if (lockedReason) {
-      const message = lockedReason === "2"
-        ? "先完成互动 1，才能解锁翻牌配对"
-        : "当前演示状态不可进入课堂互动";
-      window.setTimeout(() => showToast(message), 250);
+      window.setTimeout(() => showToast("当前演示状态不可进入课堂互动"), 250);
     }
   }
 
@@ -451,14 +502,12 @@
     const board = document.querySelector("[data-match-board]");
     const svg = document.querySelector("[data-match-lines]");
     const progress = document.querySelector("[data-match-progress]");
-    const modal = document.querySelector("[data-match-complete]");
-    const classroomButton = document.querySelector("[data-match-classroom]");
-    const retryButton = document.querySelector("[data-match-retry]");
     if (!board || !svg) return;
 
     const matched = new Set();
     let selected = null;
     let resolving = false;
+    let madeMistake = false;
 
     const leftItems = [...board.querySelectorAll('[data-side="left"]')];
     const rightItems = [...board.querySelectorAll('[data-side="right"]')];
@@ -475,7 +524,14 @@
     };
 
     const updateProgress = () => {
-      if (progress) progress.textContent = `${matched.size} / 4 组`;
+      if (progress) progress.textContent = `已找到 ${matched.size} / 4 对`;
+    };
+
+    /* 呼吸引导：一直指着"第一张还没连上的左列卡"，连对一张自动移到下一张（整页唯一的循环动效） */
+    const updateGuide = () => {
+      board.querySelectorAll(".is-guide").forEach((item) => item.classList.remove("is-guide"));
+      const next = leftItems.filter((item) => !item.classList.contains("correct"))[0];
+      if (next) next.classList.add("is-guide");
     };
 
     const markCorrect = (key) => {
@@ -527,16 +583,13 @@
           selected = null;
           markCorrect(key);
           updateProgress();
+          updateGuide();
           redraw();
 
           if (matched.size === leftItems.length) {
-            updateState({ task1Done: true });
-            recordPlatformCompletion(1);
-            window.setTimeout(() => {
-              if (modal) {
-                modal.classList.remove("hidden");
-              }
-            }, 520);
+            updateState({ task3Done: true });
+            recordPlatformCompletion(3);
+            window.setTimeout(openCompleteModal, 520);
           }
           return;
         }
@@ -546,6 +599,7 @@
         right.classList.remove("selected");
         left.classList.add("wrong");
         right.classList.add("wrong");
+        madeMistake = true;
         const wrongPath = makeSvgPath(board, svg, left, right, "wrong");
         selected = null;
 
@@ -562,32 +616,54 @@
       matched.clear();
       selected = null;
       resolving = false;
+      madeMistake = false;
       board.querySelectorAll(".match-item").forEach((item) => {
         item.disabled = false;
         item.classList.remove("correct", "selected", "wrong");
       });
       updateProgress();
+      updateGuide();
       redraw();
     };
 
-    if (classroomButton) {
-      classroomButton.addEventListener("click", () => {
-        window.location.href = "classroom.html";
+    /* 完成弹窗走公共模具：从句池抽；一局没连错过走升级档 */
+    const openCompleteModal = () => {
+      const feedbackModal = window.AICloudFeedbackModal;
+      const feedbackCopy = window.AICloudFeedbackCopy || {};
+      if (!feedbackModal || typeof feedbackModal.open !== "function") return;
+      const perfect = !madeMistake;
+      const praise = (typeof feedbackCopy.draw === "function" ? feedbackCopy.draw("pair", { perfect }) : null)
+        || { zh: "全部连对啦！", id: "Semua pasangan benar!", emoji: "🎉" };
+      feedbackModal.open({
+        tier: perfect ? "correctFirstTry" : "correct",
+        badge: praise.emoji,
+        titleZh: praise.zh,
+        titleId: praise.id,
+        actions: [
+          {
+            label: "返回课堂",
+            onSelect: () => {
+              window.location.href = "classroom.html";
+            }
+          },
+          {
+            label: "再练一次",
+            icon: "↻",
+            onSelect: () => {
+              feedbackModal.close();
+              restartRound();
+            }
+          }
+        ]
       });
-    }
-
-    if (retryButton) {
-      retryButton.addEventListener("click", () => {
-        restartRound();
-        if (modal) modal.classList.add("hidden");
-      });
-    }
+    };
 
     const resizeObserver = new ResizeObserver(redraw);
     resizeObserver.observe(board);
     window.addEventListener("resize", redraw);
     redraw();
     updateProgress();
+    updateGuide();
   }
 
   function shuffle(items) {
@@ -602,15 +678,7 @@
   function initMemory() {
     const grid = document.querySelector("[data-memory-grid]");
     const progress = document.querySelector("[data-memory-progress]");
-    const modal = document.querySelector("[data-memory-complete]");
-    const classroomButton = document.querySelector("[data-memory-classroom]");
-    const retryButton = document.querySelector("[data-memory-retry]");
     if (!grid) return;
-
-    if (!appState.task1Done) {
-      window.location.replace("classroom.html?locked=2");
-      return;
-    }
 
     const pairs = [
       { key: "hello", zh: "你好", pinyin: "nǐ hǎo", id: "Halo", emoji: "👋" },
@@ -628,6 +696,7 @@
     let secondCard = null;
     let resolving = false;
     let matchedPairs = 0;
+    let madeMistake = false;
 
     const buildCard = (card) => {
       const button = document.createElement("button");
@@ -695,9 +764,7 @@
         updateProgress();
 
         if (matchedPairs === pairs.length) {
-          updateState({ task2Done: true });
-          recordPlatformCompletion(2);
-          window.setTimeout(() => modal && modal.classList.remove("hidden"), 520);
+          window.setTimeout(openCompleteModal, 520);
         }
         return;
       }
@@ -705,6 +772,7 @@
       resolving = true;
       firstCard.classList.add("mismatch");
       secondCard.classList.add("mismatch");
+      madeMistake = true;
       window.setTimeout(clearTurn, 850);
     });
 
@@ -713,22 +781,42 @@
       cards.splice(0, cards.length, ...reshuffled);
       clearTurn();
       matchedPairs = 0;
+      madeMistake = false;
       updateProgress();
       renderGrid();
     };
 
-    if (classroomButton) {
-      classroomButton.addEventListener("click", () => {
-        window.location.href = "classroom.html";
+    /* 完成弹窗走公共模具：从句池抽；一局没连错过走升级档 */
+    const openCompleteModal = () => {
+      const feedbackModal = window.AICloudFeedbackModal;
+      const feedbackCopy = window.AICloudFeedbackCopy || {};
+      if (!feedbackModal || typeof feedbackModal.open !== "function") return;
+      const perfect = !madeMistake;
+      const praise = (typeof feedbackCopy.draw === "function" ? feedbackCopy.draw("pair", { perfect }) : null)
+        || { zh: "全部连对啦！", id: "Semua pasangan benar!", emoji: "🎉" };
+      feedbackModal.open({
+        tier: perfect ? "correctFirstTry" : "correct",
+        badge: praise.emoji,
+        titleZh: praise.zh,
+        titleId: praise.id,
+        actions: [
+          {
+            label: "返回课堂",
+            onSelect: () => {
+              window.location.href = "classroom.html";
+            }
+          },
+          {
+            label: "再练一次",
+            icon: "↻",
+            onSelect: () => {
+              feedbackModal.close();
+              restartRound();
+            }
+          }
+        ]
       });
-    }
-
-    if (retryButton) {
-      retryButton.addEventListener("click", () => {
-        restartRound();
-        if (modal) modal.classList.add("hidden");
-      });
-    }
+    };
 
     updateProgress();
   }

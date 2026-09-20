@@ -25,15 +25,18 @@
     </header>
 
     <main class="page page-content">
-      <section class="choice-card" data-choice-card aria-labelledby="choice-question">
+      <section class="choice-card" data-choice-card aria-labelledby="choice-word">
         <div class="choice-stem">
-          <p class="choice-pinyin" data-choice-pinyin>Nǐ xiǎng hē shénme?</p>
-          <h3 class="choice-question" id="choice-question" data-choice-question>你想喝什么？</h3>
+          <p class="choice-pinyin" data-choice-pinyin>Yì bēi chá</p>
+          <h3 class="choice-question" id="choice-word" data-choice-word>一杯茶</h3>
         </div>
 
-        <div class="choice-options" role="group" aria-labelledby="choice-question" data-choice-options></div>
+        <div class="choice-grid" role="group" aria-labelledby="choice-word" data-choice-options></div>
 
-        <button type="button" class="primary-button" data-choice-submit disabled>提交答案</button>
+        <button type="button" class="primary-button btn-stacked" data-choice-submit disabled>
+          <span data-choice-submit-label>提交</span>
+          <span class="btn-id" lang="id" data-choice-submit-label-id>Kirim</span>
+        </button>
 
         <div class="choice-feedback hidden" role="status" aria-live="polite" data-choice-feedback>
           <strong class="choice-feedback-title">
@@ -43,11 +46,6 @@
           <p class="choice-feedback-answer hidden" data-choice-feedback-answer></p>
         </div>
       </section>
-
-      <div class="choice-demo-row" role="group" aria-label="演示题目切换">
-        <button type="button" class="choice-demo-chip is-active" data-choice-variant="single" aria-pressed="true">单选题</button>
-        <button type="button" class="choice-demo-chip" data-choice-variant="multiple" aria-pressed="false">多选题</button>
-      </div>
     </main>
   </div>
 

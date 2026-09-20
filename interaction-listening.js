@@ -1,25 +1,26 @@
 /* 听音选图/选词 · interaction-listening.html 页面脚本（占位版）
-   状态机：待作答 → 播放中 → 已选择 → 已提交 → 正确 / 错误（每题只判一次，不提供重试）。
+   状态机：待作答 → 播放中 → 已选择 → 已提交 → 正确 / 错误（每题只判一次）。
    判分是真的：按题目数据里标了 correct 的那一项判，选对才算对。
+   对错只靠整块颜色表达（对＝选中的块变绿 + 一个小绿 ✓；错＝选中的块变红、正确的块变绿），
+   页面不写任何解释文字；读屏只播「答对了 / 再想想」。
    播放是假的：不发出声音、不碰麦克风；题目数据里的 audio 一旦填上真实路径，
    同一个播放按钮就走 <audio> 真播放，页面代码不用重写。
-   进度记账和课堂跳转都由 shared/activity-bridge.js 负责，本页只做界面并调用 finish()。 */
+   进度记账由 shared/activity-bridge.js 负责（课堂跳转由完成弹窗的按钮执行），本页只做界面并调用 finish()。 */
 (function (global) {
   "use strict";
 
   const LETTERS = ["A", "B", "C", "D", "E", "F"];
   const FAKE_PLAY_MS = 1000;          // 占位播放：按钮「播放中…」保持 1 秒
-  const HINT_VISIBLE_MS = 2000;       // 占位小字「音频待录制（占位）」显示 2 秒后自动淡出
-  const SOLO_MODAL_DELAY = 2000;      // 体验模式：提交后留多久看对错，再弹完成弹窗
-  const CLASS_REDIRECT_DELAY = 2600;  // 课堂模式：公共脚本按这个延迟跳转
+  const SOLO_MODAL_DELAY = 2000;      // 体验模式：提交后留多久看颜色结果，再弹完成弹窗
+  const modal = global.AICloudFeedbackModal || null;
+  const copy = global.AICloudFeedbackCopy || {};
 
-  /* 单题数据（任务书 5.4 的例子）。
+  /* 单题数据（任务书 5.4 的例子）。prompt 只给读屏：页面上让大按钮自己说话。
      audio 先留空字符串：以后录音文件放进 public/shared/demo-materials/，
      把路径填到这个字段里，播放就是真的了——页面代码不用改。 */
   const QUESTION = {
     id: "ting-shengdiao-san",
     prompt: "听一听，选出你听到的",
-    promptId: "Dengarkan, lalu pilih yang kamu dengar.",
     audio: "",
     audioText: "三",
     pinyin: "sān",
@@ -28,9 +29,7 @@
       { text: "四", pinyin: "sì" },
       { text: "山", pinyin: "shān" },
       { text: "伞", pinyin: "sǎn" }
-    ],
-    explain: "三 sān 是第一声，读得又平又高；四 sì 是第四声，往下掉。",
-    explainId: "三 sān memakai nada pertama (datar dan tinggi); 四 sì memakai nada keempat (turun)."
+    ]
   };
 
   const el = {};
@@ -43,56 +42,27 @@
   let lastSeconds = 0;
   let startedAt = 0;
   let playTimer = 0;
-  let hintTimer = 0;
+  let attempts = 0;        // 本页会话里提交过几次：第一次就全对才是「一次全对」档
   let modalTimer = 0;
 
   function setText(node, text) {
     if (node) node.textContent = text;
   }
 
-  function setHidden(node, hidden) {
-    if (node) node.classList.toggle("hidden", !!hidden);
-  }
-
   function cache() {
     el.prompt = document.querySelector("[data-listening-prompt]");
-    el.promptId = document.querySelector("[data-listening-prompt-id]");
     el.play = document.querySelector("[data-listening-play]");
     el.playLabel = document.querySelector("[data-listening-play-label]");
-    el.playHint = document.querySelector("[data-listening-play-hint]");
-    el.playHintText = document.querySelector("[data-listening-play-hint-text]");
     el.audio = document.querySelector("[data-listening-audio]");
     el.options = document.querySelector("[data-listening-options]");
     el.submit = document.querySelector("[data-listening-submit]");
-    el.feedback = document.querySelector("[data-listening-feedback]");
-    el.feedbackIcon = document.querySelector("[data-listening-feedback-icon]");
-    el.feedbackTitle = document.querySelector("[data-listening-feedback-title]");
-    el.feedbackTitleId = document.querySelector("[data-listening-feedback-title-id]");
-    el.feedbackAnswer = document.querySelector("[data-listening-feedback-answer]");
-    el.feedbackCopy = document.querySelector("[data-listening-feedback-copy]");
-    el.feedbackId = document.querySelector("[data-listening-feedback-id]");
+    el.submitLabel = document.querySelector("[data-listening-submit-label]");
+    el.submitLabelId = document.querySelector("[data-listening-submit-label-id]");
     el.announcer = document.querySelector("[data-listening-announcer]");
-    el.status = document.querySelector("[data-activity-status]");
-    el.badgeIcon = document.querySelector("[data-listening-type-icon]");
-    el.badgeName = document.querySelector("[data-listening-type-name]");
-    el.modal = document.querySelector("[data-listening-complete]");
-    el.modalBadge = document.querySelector("[data-listening-modal-badge]");
-    el.modalTitle = document.querySelector("[data-listening-modal-title]");
-    el.modalId = document.querySelector("[data-listening-modal-id]");
-    el.modalCopy = document.querySelector("[data-listening-modal-copy]");
-    el.modalChange = document.querySelector("[data-listening-change]");
-    el.modalReturn = document.querySelector("[data-listening-return]");
   }
 
   function activityBridge() {
     return global.AICloudActivity || null;
-  }
-
-  function activityMeta() {
-    const types = global.AICloudActivityTypes;
-    const type = document.body.dataset.activityType || "listening";
-    if (!types || typeof types.get !== "function") return null;
-    return types.get(type);
   }
 
   function mode() {
@@ -101,19 +71,13 @@
     return bridge.context().mode;
   }
 
-  /* 题型角标文案取自题型清单，不在页面里另写一份；返回按钮跟着模式走 */
+  /* 返回按钮：课堂模式回课堂互动，体验模式也回课堂页 */
   function applyShellText() {
-    const meta = activityMeta();
-    if (meta) {
-      setText(el.badgeIcon, meta.icon);
-      setText(el.badgeName, meta.title);
-    }
     const back = document.querySelector("[data-activity-back]");
-    if (back) {
-      const isClass = mode() === "class";
-      back.setAttribute("href", "classroom.html");
-      back.setAttribute("aria-label", isClass ? "返回课堂互动" : "返回课堂");
-    }
+    if (!back) return;
+    const isClass = mode() === "class";
+    back.setAttribute("href", "classroom.html");
+    back.setAttribute("aria-label", isClass ? "返回课堂互动" : "返回课堂");
   }
 
   function announce(text) {
@@ -124,46 +88,38 @@
     return typeof QUESTION.audio === "string" && QUESTION.audio.trim() !== "";
   }
 
+  /* 呼吸只在"待作答 / 待再听"时出现：播放中换成图标脉冲，提交后彻底停住 */
+  function updatePlayInvite() {
+    if (el.play) el.play.classList.toggle("is-inviting", !playing && !submitted);
+  }
+
   function setPlaying(isPlaying) {
     playing = isPlaying;
     if (el.play) el.play.classList.toggle("is-playing", isPlaying);
+    updatePlayInvite();
   }
 
   function clearPlayTimers() {
     global.clearTimeout(playTimer);
-    global.clearTimeout(hintTimer);
   }
 
-  /* 回到「待播放」：不自动播放、不留上一次的占位小字 */
+  /* 回到「待播放」：不自动播放，按钮回到「听一听」 */
   function resetPlay() {
     clearPlayTimers();
     setPlaying(false);
-    if (el.playHint) el.playHint.classList.remove("is-visible");
-    if (el.playHintText) setText(el.playHintText, "");
     setText(el.playLabel, "听一听");
     if (el.audio && !el.audio.paused && typeof el.audio.pause === "function") el.audio.pause();
-  }
-
-  /* 占位小字：出现后 2 秒自动淡出 */
-  function showPlayHint() {
-    if (el.playHintText) setText(el.playHintText, "音频待录制（占位）");
-    if (el.playHint) el.playHint.classList.add("is-visible");
-    global.clearTimeout(hintTimer);
-    hintTimer = global.setTimeout(function () {
-      if (el.playHint) el.playHint.classList.remove("is-visible");
-    }, HINT_VISIBLE_MS);
   }
 
   /* 假播放：不发出声音，只把按钮状态走一遍 */
   function playPlaceholder() {
     setPlaying(true);
     setText(el.playLabel, "播放中…");
-    announce("占位播放，不会发出声音。");
+    announce("播放中。");
     playTimer = global.setTimeout(function () {
       setPlaying(false);
       setText(el.playLabel, "再听一次");
-      showPlayHint();
-      announce("音频待录制（占位），可以再听一次。");
+      announce("可以再听一次。");
     }, FAKE_PLAY_MS);
   }
 
@@ -176,7 +132,7 @@
     }
     setPlaying(true);
     setText(el.playLabel, "播放中…");
-    announce("正在播放音频。");
+    announce("播放中。");
     try {
       audio.currentTime = 0;
     } catch (error) {
@@ -210,14 +166,6 @@
     return options.filter(function (option) {
       return option.correct;
     })[0] || null;
-  }
-
-  function updateStatus() {
-    if (!el.status) return;
-    let text = "当前状态：待作答";
-    if (submitted) text = "当前状态：已提交";
-    else if (selectedId) text = "当前状态：已选择";
-    setText(el.status, text);
   }
 
   function paintSelection() {
@@ -263,23 +211,10 @@
     if (submitted || id === selectedId) return;
     selectedId = id;
     paintSelection();
-    updateStatus();
     const picked = options.filter(function (option) {
       return option.id === id;
     })[0];
-    if (picked) announce("已选择 " + picked.letter + " " + picked.text + "，点提交看结果。");
-  }
-
-  function resetFeedback() {
-    if (!el.feedback) return;
-    el.feedback.classList.add("hidden");
-    el.feedback.classList.remove("is-correct", "is-wrong");
-    setText(el.feedbackIcon, "");
-    setText(el.feedbackTitle, "");
-    setText(el.feedbackTitleId, "");
-    setText(el.feedbackAnswer, "");
-    setText(el.feedbackCopy, "");
-    setText(el.feedbackId, "");
+    if (picked) announce("已选择 " + picked.letter + " " + picked.text + "。");
   }
 
   /* 提交后锁定：正确项标绿，选错的那一项标红 */
@@ -287,26 +222,11 @@
     const correct = correctOptionOf();
     eachOptionButton(function (button, option) {
       button.disabled = true;
+      button.classList.remove("selected");
+      button.setAttribute("aria-pressed", "false");
       if (correct && option.id === correct.id) button.classList.add("correct");
       else if (option.id === selectedId) button.classList.add("wrong");
     });
-  }
-
-  function showFeedback(isCorrect, correct) {
-    if (!el.feedback) return;
-    el.feedback.classList.remove("is-correct", "is-wrong");
-    el.feedback.classList.add(isCorrect ? "is-correct" : "is-wrong");
-    setText(el.feedbackIcon, isCorrect ? "✓" : "✗");
-    setText(el.feedbackTitle, isCorrect ? "答对了！" : "再想想");
-    setText(el.feedbackTitleId, isCorrect
-      ? "Bagus, jawabanmu benar!"
-      : "Belum tepat. Coba ingat lagi ya.");
-    setText(el.feedbackAnswer, isCorrect
-      ? "你听到的是 " + QUESTION.audioText + " " + QUESTION.pinyin
-      : "正确答案：" + correct.letter + " " + correct.text + " " + correct.pinyin);
-    setText(el.feedbackCopy, "解析：" + QUESTION.explain);
-    setText(el.feedbackId, "Penjelasan: " + QUESTION.explainId);
-    el.feedback.classList.remove("hidden");
   }
 
   function completeOnce() {
@@ -320,68 +240,70 @@
     return bridge.finish({
       correct: lastCorrect,
       seconds: lastSeconds,
-      detail: picked ? "选了「" + picked.text + "」" : "",
-      delay: CLASS_REDIRECT_DELAY
+      detail: picked ? "选了「" + picked.text + "」" : ""
     });
   }
 
-  function showModal() {
-    if (!el.modal) return;
-    setText(el.modalBadge, lastCorrect ? "🎉" : "💪");
-    setText(el.modalTitle, lastCorrect ? "答对了，真棒！" : "再想想也没关系");
-    setText(el.modalId, lastCorrect
-      ? "Bagus! Jawabanmu benar."
-      : "Tidak apa-apa, coba lagi ya!");
-    setText(el.modalCopy, lastCorrect
-      ? "本题已完成，可以换一个题型再练一练，或者回到课堂。"
-      : "正确答案和解析就在上面，可以换一个题型再练一练。");
-    el.modal.classList.remove("hidden");
-    if (el.modalChange && typeof el.modalChange.focus === "function") el.modalChange.focus();
+  /* 反馈弹窗走公共模具：页面只报档位和那句情绪话，样式与动效都在公共层 */
+  function openModal(tier, praise) {
+    if (!modal || typeof modal.open !== "function") return;
+    modal.open({
+      tier: tier,
+      badge: praise ? praise.emoji : "",
+      titleZh: praise ? praise.zh : "",
+      titleId: praise ? praise.id : "",
+      actions: [
+        {
+          label: "返回课堂",
+          onSelect: function () {
+            if (global.location) global.location.href = "classroom.html";
+          }
+        },
+        { label: "再练一次", icon: "↻", onSelect: restartQuestion }
+      ]
+    });
   }
 
-  function hideModal() {
-    if (el.modal) el.modal.classList.add("hidden");
+  function closeModal() {
+    if (modal && typeof modal.close === "function") modal.close();
+  }
+
+  /* 再练一次：关掉弹窗，重新开始本题（播放按钮回到「听一听」） */
+  function restartQuestion() {
+    closeModal();
+    startQuestion();
   }
 
   function submitAnswer() {
     if (submitted || !selectedId) return;
     submitted = true;
+    updatePlayInvite();
     lastSeconds = Math.max(1, Math.round((Date.now() - startedAt) / 1000));
 
     const correct = correctOptionOf();
     lastCorrect = !!correct && selectedId === correct.id;
+    attempts += 1;
+    const tier = lastCorrect ? (attempts === 1 ? "correctFirstTry" : "correct") : "wrong";
+    const praise = typeof copy.draw === "function" ? copy.draw(tier) : null;
 
     lockOptions();
     if (el.submit) {
       el.submit.disabled = true;
-      el.submit.textContent = "已提交";
+      setText(el.submitLabel, "已提交");
+      setText(el.submitLabelId, "Terkirim");
     }
+    announce(lastCorrect ? "答对了" : "再想想");
 
-    showFeedback(lastCorrect, correct || { letter: "", text: QUESTION.audioText, pinyin: QUESTION.pinyin });
-    updateStatus();
-    announce(lastCorrect
-      ? "答对了！你听到的是 " + QUESTION.audioText + " " + QUESTION.pinyin + "。" + QUESTION.explain
-      : "再想想。正确答案：" + (correct ? correct.letter + " " + correct.text + " " + correct.pinyin + "。" : "") + QUESTION.explain);
-    if (el.feedback) {
-      if (typeof el.feedback.focus === "function") el.feedback.focus({ preventScroll: true });
-      if (typeof el.feedback.scrollIntoView === "function") el.feedback.scrollIntoView({ block: "center" });
-    }
-
-    const outcome = completeOnce();
-    if (outcome && outcome.recorded) {
-      setText(el.status, outcome.next === "complete.html"
-        ? "已提交，正在进入完成页…"
-        : "已提交，正在返回课堂继续下一题…");
-      return;
-    }
-    modalTimer = global.setTimeout(showModal, SOLO_MODAL_DELAY);
+    completeOnce();
+    modalTimer = global.setTimeout(function () {
+      openModal(tier, praise);
+    }, SOLO_MODAL_DELAY);
   }
 
   function startQuestion() {
     global.clearTimeout(playTimer);
-    global.clearTimeout(hintTimer);
     global.clearTimeout(modalTimer);
-    hideModal();
+    closeModal();
 
     submitted = false;
     finished = false;
@@ -390,9 +312,6 @@
     startedAt = Date.now();
 
     setText(el.prompt, QUESTION.prompt);
-    setText(el.promptId, QUESTION.promptId);
-    setHidden(el.promptId, !QUESTION.promptId);
-
     resetPlay();
     if (el.audio) {
       if (hasRealAudio()) el.audio.setAttribute("src", QUESTION.audio);
@@ -410,12 +329,11 @@
     });
 
     renderOptions();
-    resetFeedback();
     if (el.submit) {
       el.submit.disabled = true;
-      el.submit.textContent = "提交";
+      setText(el.submitLabel, "提交");
+      setText(el.submitLabelId, "Kirim");
     }
-    updateStatus();
     announce("待作答。先点播放按钮听一听。");
   }
 
@@ -434,12 +352,6 @@
         announce("音频暂时无法播放。");
       });
     }
-    [el.modalChange, el.modalReturn].forEach(function (link) {
-      if (!link) return;
-      link.addEventListener("click", function () {
-        completeOnce();
-      });
-    });
   }
 
   function boot() {

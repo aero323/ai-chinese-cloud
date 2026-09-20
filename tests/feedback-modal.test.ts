@@ -13,8 +13,8 @@ describe("feedback modal mold", () => {
     modal.open({
       tier: "wrong",
       badge: "💪",
-      titleZh: "再来一遍？",
-      titleId: "Mau coba lagi?",
+      titleZh: "再来一遍！",
+      titleId: "Ayo coba lagi!",
       actions: [
         { label: "再练一次", icon: "↻", onSelect: onRetry },
         { label: "返回课堂", onSelect: () => {} }
@@ -26,15 +26,17 @@ describe("feedback modal mold", () => {
     expect(overlay.classList.contains("hidden")).toBe(false);
     expect(overlay.getAttribute("data-tier")).toBe("wrong");
     expect(overlay.querySelector("[data-feedback-modal-emoji]")!.textContent).toBe("💪");
-    expect(overlay.querySelector("h3")!.textContent).toBe("再来一遍？");
-    expect(overlay.querySelector(".id-copy")!.textContent).toBe("Mau coba lagi?");
+    expect(overlay.querySelector("h3")!.textContent).toBe("再来一遍！");
+    expect(overlay.querySelector(".id-copy")!.textContent).toBe("Ayo coba lagi!");
 
     const buttons = overlay.querySelectorAll("button");
     expect(buttons.length).toBe(2);
-    expect(buttons[0].className).toBe("primary-button");
+    expect(buttons[0].className).toBe("primary-button btn-stacked");
     expect(buttons[0].querySelector(".action-icon")!.textContent).toBe("↻");
-    expect(buttons[0].textContent).toBe("↻再练一次");
-    expect(buttons[1].className).toBe("secondary-button");
+    expect(buttons[0].querySelector(".btn-id")!.textContent).toBe("Coba lagi");
+    expect(buttons[0].textContent).toBe("↻再练一次Coba lagi");
+    expect(buttons[1].className).toBe("secondary-button btn-stacked");
+    expect(buttons[1].querySelector(".btn-id")!.textContent).toBe("Kembali ke kelas");
     buttons[0].click();
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
@@ -48,7 +50,7 @@ describe("feedback modal mold", () => {
 
     modal.open({ tier: "correct", titleZh: "太棒了！", titleId: "Hebat!", actions: [] });
     expect(overlay.getAttribute("data-tier")).toBe("correct");
-    expect(overlay.querySelector("[data-feedback-modal-emoji]")!.textContent).toBe("🎉");
+    expect(overlay.querySelector("[data-feedback-modal-emoji]")!.textContent).toBe("🤩");
   });
 
   it("still supports calls without a tier", () => {

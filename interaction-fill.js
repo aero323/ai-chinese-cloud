@@ -1,16 +1,20 @@
 /* 补全句子 · interaction-fill.html 页面脚本（词库填空版）
    点词库里的词 → 填进最左边的空；点句子中已填的词 → 退回词库原位置。
-   状态机：待作答 → 已选择（空都填了）→ 已提交（每题只提交一次）→ 正确 / 错误 */
-(function () {
+   状态机：待作答 → 已选择（空都填了）→ 已提交（每题只提交一次）→ 正确 / 错误。
+   页面说事实（对错、正确答案），弹窗说情绪（句池来自 shared/feedback-copy.js）。 */
+(function (global) {
   "use strict";
 
-  const bridge = window.AICloudActivity;
-  const types = window.AICloudActivityTypes;
+  const bridge = global.AICloudActivity;
+  const modal = global.AICloudFeedbackModal || null;
+  const copy = global.AICloudFeedbackCopy || {};
+  const MODAL_DELAY = 1400;          // 结果条先出场，弹窗后到
 
   // 模拟题目：字段结构与后台 InteractionPlayer 的 fill 题型一致，sentence 里 ____ 表示空
   const QUESTION = {
     id: "fill-greeting-1",
     sentence: "我每天 ____ 七点 ____，然后 ____ 学校。",
+    translationId: "Setiap hari saya bangun jam tujuh pagi, lalu pergi ke sekolah.",
     blanks: [
       { id: "time", answer: "早上" },
       { id: "wake", answer: "起床" },
@@ -23,43 +27,28 @@
       { id: "w-go", text: "去", pinyin: "qù" },
       { id: "w-bag", text: "书包", pinyin: "shū bāo" },
       { id: "w-drink", text: "喝", pinyin: "hē" }
-    ],
-    explanation: "「早上」是时间词，放在「七点」前面；「起床」是睡醒后离开床；「去」后面接要去的地方。"
-  };
-
-  const STATE_TEXT = {
-    idle: "当前状态：待作答（点下面的词，把它填进空里）",
-    ready: "当前状态：已选择（所有空都填好了，可以提交）",
-    submitted: "当前状态：已提交（每题只提交一次）",
-    correct: "当前状态：已提交 · 正确（答对了！）",
-    wrong: "当前状态：已提交 · 错误（看看正确答案，再练一次）"
+    ]
   };
 
   const dom = {
     card: document.querySelector(".fill-card"),
-    badge: document.querySelector("[data-fill-badge]"),
     sentence: document.querySelector("[data-fill-sentence]"),
     bank: document.querySelector("[data-fill-bank]"),
     clear: document.querySelector("[data-fill-clear]"),
     submit: document.querySelector("[data-fill-submit]"),
-    progress: document.querySelector("[data-fill-progress]"),
-    status: document.querySelector("[data-activity-status]"),
+    submitLabel: document.querySelector("[data-fill-submit-label]"),
+    submitLabelId: document.querySelector("[data-fill-submit-label-id]"),
     live: document.querySelector("[data-fill-live]"),
     feedback: document.querySelector("[data-fill-feedback]"),
     feedbackIcon: document.querySelector("[data-fill-feedback-icon]"),
     verdict: document.querySelector("[data-fill-verdict]"),
+    feedbackTitle: document.querySelector(".fill-feedback-title"),
     fullSentence: document.querySelector("[data-fill-full-sentence]"),
-    answerLine: document.querySelector("[data-fill-answer-line]"),
-    explanation: document.querySelector("[data-fill-explanation]"),
-    modal: document.querySelector("[data-fill-complete]"),
-    modalBadge: document.querySelector("[data-fill-modal-badge]"),
-    modalTitle: document.querySelector("[data-fill-modal-title]"),
-    modalCopy: document.querySelector("[data-fill-modal-copy]"),
-    modalDescription: document.querySelector("[data-fill-modal-description]")
+    translation: document.querySelector("[data-fill-full-sentence-id]")
   };
 
   const blanks = QUESTION.blanks.map(function (item, index) {
-    return { id: item.id, answer: item.answer, index: index, word: null, el: null, button: null, hint: null };
+    return { id: item.id, answer: item.answer, index: index, word: null, el: null, button: null };
   });
 
   // 词块顺序每次进页面都打乱
@@ -68,7 +57,12 @@
   });
 
   let state = "idle";
+  let attempts = 0;
+  let finished = false;
+  let lastCorrect = false;
+  let lastSeconds = 0;
   let startedAt = Date.now();
+  let modalTimer = 0;
 
   function shuffle(list) {
     const items = list.slice();
@@ -89,10 +83,6 @@
     return blanks.filter(function (blank) { return !blank.word; }).length;
   }
 
-  function wordOfBlank(blank) {
-    return blank.word;
-  }
-
   function announce(message) {
     if (dom.live) dom.live.textContent = message;
   }
@@ -100,7 +90,6 @@
   function setState(next) {
     state = next;
     if (dom.card) dom.card.dataset.fillState = next;
-    if (dom.status) dom.status.textContent = STATE_TEXT[next] || "";
   }
 
   function fullSentenceText() {
@@ -129,16 +118,10 @@
       takeBackWord(blank, event);
     });
 
-    const hint = document.createElement("span");
-    hint.className = "fill-blank-hint";
-    hint.hidden = true;
-
     slotEl.appendChild(button);
-    slotEl.appendChild(hint);
 
     blank.el = slotEl;
     blank.button = button;
-    blank.hint = hint;
     return slotEl;
   }
 
@@ -189,17 +172,23 @@
 
   function updateBlank(blank) {
     const button = blank.button;
-    const word = wordOfBlank(blank);
+    const word = blank.word;
     if (word) {
       button.textContent = word.text;
       button.classList.add("is-filled");
-      button.setAttribute("aria-label", "把词语 " + word.text + " 放回词库");
     } else {
       button.textContent = "";
       button.classList.remove("is-filled");
-      button.setAttribute("aria-label", "第 " + (blank.index + 1) + " 个空，还没有填");
     }
     button.disabled = isLocked() || !word;
+
+    if (!word) {
+      button.setAttribute("aria-label", "第 " + (blank.index + 1) + " 个空，还没有填");
+    } else if (isLocked()) {
+      button.setAttribute("aria-label", "第 " + (blank.index + 1) + " 个空：" + word.text);
+    } else {
+      button.setAttribute("aria-label", "把词语 " + word.text + " 放回词库");
+    }
   }
 
   function updateWord(word) {
@@ -219,7 +208,7 @@
     if (isLocked()) return;
     const blank = firstEmptyBlank();
     if (!blank) {
-      announce("三个空都填好了，可以点提交答案，或者点句子里已填的词把它放回词库");
+      announce("空都填好了，可以点提交，或者点句子里已填的词把它放回词库");
       return;
     }
 
@@ -231,7 +220,7 @@
     const left = emptyCount();
     announce(left > 0
       ? "已填入「" + word.text + "」，还剩 " + left + " 个空"
-      : "已填入「" + word.text + "」，三个空都填好了，可以提交");
+      : "已填入「" + word.text + "」，空都填好了，可以提交");
 
     if (event && event.detail === 0) focusNextChip(word);
   }
@@ -258,7 +247,7 @@
     });
     words.forEach(updateWord);
     syncReady();
-    announce("已全部放回词库，可以重新选择");
+    announce("已清空，全部词放回词库");
 
     if (event && event.detail === 0) {
       const first = words.filter(function (word) { return !word.button.disabled; })[0];
@@ -283,71 +272,104 @@
     const left = emptyCount();
     dom.submit.disabled = left > 0;
     dom.clear.disabled = left === blanks.length;
-    dom.progress.textContent = left > 0 ? "还有 " + left + " 个空没填" : "所有空都填好了，可以提交";
     setState(left > 0 ? "idle" : "ready");
   }
 
-  /* ---------- 提交与反馈 ---------- */
+  /* ---------- 结果条与弹窗 ---------- */
 
-  function renderFeedback(allCorrect, misses) {
+  function resetFeedback() {
+    if (!dom.feedback) return;
+    dom.feedback.classList.add("hidden");
+    dom.feedback.classList.remove("is-correct", "is-wrong");
+    if (dom.feedbackIcon) dom.feedbackIcon.textContent = "";
+    if (dom.feedbackTitle) dom.feedbackTitle.classList.remove("hidden");
+    if (dom.verdict) dom.verdict.textContent = "";
+    if (dom.fullSentence) {
+      dom.fullSentence.textContent = "";
+      dom.fullSentence.classList.add("hidden");
+    }
+    if (dom.translation) {
+      dom.translation.textContent = "";
+      dom.translation.classList.add("hidden");
+    }
+  }
+
+  /* 页面只说事实：对错用空格的颜色表达，答案统一在结果框里给完整原句。
+     全对 = 绿框「答对了！」+ 原句；有错 = 中性紫框，只放原句（不再写“还差 N 个”）。 */
+  function renderFeedback(allCorrect) {
+    if (!dom.feedback) return;
     dom.feedback.classList.remove("hidden");
     dom.feedback.classList.toggle("is-correct", allCorrect);
     dom.feedback.classList.toggle("is-wrong", !allCorrect);
-    dom.feedbackIcon.textContent = allCorrect ? "🎉" : "🤔";
-    dom.verdict.textContent = allCorrect ? "答对了！" : "再想想";
-
-    if (allCorrect) {
+    if (dom.feedbackIcon) dom.feedbackIcon.textContent = allCorrect ? "✓" : "";
+    if (dom.feedbackTitle) dom.feedbackTitle.classList.toggle("hidden", !allCorrect);
+    if (dom.verdict) dom.verdict.textContent = allCorrect ? "答对了！" : "";
+    if (dom.fullSentence) {
       dom.fullSentence.textContent = fullSentenceText();
       dom.fullSentence.classList.remove("hidden");
-      dom.answerLine.classList.add("hidden");
-      dom.answerLine.textContent = "";
-    } else {
-      dom.fullSentence.classList.add("hidden");
-      dom.fullSentence.textContent = "";
-      dom.answerLine.classList.remove("hidden");
-      dom.answerLine.textContent = "正确答案：" + misses.join(" / ");
     }
-    dom.explanation.textContent = QUESTION.explanation;
+    if (dom.translation) {
+      dom.translation.textContent = QUESTION.translationId || "";
+      dom.translation.classList.toggle("hidden", !QUESTION.translationId);
+    }
   }
 
-  function showCompleteModal(allCorrect, misses) {
-    dom.modalBadge.textContent = allCorrect ? "🎉" : "💪";
-    dom.modalTitle.textContent = allCorrect ? "全部答对，太棒了！" : "本题已提交，再练一次！";
-    dom.modalCopy.textContent = allCorrect ? "Semua jawaban benar!" : "Sudah dikirim, ayo coba lagi!";
-    dom.modalDescription.textContent = (allCorrect
-      ? "本题已完成，"
-      : "正确答案：" + misses.join(" / ") + "。") + "单独体验不计分，也不影响课堂进度；可以换一个题型，或回课堂看看。";
-    dom.modal.classList.remove("hidden");
-    const firstLink = dom.modal.querySelector("a");
-    if (firstLink) firstLink.focus();
+  function openModal(tier, praise) {
+    if (!modal || typeof modal.open !== "function") return;
+    modal.open({
+      tier: tier,
+      badge: praise ? praise.emoji : "",
+      titleZh: praise ? praise.zh : "",
+      titleId: praise ? praise.id : "",
+      actions: [
+        {
+          label: "返回课堂",
+          onSelect: function () {
+            if (global.location) global.location.href = "classroom.html";
+          }
+        },
+        { label: "再练一次", icon: "↻", onSelect: restartQuestion }
+      ]
+    });
   }
 
-  function reportFinish(allCorrect, results, misses, seconds) {
-    const ctx = bridge && typeof bridge.context === "function" ? bridge.context() : { mode: "solo" };
-    const isClass = ctx.mode === "class";
-    const correctCount = results.filter(function (entry) { return entry.correct; }).length;
+  /* 再练一次：词全部放回词库（顺序不变）、空格清空、计时重开 */
+  function restartQuestion() {
+    global.clearTimeout(modalTimer);
+    if (modal && typeof modal.close === "function") modal.close();
+    if (dom.bank) dom.bank.classList.remove("is-locked");
 
-    if (!bridge || typeof bridge.finish !== "function") {
-      window.setTimeout(function () { showCompleteModal(allCorrect, misses); }, allCorrect ? 1000 : 1800);
-      return;
-    }
+    // 先回到待作答，再重画空格和词块，否则它们会带着“已锁定”的禁用态
+    finished = false;
+    setState("idle");
 
-    // 课堂模式由公共脚本记录进度并跳转，这里留 2 秒给学生看对错；体验模式不记账
-    const outcome = bridge.finish({
-      correct: allCorrect,
-      seconds: seconds,
-      delay: isClass ? 2000 : 0,
-      detail: "补全句子：答对 " + correctCount + " / " + results.length + " 个空"
-    }) || {};
+    blanks.forEach(function (blank) {
+      blank.word = null;
+      blank.el.classList.remove("is-correct", "is-wrong");
+      blank.button.classList.remove("is-correct", "is-wrong");
+      updateBlank(blank);
+    });
+    words.forEach(updateWord);
 
-    if (isClass) {
-      dom.progress.textContent = outcome.next === "complete.html"
-        ? "本题已完成，正在进入完成页…"
-        : "本题已完成，正在返回课堂继续下一题…";
-      return;
-    }
+    if (dom.submitLabel) dom.submitLabel.textContent = "提交";
+    if (dom.submitLabelId) dom.submitLabelId.textContent = "Kirim";
+    resetFeedback();
+    startedAt = Date.now();
+    syncReady();
+    announce("已复位，可以重新填一次");
+  }
 
-    window.setTimeout(function () { showCompleteModal(allCorrect, misses); }, allCorrect ? 1000 : 1800);
+  /* ---------- 提交 ---------- */
+
+  function reportFinish(correctCount) {
+    if (finished) return null;
+    finished = true;
+    if (!bridge || typeof bridge.finish !== "function") return { recorded: false, next: "" };
+    return bridge.finish({
+      correct: lastCorrect,
+      seconds: lastSeconds,
+      detail: "补全句子：答对 " + correctCount + " / " + blanks.length + " 个空"
+    });
   }
 
   function submit() {
@@ -357,46 +379,64 @@
     const results = blanks.map(function (blank) {
       return { blank: blank, correct: blank.word.text === blank.answer };
     });
-    const allCorrect = results.every(function (entry) { return entry.correct; });
-    const seconds = Math.max(1, Math.round((Date.now() - startedAt) / 1000));
-    const misses = [];
+    const misses = results
+      .filter(function (entry) { return !entry.correct; })
+      .map(function (entry) { return entry.blank.answer; });
+    const allCorrect = misses.length === 0;
+    const firstTry = allCorrect && attempts === 0;
+    const tier = allCorrect ? (firstTry ? "correctFirstTry" : "correct") : "wrong";
+    const praise = typeof copy.draw === "function" ? copy.draw(tier) : null;
 
+    attempts += 1;
+    lastCorrect = allCorrect;
+    lastSeconds = Math.max(1, Math.round((Date.now() - startedAt) / 1000));
     setState("submitted");
+
     dom.submit.disabled = true;
+    if (dom.submitLabel) dom.submitLabel.textContent = "已提交";
+    if (dom.submitLabelId) dom.submitLabelId.textContent = "Terkirim";
     dom.clear.disabled = true;
-    dom.bank.classList.add("is-locked");
-    dom.progress.textContent = "本题已提交，答案已锁定";
+    if (dom.bank) dom.bank.classList.add("is-locked");
 
     results.forEach(function (entry) {
       const blank = entry.blank;
-      blank.button.disabled = true;
-      blank.button.classList.add(entry.correct ? "is-correct" : "is-wrong");
-      blank.el.classList.add(entry.correct ? "is-correct" : "is-wrong");
-      if (entry.correct) return;
-      misses.push(blank.answer);
-      blank.hint.textContent = "正确答案：" + blank.answer;
-      blank.hint.hidden = false;
+      if (entry.correct) {
+        blank.button.classList.add("is-correct");
+        blank.el.classList.add("is-correct");
+      } else {
+        blank.button.classList.add("is-wrong");
+        blank.el.classList.add("is-wrong");
+      }
+      updateBlank(blank);
     });
 
     words.forEach(function (word) { word.button.disabled = true; });
 
-    renderFeedback(allCorrect, misses);
+    renderFeedback(allCorrect);
     setState(allCorrect ? "correct" : "wrong");
-    reportFinish(allCorrect, results, misses, seconds);
+
+    // 读屏与页面同口径：有错时念完整原句，不再逐空念答案
+    announce(allCorrect ? "全对，答对了！" : fullSentenceText());
+
+    if (dom.feedback && typeof dom.feedback.scrollIntoView === "function") {
+      dom.feedback.scrollIntoView({ block: "center" });
+    }
+
+    reportFinish(results.length - misses.length);
+
+    modalTimer = global.setTimeout(function () {
+      openModal(tier, praise);
+    }, MODAL_DELAY);
   }
 
   function boot() {
-    const ctx = bridge && typeof bridge.context === "function" ? bridge.context() : { type: "fill", mode: "solo" };
-    const meta = types && typeof types.get === "function" ? (types.get(ctx.type) || types.get("fill")) : null;
-    if (meta && dom.badge) dom.badge.textContent = meta.icon + " " + meta.title;
-
     renderSentence();
     renderBank();
     words.forEach(updateWord);
     blanks.forEach(updateBlank);
 
-    dom.submit.addEventListener("click", submit);
-    dom.clear.addEventListener("click", clearAll);
+    if (dom.submit) dom.submit.addEventListener("click", submit);
+    if (dom.clear) dom.clear.addEventListener("click", clearAll);
 
     startedAt = Date.now();
     setState("idle");
@@ -405,4 +445,4 @@
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
   else boot();
-})();
+})(typeof window !== "undefined" ? window : globalThis);

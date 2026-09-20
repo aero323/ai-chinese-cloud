@@ -17,7 +17,7 @@
     </div>
 
     <header class="page-header">
-      <a class="icon-button" href="index.html" data-activity-back aria-label="返回首页">
+      <a class="icon-button" href="classroom.html" data-activity-back aria-label="返回课堂">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
       </a>
       <h1><span data-activity-title>找错误/改错</span><span class="header-subtitle" data-activity-subtitle>Temukan yang salah</span></h1>
@@ -25,75 +25,32 @@
     </header>
 
     <main class="page page-content">
-      <div class="game-intro">
-        <div>
-          <h2 data-activity-task>读句子，点出用错的那个词，看看正确说法。</h2>
-          <p>读一读句子，找出用错的那个词，选好再点提交。<br>Baca kalimatnya, temukan kata yang salah, lalu kirim.</p>
-        </div>
-        <span class="progress-pill" data-activity-step>题型体验</span>
-      </div>
-
       <section class="correction-card" aria-labelledby="correction-prompt">
-        <div class="correction-card-head">
-          <span class="correction-type-badge">
-            <span aria-hidden="true" data-correction-type-icon>🔍</span>
-            <strong data-correction-type-name>找错误/改错</strong>
-          </span>
-          <span class="progress-pill" data-correction-step>第 1 / 1 题</span>
-        </div>
 
-        <div class="correction-stem">
-          <h3 class="correction-prompt" id="correction-prompt" data-correction-prompt>下面这句话里有一个词用错了，点出来。</h3>
-          <p class="correction-prompt-id" lang="id" data-correction-prompt-id>Di kalimat ini ada satu kata yang salah. Ketuk kata itu.</p>
-        </div>
+        <!-- 题面只说给读屏听：页面上让句子（字块）自己说话 -->
+        <p class="correction-sr" id="correction-prompt" data-correction-prompt>下面这句话里有一个词用错了，点出来。</p>
 
-        <div class="correction-sentence-wrap">
-          <p class="correction-sentence-label" id="correction-sentence-label">句子 · Kalimat</p>
-          <div class="correction-sentence" role="group" aria-labelledby="correction-sentence-label" data-correction-sentence></div>
-        </div>
+        <div class="correction-sentence" role="group" aria-labelledby="correction-prompt" data-correction-sentence></div>
 
-        <button type="button" class="primary-button correction-submit" data-correction-submit disabled>提交</button>
+        <button type="button" class="primary-button correction-submit btn-stacked" data-correction-submit disabled>
+          <span data-correction-submit-label>提交</span>
+          <span class="btn-id" lang="id" data-correction-submit-label-id>Kirim</span>
+        </button>
 
         <div class="correction-feedback hidden" role="status" aria-live="polite" tabindex="-1" data-correction-feedback>
-          <strong class="correction-feedback-title">
-            <span class="correction-feedback-icon" aria-hidden="true" data-correction-feedback-icon></span>
+          <strong class="correction-feedback-title hidden" data-correction-feedback-title-row>
+            <span aria-hidden="true" data-correction-feedback-icon></span>
             <span data-correction-feedback-title></span>
           </strong>
-          <p class="correction-feedback-title-id" lang="id" data-correction-feedback-title-id></p>
-          <p class="correction-feedback-answer" data-correction-feedback-answer></p>
-          <p class="correction-feedback-fixed">
-            <span class="correction-feedback-label">改好的整句：</span>
-            <strong data-correction-fixed-sentence>我买一本书。</strong>
-            <small class="correction-feedback-pinyin" data-correction-fixed-pinyin>Wǒ mǎi yì běn shū.</small>
-          </p>
+          <p class="correction-feedback-sentence" data-correction-fixed-sentence></p>
+          <p class="correction-feedback-pinyin" data-correction-fixed-pinyin></p>
           <p class="correction-feedback-copy" data-correction-feedback-copy></p>
           <p class="correction-feedback-id" lang="id" data-correction-feedback-id></p>
         </div>
       </section>
 
       <p class="correction-announcer" data-correction-announcer role="status" aria-live="polite"></p>
-
-      <div class="helper-note">
-        <span aria-hidden="true">👇</span>
-        <div>点一下你觉得不对的那个词，再提交。<br>Ketuk kata yang menurutmu salah, lalu kirim.</div>
-      </div>
-
-      <p class="activity-status" data-activity-status>当前状态：待作答</p>
-      <p class="activity-meta" data-activity-meta></p>
     </main>
-  </div>
-
-  <div class="modal-overlay hidden" data-correction-complete>
-    <section class="completion-modal" role="dialog" aria-modal="true" aria-labelledby="correction-complete-title">
-      <div class="modal-badge" data-correction-modal-badge>🎉</div>
-      <h3 id="correction-complete-title" data-correction-modal-title>找对了，真棒！</h3>
-      <p class="id-copy" data-correction-modal-id>Hebat, kamu menemukan kata yang salah!</p>
-      <p class="modal-description" data-correction-modal-copy>本题已完成，可以换一个题型再练一练，或者回到课堂。</p>
-      <div class="correction-modal-actions">
-        <a class="primary-button" href="classroom.html?activities=1" data-correction-change>换一个题型</a>
-        <a class="secondary-button" href="classroom.html" data-correction-return>返回课堂</a>
-      </div>
-    </section>
   </div>
 
   <script type="module" src="shared/activity-types.js"></script>
@@ -101,6 +58,8 @@
   <script type="module" src="shared/activity-bridge.js"></script>
   <script type="module" src="app.js"></script>
   <script type="module" src="shared/activity-page.js"></script>
+  <script type="module" src="shared/feedback-copy.js"></script>
+  <script type="module" src="shared/feedback-modal.js"></script>
   <script type="module" src="interaction-correction.js"></script>
 </body>
 </html>

@@ -1,80 +1,100 @@
 /* 拼字/组词 · interaction-word-build.html 专用样式
-   公共外壳（app-shell / page-header / game-intro / progress-pill / helper-note /
-   modal-overlay / completion-modal / primary-button）全部复用 styles.css，
-   这里只写本页面自己的部件：提示槽、作答槽、字块区、反馈区、完成弹窗按钮排列。 */
+   尺子与黄金样板 interaction-choice.css 对齐：顶部变量整块照抄，不自造颜色 / 厚度 / 时长。
+   页面只说事实（对错、正确答案）；可见文案里只有一个“说话的人”——题目牌上的 emoji + 印尼语词。 */
+
+:root {
+  /* 颜色 */
+  --surface-page: #f5f4fb;
+  --line-soft: #e9e7f2;
+  --line-card: #eceaf4;
+  --edge-quiet: #ece9f5;
+  --edge-select: #c9bcff;
+  --edge-button: #4331c4;
+  --select-fill: #f1eeff;
+  --answer-correct: #1fbf8f;
+  --answer-correct-text: #0f8f68;
+  --answer-wrong: #f2555f;
+  --answer-wrong-fill: #fff0f1;
+  --text-quiet: #3f3a5c;
+  --text-subtle: #8f8aa3;
+  --chip-fill: #f1f0f6;
+  --button-disabled-fill: #eceaf4;
+  --button-disabled-text: #a5a0bd;
+
+  /* 圆角 / 厚度 / 按下幅度 */
+  --radius-card: 28px;
+  --radius-option: 20px;
+  --radius-button: 20px;
+  --edge-quiet-w: 2px;
+  --edge-active-w: 4px;
+  --edge-button-w: 6px;
+  --press-option: 2px;
+  --press-button: 4px;
+
+  /* 字号 */
+  --text-hint: 30px;
+  --text-word: 26px;
+  --text-option: 15px;
+  --text-button: 17px;
+
+  /* 方件（作答槽与字块同款，才有拼图感） */
+  --piece: 62px;
+
+  /* 动效 */
+  --dur-press: .15s;
+  --dur-enter: .26s;
+  --dur-pop: .3s;
+  --ease-enter: cubic-bezier(.2, .85, .25, 1);
+  --ease-pop: cubic-bezier(.2, .9, .3, 1.25);
+}
 
 .page-content {
-  padding-bottom: 190px;
+  padding-bottom: 160px;
 }
 
+/* ---------- 页面底子 ---------- */
+.app-shell {
+  background: var(--surface-page);
+}
+
+.page-header {
+  min-height: 64px;
+  background: rgba(245, 244, 251, 0.94);
+  border-bottom: 0;
+}
+
+/* ---------- 题面卡 ---------- */
 .word-card {
-  padding: 15px 16px 16px;
-  border-radius: 24px;
+  padding: 18px 16px 16px;
+  border: 2px solid var(--line-card);
+  border-radius: var(--radius-card);
   background: #ffffff;
-  box-shadow: var(--shadow-soft);
+  box-shadow: 0 6px 0 #e6e3ef, 0 22px 40px rgba(71, 57, 142, 0.08);
 }
 
-.word-card-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.word-type-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-  padding: 6px 11px;
-  border-radius: 999px;
-  color: var(--purple-deep);
-  background: var(--purple-soft);
-  font-size: 10px;
-  font-weight: 900;
-}
-
-.word-card-head .progress-pill {
-  flex: 0 0 auto;
-}
-
-.word-stem {
-  margin-top: 12px;
-}
-
-.word-prompt {
-  margin: 0;
-  font-size: 18px;
-  line-height: 1.4;
-  overflow-wrap: anywhere;
-}
-
-/* 提示槽：宽度固定，emoji 和真图共用同一个槽位（数据和 shared 二期看图单选一致），
-   以后把 QUESTION.image 填上真图，布局和样式都不用动 */
+/* 题目牌：无描边无厚度，emoji 和词是这一题的关键线索，给足字号 */
 .word-hint {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-top: 10px;
-  padding: 11px 12px;
-  border-radius: 18px;
-  background: linear-gradient(150deg, #f8f6ff, #eee9ff);
+  justify-content: center;
+  gap: 14px;
+  min-height: 96px;
+  padding: 14px;
+  border-radius: var(--radius-option);
+  background: var(--surface-page);
 }
 
 .word-hint-slot {
   display: grid;
   flex: 0 0 auto;
-  width: 58px;
-  height: 58px;
+  width: 56px;
+  height: 56px;
   place-items: center;
-  border: 1px solid #e7e2ff;
-  border-radius: 18px;
-  background: #ffffff;
   overflow: hidden;
 }
 
 .word-hint-emoji {
-  font-size: 30px;
+  font-size: 46px;
   line-height: 1;
 }
 
@@ -85,29 +105,17 @@
   object-fit: cover;
 }
 
-.word-hint-copy {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
 .word-hint-meaning {
-  font-size: 19px;
+  font-size: var(--text-hint);
   font-weight: 900;
-  line-height: 1.2;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
   overflow-wrap: anywhere;
 }
 
-.word-hint-note {
-  color: var(--muted);
-  font-size: 10px;
-  font-weight: 700;
-  line-height: 1.4;
-}
-
+/* ---------- 作答槽：和字块同尺寸，落字就像拼图归位 ---------- */
 .word-answer-area {
-  margin-top: 16px;
+  margin-top: 18px;
 }
 
 .word-slots {
@@ -115,44 +123,47 @@
   flex-wrap: wrap;
   align-items: flex-start;
   justify-content: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .word-slot-wrap {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
 }
 
 .word-slot {
   position: relative;
   display: grid;
-  width: 74px;
-  height: 82px;
+  width: var(--piece);
+  height: var(--piece);
   place-items: center;
   padding: 0;
-  border: 2px dashed #d8d3ea;
-  border-radius: 18px;
-  color: var(--ink);
-  background: #fbfaff;
-  font-size: 30px;
-  font-weight: 800;
+  border: 2px dashed var(--line-soft);
+  border-radius: var(--radius-option);
+  color: var(--text-quiet);
+  background: var(--surface-page);
+  font: inherit;
+  font-size: var(--text-word);
+  font-weight: 900;
   line-height: 1;
   cursor: pointer;
-  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  transition: transform var(--dur-press) ease, box-shadow var(--dur-press) ease, border-color var(--dur-press) ease, background var(--dur-press) ease;
 }
 
+/* 落字：和字块长得一模一样 */
 .word-slot.is-filled {
   border-style: solid;
-  border-color: #d0c8ff;
+  border-color: var(--line-soft);
   background: #ffffff;
-  box-shadow: 0 6px 16px rgba(58, 48, 116, 0.08);
-  animation: wordSlotIn 0.2s cubic-bezier(0.2, 0.85, 0.25, 1);
+  box-shadow: 0 var(--edge-quiet-w) 0 var(--edge-quiet);
+  animation: wordPieceIn var(--dur-press) ease;
 }
 
 .word-slot:active:not(:disabled) {
-  transform: translateY(1px) scale(0.97);
+  transform: translateY(var(--press-option));
+  box-shadow: 0 0 0 var(--edge-quiet);
 }
 
 .word-slot:disabled {
@@ -160,126 +171,92 @@
 }
 
 .word-slot.is-correct {
-  border-color: rgba(34, 173, 131, 0.55);
-  background: #e9faf4;
-  box-shadow: none;
+  border-color: var(--answer-correct);
+  background: #e8fbf3;
+  box-shadow: 0 var(--edge-active-w) 0 #a9e8d3;
 }
 
 .word-slot.is-wrong {
-  border-color: var(--danger);
-  background: #fff0f1;
-  box-shadow: none;
-  animation: wordSlotShake 0.35s ease;
+  border-color: var(--answer-wrong);
+  background: var(--answer-wrong-fill);
+  box-shadow: 0 var(--edge-active-w) 0 #f8c3c7;
+  animation: wordShake .35s ease;
 }
 
-.word-slot-mark {
+/* 勾只给对的那一格；错的格子不加角标，整块变红就够了 */
+.word-slot-badge {
   position: absolute;
   top: -8px;
   right: -8px;
   display: grid;
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   place-items: center;
   border-radius: 50%;
   color: #ffffff;
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 900;
+  background: var(--answer-correct);
+  animation: wordPop var(--dur-pop) var(--ease-pop);
 }
 
-.word-slot.is-correct .word-slot-mark {
-  background: var(--success);
-}
-
-.word-slot.is-wrong .word-slot-mark {
-  background: var(--danger);
-}
-
-/* 答错的槽：在空格下面补上这个位置正确的字 */
+/* 错的那一格下面直接给正确的字，不加标签 */
 .word-slot-fix {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1px;
-  max-width: 92px;
-  text-align: center;
-  animation: wordSlotIn 0.24s ease;
-}
-
-.word-slot-fix small {
-  color: #a8636f;
-  font-size: 9px;
-  font-weight: 800;
-  line-height: 1.3;
-}
-
-.word-slot-fix strong {
-  color: #c23a45;
-  font-size: 15px;
+  color: var(--text-quiet);
+  font-size: var(--text-option);
   font-weight: 900;
   line-height: 1.2;
 }
 
-@keyframes wordSlotIn {
-  from {
-    opacity: 0;
-    transform: translateY(6px) scale(0.94);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes wordSlotShake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-4px); }
-  75% { transform: translateX(4px); }
-}
-
+/* ---------- 字块：保持方形，硬底 + 下沉 ---------- */
 .word-bank-area {
   margin-top: 18px;
 }
 
 .word-bank {
   display: grid;
-  grid-template-columns: repeat(3, 58px);
+  grid-template-columns: repeat(3, var(--piece));
   justify-content: center;
   gap: 10px 12px;
 }
 
 .word-tile {
   display: grid;
-  height: 62px;
+  width: var(--piece);
+  height: var(--piece);
   place-items: center;
   padding: 0;
-  border: 2px solid #e8e5f4;
-  border-radius: 18px;
+  border: 2px solid var(--line-soft);
+  border-radius: var(--radius-option);
   color: var(--ink);
   background: #ffffff;
-  box-shadow: 0 5px 14px rgba(58, 48, 116, 0.07);
-  font-size: 26px;
-  font-weight: 800;
+  box-shadow: 0 var(--edge-quiet-w) 0 var(--edge-quiet);
+  font: inherit;
+  font-size: var(--text-word);
+  font-weight: 900;
   line-height: 1;
   cursor: pointer;
-  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  transition: transform var(--dur-press) ease, box-shadow var(--dur-press) ease, border-color var(--dur-press) ease, background var(--dur-press) ease, color var(--dur-press) ease;
 }
 
+/* 按下：陷下去（厚度收掉） */
 .word-tile:active:not(:disabled) {
-  transform: translateY(1px) scale(0.95);
+  transform: translateY(var(--press-option));
+  box-shadow: 0 0 0 var(--edge-quiet);
 }
 
-/* 已经填进空格的字块留在原地，但变灰不可再点；一个字块只能用一次 */
+/* 已经填进空格的字块留在原位，变灰不可再点；一个字块只能用一次 */
 .word-tile.is-used,
 .word-tile:disabled {
   border-style: dashed;
-  border-color: #eceaf5;
-  color: #b6b1c6;
-  background: #f4f3f9;
+  border-color: var(--edge-quiet);
+  color: var(--button-disabled-text);
+  background: var(--chip-fill);
   box-shadow: none;
   cursor: default;
 }
 
+/* ---------- 重置 / 提交：公共按钮 + 尺子厚度（主 6px、次 3px，按下下沉） ---------- */
 .word-actions {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
@@ -287,14 +264,100 @@
   margin-top: 18px;
 }
 
-.word-actions .primary-button:disabled,
-.word-actions .secondary-button:disabled {
-  opacity: 0.5;
-  box-shadow: none;
+/* 重置：白底 + 3px 硬底边（同补全句子页的次级按钮） */
+.word-actions .secondary-button {
+  min-height: 60px;
+  border: 2px solid var(--line-soft);
+  border-radius: var(--radius-button);
+  color: var(--text-quiet);
+  background: #ffffff;
+  box-shadow: 0 3px 0 #e2dfee;
+  font-size: var(--text-button);
+  transition: transform var(--dur-press) ease, box-shadow var(--dur-press) ease, background .2s ease, color .2s ease;
+}
+
+.word-actions .secondary-button:not([disabled]):active {
+  transform: translateY(3px);
+  box-shadow: 0 0 0 #e2dfee;
+}
+
+/* 提交：高 60、圆角 20、硬底边 6px；按下下沉 4px（底边同时变 2px） */
+.word-actions .primary-button {
+  min-height: 60px;
+  border-radius: var(--radius-button);
+  font-size: var(--text-button);
+  letter-spacing: 0.02em;
+  background: linear-gradient(180deg, #7d68ff, #5b45ee);
+  box-shadow: 0 var(--edge-button-w) 0 var(--edge-button), 0 14px 26px rgba(79, 58, 224, 0.28);
+  transition: transform var(--dur-press) ease, box-shadow var(--dur-press) ease, background .2s ease, color .2s ease;
+}
+
+.word-actions .primary-button:not([disabled]):active {
+  transform: translateY(var(--press-button));
+  box-shadow: 0 2px 0 var(--edge-button), 0 8px 16px rgba(79, 58, 224, 0.24);
+}
+
+/* 不可提交 / 已提交：灰、不带紫 */
+.word-actions .primary-button[disabled],
+.word-actions .secondary-button[disabled] {
+  opacity: 1;
+  color: var(--button-disabled-text);
+  background: var(--button-disabled-fill);
+  border-color: transparent;
+  box-shadow: 0 3px 0 #e2dfee;
   cursor: not-allowed;
 }
 
-.word-announcer {
+/* ---------- 结果条（尺子：圆角 20、描边 2px、硬底边 4px、内边距 15/16） ---------- */
+.word-feedback {
+  margin-top: 15px;
+  padding: 15px 16px;
+  border: 2px solid transparent;
+  border-radius: var(--radius-option);
+  font-size: 12px;
+  line-height: 1.6;
+  animation: wordFeedbackIn var(--dur-enter) var(--ease-enter);
+}
+
+.word-feedback.is-correct {
+  border-color: #a9e8d3;
+  background: #e8fbf3;
+  box-shadow: 0 4px 0 #d3f2e7;
+}
+
+/* 框里装的是正确答案，不是错误提示：用中性紫，不用红 */
+.word-feedback.is-wrong {
+  border-color: #d9d3ee;
+  background: var(--select-fill);
+  box-shadow: 0 4px 0 #dad4f0;
+}
+
+.word-feedback-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.word-feedback.is-correct .word-feedback-title {
+  color: var(--answer-correct-text);
+}
+
+.word-feedback-answer {
+  margin: 7px 0 0;
+  color: var(--text-quiet);
+  font-size: var(--text-option);
+  font-weight: 900;
+}
+
+/* 有错时框里只有答案行，没有标题行 */
+.word-feedback.is-wrong .word-feedback-answer {
+  margin-top: 0;
+}
+
+/* ---------- 读屏专用播报区 ---------- */
+.word-live {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -306,154 +369,62 @@
   white-space: nowrap;
 }
 
-.word-feedback {
-  margin-top: 14px;
-  padding: 14px;
-  border: 2px solid transparent;
-  border-radius: 18px;
+/* ---------- 关键帧：只做三样 ---------- */
+@keyframes wordFeedbackIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
 }
 
-.word-feedback:focus {
-  outline: none;
+@keyframes wordPop {
+  0% { transform: scale(.4); }
+  60% { transform: scale(1.14); }
+  100% { transform: scale(1); }
 }
 
-.word-feedback.is-correct {
-  border-color: rgba(34, 173, 131, 0.45);
-  background: #eafaf5;
+@keyframes wordShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
 }
 
-.word-feedback.is-wrong {
-  border-color: rgba(239, 95, 105, 0.45);
-  background: #fff0f1;
-}
-
-.word-feedback-head {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  margin: 0;
-  font-size: 15px;
-  font-weight: 900;
-}
-
-.word-feedback.is-correct .word-feedback-head {
-  color: #14805f;
-}
-
-.word-feedback.is-wrong .word-feedback-head {
-  color: #c33f48;
-}
-
-.word-feedback-icon {
-  display: grid;
-  flex: 0 0 auto;
-  width: 22px;
-  height: 22px;
-  place-items: center;
-  border-radius: 50%;
-  color: #ffffff;
-  font-size: 12px;
-}
-
-.word-feedback.is-correct .word-feedback-icon {
-  background: var(--success);
-}
-
-.word-feedback.is-wrong .word-feedback-icon {
-  background: var(--danger);
-}
-
-.word-feedback-id {
-  margin: 4px 0 0;
-  color: #8d88a0;
-  font-size: 10px;
-  line-height: 1.5;
-}
-
-.word-feedback-answer {
-  margin: 10px 0 0;
-  padding: 9px 11px;
-  border-radius: 13px;
-  background: rgba(255, 255, 255, 0.85);
-  font-size: 14px;
-  font-weight: 900;
-  line-height: 1.45;
-}
-
-.word-feedback.is-correct .word-feedback-answer {
-  color: #14705a;
-}
-
-.word-feedback.is-wrong .word-feedback-answer {
-  color: #c33f48;
-}
-
-.word-feedback-answer small {
-  margin-left: 6px;
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.word-feedback-explain {
-  margin: 10px 0 0;
-  color: #4f4775;
-  font-size: 11px;
-  line-height: 1.6;
-}
-
-.word-feedback-explain-id {
-  margin: 3px 0 0;
-  color: #8d88a0;
-  font-size: 10px;
-  line-height: 1.5;
-}
-
-.word-modal-actions {
-  display: grid;
-  gap: 10px;
-  margin-top: 6px;
-}
-
-.word-modal-actions .primary-button,
-.word-modal-actions .secondary-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 14px;
-  line-height: 1.3;
-  text-align: center;
-  text-decoration: none;
+@keyframes wordPieceIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
 }
 
 @media (hover: hover) {
-  .word-tile:hover:not(:disabled) {
-    border-color: #c9c1ff;
-  }
-
+  .word-tile:hover:not(:disabled),
   .word-slot.is-filled:hover:not(:disabled) {
-    border-color: #b9afff;
+    border-color: var(--edge-select);
   }
 }
 
 @media (max-width: 360px) {
-  .word-slot {
-    width: 66px;
-    height: 74px;
-    font-size: 27px;
+  :root {
+    --text-hint: 26px;
+    --text-word: 23px;
+    --piece: 56px;
+  }
+
+  .word-card {
+    padding: 16px 14px 14px;
+  }
+
+  .word-hint {
+    min-height: 84px;
+    gap: 12px;
+  }
+
+  .word-hint-slot {
+    width: 48px;
+    height: 48px;
+  }
+
+  .word-hint-emoji {
+    font-size: 38px;
   }
 
   .word-bank {
-    grid-template-columns: repeat(3, 52px);
-    gap: 9px 10px;
-  }
-
-  .word-tile {
-    height: 56px;
-    font-size: 23px;
-  }
-
-  .word-prompt {
-    font-size: 17px;
+    gap: 8px 10px;
   }
 }

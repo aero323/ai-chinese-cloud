@@ -11,8 +11,8 @@
 
   const BANK_ORDER = ["apple", "me", "one", "want", "buy"];
   const CORRECT_ORDER = ["me", "want", "buy", "one", "apple"];
+  const CORRECT_ID = "Saya ingin membeli sebuah apel.";
   const MODAL_DELAY = 1400;
-  const CLASS_REDIRECT_DELAY = 2600;
 
   const bridge = global.AICloudActivity;
   const copy = global.AICloudFeedbackCopy || {};
@@ -21,6 +21,8 @@
   const answerNode = document.querySelector("[data-order-answer]");
   const bankNode = document.querySelector("[data-order-bank]");
   const submitNode = document.querySelector("[data-order-submit]");
+  const submitLabelNode = document.querySelector("[data-order-submit-label]");
+  const submitLabelIdNode = document.querySelector("[data-order-submit-label-id]");
   const clearNode = document.querySelector("[data-order-clear]");
   const feedbackNode = document.querySelector("[data-order-feedback]");
   const announcerNode = document.querySelector("[data-order-announcer]");
@@ -71,11 +73,13 @@
     if (submitted) {
       const right = id === CORRECT_ORDER[index];
       button.classList.add(right ? "is-correct" : "is-wrong");
-      const mark = document.createElement("span");
-      mark.className = "order-tile-mark";
-      mark.setAttribute("aria-hidden", "true");
-      mark.textContent = right ? "✓" : "✕";
-      button.appendChild(mark);
+      if (right) {
+        const mark = document.createElement("span");
+        mark.className = "order-tile-mark";
+        mark.setAttribute("aria-hidden", "true");
+        mark.textContent = "✓";
+        button.appendChild(mark);
+      }
     } else if (settings.popId === id) {
       button.classList.add("is-new");
     }
@@ -106,13 +110,6 @@
   function renderAnswer(settings) {
     if (!answerNode) return;
     answerNode.textContent = "";
-    if (picked.length === 0) {
-      const hint = document.createElement("p");
-      hint.className = "order-answer-hint";
-      hint.textContent = "点下面的词开始组句";
-      answerNode.appendChild(hint);
-      return;
-    }
     picked.forEach(function (id, index) {
       answerNode.appendChild(buildAnswerWord(id, index, settings));
     });
@@ -129,8 +126,9 @@
   function syncControls() {
     if (submitNode) {
       submitNode.disabled = submitted || picked.length === 0;
-      submitNode.textContent = submitted ? "已提交" : "提交答案";
     }
+    if (submitLabelNode) submitLabelNode.textContent = submitted ? "已提交" : "提交";
+    if (submitLabelIdNode) submitLabelIdNode.textContent = submitted ? "Terkirim" : "Kirim";
     if (clearNode) clearNode.disabled = submitted;
   }
 
@@ -171,40 +169,18 @@
     announce("已清空答案行，词已全部放回词库，已选 0 个词");
   }
 
-  function feedbackHead(iconText) {
-    const head = document.createElement("p");
-    head.className = "order-feedback-head";
-    const icon = document.createElement("span");
-    icon.className = "order-feedback-icon";
-    icon.setAttribute("aria-hidden", "true");
-    icon.textContent = iconText;
-    head.appendChild(icon);
-    return head;
-  }
-
-  function buildAnswerLabel() {
-    const label = document.createElement("p");
-    label.className = "order-feedback-label";
-    label.textContent = "正确顺序";
-    const labelId = document.createElement("span");
-    labelId.className = "order-feedback-label-id";
-    labelId.lang = "id";
-    labelId.textContent = "Urutan yang benar";
-    label.appendChild(labelId);
-    return label;
-  }
-
-  function buildAnswerRow() {
-    const row = document.createElement("div");
-    row.className = "order-feedback-answer";
-    CORRECT_ORDER.forEach(function (id) {
-      const entry = itemFor(id) || { text: id, pinyin: "" };
-      const chip = document.createElement("span");
-      chip.className = "order-tile order-tile-static";
-      fillTile(chip, entry);
-      row.appendChild(chip);
-    });
-    return row;
+  function buildAnswerSentence() {
+    const block = document.createDocumentFragment();
+    const line = document.createElement("p");
+    line.className = "order-feedback-sentence";
+    line.textContent = sentence(CORRECT_ORDER);
+    const translation = document.createElement("p");
+    translation.className = "order-feedback-translation";
+    translation.lang = "id";
+    translation.textContent = CORRECT_ID;
+    block.appendChild(line);
+    block.appendChild(translation);
+    return block;
   }
 
   function showFeedback(correct) {
@@ -217,9 +193,7 @@
     }
     feedbackNode.classList.remove("hidden");
     feedbackNode.classList.add("is-wrong");
-    feedbackNode.appendChild(feedbackHead("✕"));
-    feedbackNode.appendChild(buildAnswerLabel());
-    feedbackNode.appendChild(buildAnswerRow());
+    feedbackNode.appendChild(buildAnswerSentence());
     if (typeof feedbackNode.focus === "function") feedbackNode.focus();
   }
 
@@ -273,17 +247,13 @@
       ? (praise && praise.zh) || "全对！"
       : "正确顺序是：" + sentence(CORRECT_ORDER) + "。");
 
-    const ctx = bridge && bridge.context ? bridge.context() : { mode: "solo" };
-    const outcome = bridge && bridge.finish
-      ? bridge.finish({
+    if (bridge && bridge.finish) {
+      bridge.finish({
         correct: correct,
         seconds: seconds,
-        detail: sentence(picked),
-        delay: ctx.mode === "class" ? CLASS_REDIRECT_DELAY : 0
-      })
-      : null;
-
-    if (outcome && outcome.recorded) return;
+        detail: sentence(picked)
+      });
+    }
 
     global.setTimeout(function () { openModal(tier, praise); }, MODAL_DELAY);
   }

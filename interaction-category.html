@@ -33,36 +33,27 @@
 
         <div class="category-pool-block">
           <div class="category-pool" role="group" aria-label="待归类的词" data-category-pool></div>
-          <p class="category-pool-done hidden" data-category-pool-done>词都归好类了，点「提交」看看结果。<br><span lang="id">Semua kata sudah masuk kategori, tekan Kirim.</span></p>
         </div>
 
         <div class="category-groups" data-category-groups></div>
 
         <div class="category-actions">
-          <button type="button" class="secondary-button" data-category-reset>
+          <button type="button" class="secondary-button btn-stacked" data-category-reset>
             <span data-category-reset-label>重置</span>
-            <span class="category-btn-id" lang="id">Ulangi</span>
+            <span class="btn-id" lang="id">Ulangi</span>
           </button>
-          <button type="button" class="primary-button" data-category-submit disabled>
+          <button type="button" class="primary-button btn-stacked" data-category-submit disabled>
             <span data-category-submit-label>提交</span>
-            <span class="category-btn-id" lang="id" data-category-submit-label-id>Kirim</span>
+            <span class="btn-id" lang="id" data-category-submit-label-id>Kirim</span>
           </button>
         </div>
 
         <div class="category-feedback hidden" role="status" aria-live="polite" tabindex="-1" data-category-feedback>
           <strong class="category-feedback-title">
-            <span aria-hidden="true" data-category-feedback-icon></span>
             <span data-category-feedback-title></span>
+            <span class="category-feedback-title-sep" aria-hidden="true">·</span>
             <span class="category-feedback-title-id" lang="id" data-category-feedback-title-id></span>
           </strong>
-          <p class="category-feedback-summary">
-            <span data-category-feedback-summary-zh></span>
-            <span class="category-feedback-summary-id" lang="id" data-category-feedback-summary-id></span>
-          </p>
-          <p class="category-feedback-copy">
-            <span data-category-feedback-explain></span>
-            <span class="category-feedback-explain-id" lang="id" data-category-feedback-explain-id></span>
-          </p>
         </div>
       </section>
 
@@ -70,27 +61,13 @@
     </main>
   </div>
 
-  <div class="modal-overlay hidden" data-category-complete>
-    <section class="completion-modal" role="dialog" aria-modal="true" aria-labelledby="category-complete-title">
-      <div class="modal-badge" data-category-modal-badge>🎉</div>
-      <h3 id="category-complete-title" data-category-modal-title>答对了，真棒！</h3>
-      <p class="id-copy" data-category-modal-id>Bagus! Semua kata sudah benar.</p>
-      <p class="modal-description" data-category-modal-copy>
-        <span data-category-modal-copy-zh></span>
-        <span class="category-modal-id" lang="id" data-category-modal-copy-id></span>
-      </p>
-      <div class="category-modal-actions">
-        <a class="primary-button" href="classroom.html?activities=1" data-category-change>换一个题型</a>
-        <a class="secondary-button" href="classroom.html" data-category-return>返回课堂</a>
-      </div>
-    </section>
-  </div>
-
   <script type="module" src="shared/activity-types.js"></script>
   <script type="module" src="shared/activity-fab.js"></script>
   <script type="module" src="shared/activity-bridge.js"></script>
   <script type="module" src="app.js"></script>
   <script type="module" src="shared/activity-page.js"></script>
+  <script type="module" src="shared/feedback-copy.js"></script>
+  <script type="module" src="shared/feedback-modal.js"></script>
   <script type="module" src="interaction-category.js"></script>
 </body>
 </html>

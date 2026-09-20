@@ -3,11 +3,16 @@
 
   const DEFAULT_BADGE = "🎉";
   const TIER_EMOJI = {
-    correct: "🎉",
+    correct: "🤩",
     correctFirstTry: "🏆",
     wrong: "💪"
   };
   const TIERS = ["correct", "correctFirstTry", "wrong"];
+  /* 标准动作的印尼语副行（按钮第二行小字）：全站统一口径 */
+  const STANDARD_SUBLABELS = {
+    "返回课堂": "Kembali ke kelas",
+    "再练一次": "Coba lagi"
+  };
   let overlay = null;
 
   function ensureOverlay() {
@@ -88,14 +93,31 @@
       const button = doc.createElement("button");
       button.type = "button";
       button.className = actions.children.length === 0 ? "primary-button" : "secondary-button";
+      const subLabel = typeof item.subLabel === "string" && item.subLabel
+        ? item.subLabel
+        : STANDARD_SUBLABELS[item.label] || "";
+
+      const main = doc.createElement("span");
+      main.className = "btn-main";
       if (typeof item.icon === "string" && item.icon) {
         const icon = doc.createElement("span");
         icon.className = "action-icon";
         icon.setAttribute("aria-hidden", "true");
         icon.textContent = item.icon;
-        button.appendChild(icon);
+        main.appendChild(icon);
       }
-      button.appendChild(doc.createTextNode(item.label));
+      main.appendChild(doc.createTextNode(item.label));
+
+      if (subLabel) {
+        button.classList.add("btn-stacked");
+        const sub = doc.createElement("span");
+        sub.className = "btn-id";
+        sub.setAttribute("lang", "id");
+        sub.textContent = subLabel;
+        button.append(main, sub);
+      } else {
+        button.appendChild(main);
+      }
       if (typeof item.onSelect === "function") {
         button.addEventListener("click", function () { item.onSelect(); });
       }

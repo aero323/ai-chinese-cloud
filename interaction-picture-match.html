@@ -25,52 +25,12 @@
     </header>
 
     <main class="page page-content">
-      <div class="game-intro">
-        <div>
-          <h2>把图片和词语配成对</h2>
-          <p>先点左边的图，再点右边对应的词，配对成功会变绿打勾。<br>Ketuk gambar di kiri, lalu kata yang cocok di kanan.</p>
-        </div>
-        <span class="progress-pill" data-activity-step>题型体验</span>
-      </div>
-
       <section class="pm-card" aria-label="图片与词语配对作答区">
-        <div class="pm-card-head">
-          <span class="pm-type-badge">
-            <span aria-hidden="true" data-pm-badge-icon>🧩</span>
-            <strong data-pm-badge-name>图片—词语连线</strong>
-          </span>
-          <span class="pm-head-pills">
-            <span class="progress-pill" data-pm-step>第 1 / 1 题</span>
-            <span class="progress-pill" data-pm-progress>0 / 4 组</span>
-          </span>
-        </div>
-
         <div class="match-board" data-pm-board role="group" aria-label="图片与词语配对（左列图片，右列词语）"></div>
       </section>
 
       <p class="pm-announcer" data-pm-announcer role="status" aria-live="polite"></p>
-
-      <div class="helper-note">
-        <span aria-hidden="true">💡</span>
-        <div>配错了会抖一下，可以继续尝试。<br>Kalau salah, kartunya bergetar—kamu bisa mencoba lagi.</div>
-      </div>
-
-      <p class="activity-status" data-activity-status>当前状态：待作答</p>
-      <p class="activity-meta" data-activity-meta></p>
     </main>
-  </div>
-
-  <div class="modal-overlay hidden" data-pm-complete>
-    <section class="completion-modal" role="dialog" aria-modal="true" aria-labelledby="pm-complete-title">
-      <div class="modal-badge" data-pm-modal-badge>🎉</div>
-      <h3 id="pm-complete-title" data-pm-modal-title>4 组全部配对成功！</h3>
-      <p class="id-copy" data-pm-modal-id>Semua pasangan benar!</p>
-      <p class="modal-description" data-pm-modal-copy>学校 xué xiào · 医院 yī yuàn · 商店 shāng diàn · 公园 gōng yuán。可以换一个题型再练一练，或者回到课堂。</p>
-      <div class="pm-modal-actions">
-        <a class="primary-button" href="classroom.html?activities=1" data-pm-change>换一个题型</a>
-        <a class="secondary-button" href="classroom.html" data-pm-return>返回课堂</a>
-      </div>
-    </section>
   </div>
 
   <script type="module" src="shared/activity-types.js"></script>
@@ -78,6 +38,8 @@
   <script type="module" src="shared/activity-bridge.js"></script>
   <script type="module" src="app.js"></script>
   <script type="module" src="shared/activity-page.js"></script>
+  <script type="module" src="shared/feedback-copy.js"></script>
+  <script type="module" src="shared/feedback-modal.js"></script>
   <script type="module" src="interaction-picture-match.js"></script>
 </body>
 </html>

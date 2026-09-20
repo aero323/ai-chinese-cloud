@@ -1,12 +1,13 @@
 /* 分类归组 · interaction-category.html 页面脚本
    状态机：待作答 → 已选择 → 已提交 → 正确 / 错误（每题只判一次，不提供重试）。
-   进度记账和课堂跳转都由 shared/activity-bridge.js 负责，本页只做界面并调用 finish()。
+   进度记账由 shared/activity-bridge.js 负责（课堂跳转由完成弹窗的按钮执行），本页只做界面并调用 finish()。
    交互只做点选：点词 → 点类别框 → 放进去；点框里的词 → 拿回待归类区。 */
 (function (global) {
   "use strict";
 
   const SOLO_MODAL_DELAY = 2000;      // 体验模式：提交后留多久看对错，再弹完成弹窗
-  const CLASS_REDIRECT_DELAY = 2600;  // 课堂模式：公共脚本按这个延迟跳转
+  const modal = global.AICloudFeedbackModal || null;
+  const copy = global.AICloudFeedbackCopy || {};
 
   /* 单题数据（题型体验用的模拟题目）：2 个类别 + 6 个待归类的词 */
   const GROUPS = [
@@ -14,17 +15,15 @@
     { id: "drink", name: "喝", nameId: "minum" }
   ];
 
+  /* meaningId = 词的印尼语意思，跟在拼音后面显示，进类别框也跟着走 */
   const WORDS = [
-    { id: "rice", text: "米饭", pinyin: "mǐfàn", group: "eat" },
-    { id: "water", text: "水", pinyin: "shuǐ", group: "drink" },
-    { id: "bread", text: "面包", pinyin: "miànbāo", group: "eat" },
-    { id: "tea", text: "茶", pinyin: "chá", group: "drink" },
-    { id: "dumpling", text: "饺子", pinyin: "jiǎozi", group: "eat" },
-    { id: "juice", text: "果汁", pinyin: "guǒzhī", group: "drink" }
+    { id: "rice", text: "米饭", pinyin: "mǐfàn", meaningId: "nasi", group: "eat" },
+    { id: "water", text: "水", pinyin: "shuǐ", meaningId: "air", group: "drink" },
+    { id: "bread", text: "面包", pinyin: "miànbāo", meaningId: "roti", group: "eat" },
+    { id: "tea", text: "茶", pinyin: "chá", meaningId: "teh", group: "drink" },
+    { id: "dumpling", text: "饺子", pinyin: "jiǎozi", meaningId: "jiaozi", group: "eat" },
+    { id: "juice", text: "果汁", pinyin: "guǒzhī", meaningId: "jus", group: "drink" }
   ];
-
-  const EXPLAIN_ZH = "「吃」后面接要嚼的食物，「喝」后面接液体。饺子是食物，果汁是饮料。";
-  const EXPLAIN_ID = '"吃" diikuti makanan yang perlu dikunyah, "喝" diikuti cairan. Jiaozi adalah makanan, jus adalah minuman.';
 
   const el = {};
   let placed = {};        // 词 id → 类别 id（提交后只剩放对的词）
@@ -33,6 +32,7 @@
   let submitted = false;
   let finished = false;
   let lastCorrect = false;
+  let attempts = 0;
   let lastSeconds = 0;
   let startedAt = 0;
   let modalTimer = 0;
@@ -79,29 +79,15 @@
 
   function cache() {
     el.pool = document.querySelector("[data-category-pool]");
-    el.poolDone = document.querySelector("[data-category-pool-done]");
     el.groups = document.querySelector("[data-category-groups]");
     el.submit = document.querySelector("[data-category-submit]");
     el.submitLabel = document.querySelector("[data-category-submit-label]");
     el.submitLabelId = document.querySelector("[data-category-submit-label-id]");
     el.reset = document.querySelector("[data-category-reset]");
     el.feedback = document.querySelector("[data-category-feedback]");
-    el.feedbackIcon = document.querySelector("[data-category-feedback-icon]");
     el.feedbackTitle = document.querySelector("[data-category-feedback-title]");
     el.feedbackTitleId = document.querySelector("[data-category-feedback-title-id]");
-    el.feedbackSummaryZh = document.querySelector("[data-category-feedback-summary-zh]");
-    el.feedbackSummaryId = document.querySelector("[data-category-feedback-summary-id]");
-    el.feedbackExplain = document.querySelector("[data-category-feedback-explain]");
-    el.feedbackExplainId = document.querySelector("[data-category-feedback-explain-id]");
     el.announcer = document.querySelector("[data-category-announcer]");
-    el.modal = document.querySelector("[data-category-complete]");
-    el.modalBadge = document.querySelector("[data-category-modal-badge]");
-    el.modalTitle = document.querySelector("[data-category-modal-title]");
-    el.modalId = document.querySelector("[data-category-modal-id]");
-    el.modalCopyZh = document.querySelector("[data-category-modal-copy-zh]");
-    el.modalCopyId = document.querySelector("[data-category-modal-copy-id]");
-    el.modalChange = document.querySelector("[data-category-change]");
-    el.modalReturn = document.querySelector("[data-category-return]");
   }
 
   function activityBridge() {
@@ -140,10 +126,24 @@
 
     const text = document.createElement("strong");
     text.textContent = word.text;
+    /* 拼音 + 印尼语意思打包成一条：空间不够时整体换行，「·」不会落在行尾 */
+    const note = document.createElement("span");
+    note.className = "category-chip-note";
     const pinyin = document.createElement("small");
     pinyin.textContent = word.pinyin;
+    const sep = document.createElement("i");
+    sep.className = "category-chip-sep";
+    sep.setAttribute("aria-hidden", "true");
+    sep.textContent = "·";
+    const meaning = document.createElement("span");
+    meaning.className = "category-chip-id";
+    meaning.lang = "id";
+    meaning.textContent = word.meaningId;
+    note.appendChild(pinyin);
+    note.appendChild(sep);
+    note.appendChild(meaning);
     chip.appendChild(text);
-    chip.appendChild(pinyin);
+    chip.appendChild(note);
 
     if (place === "group") {
       if (submitted) {
@@ -197,29 +197,6 @@
     rest.forEach(function (word) {
       el.pool.appendChild(buildPoolItem(word));
     });
-    setHidden(el.poolDone, submitted || rest.length > 0);
-  }
-
-  function buildGroupEmpty(group) {
-    const empty = document.createElement("p");
-    empty.className = "category-group-empty";
-    const zh = document.createElement("span");
-    const id = document.createElement("span");
-    id.lang = "id";
-    if (submitted) {
-      zh.textContent = "这个类别里没有词。";
-      id.textContent = "Tidak ada kata di kategori ini.";
-    } else if (selectedId) {
-      zh.textContent = "点这里，放进「" + group.name + "」。";
-      id.textContent = "Ketuk: masukkan ke sini.";
-    } else {
-      zh.textContent = "先点一个词，再点这里。";
-      id.textContent = "Ketuk kata dulu, lalu ke sini.";
-    }
-    empty.appendChild(zh);
-    empty.appendChild(document.createElement("br"));
-    empty.appendChild(id);
-    return empty;
   }
 
   function buildGroup(group) {
@@ -242,25 +219,16 @@
     nameId.className = "category-group-id";
     nameId.lang = "id";
     nameId.textContent = group.nameId;
-    const count = document.createElement("span");
-    count.className = "category-group-count";
-    count.setAttribute("aria-hidden", "true");
-    count.textContent = String(placedList(group.id).length);
     head.appendChild(name);
     head.appendChild(nameId);
-    head.appendChild(count);
 
     const items = document.createElement("div");
     items.className = "category-group-items";
     items.dataset.categoryGroupItems = group.id;
     const list = placedList(group.id);
-    if (list.length === 0) {
-      items.appendChild(buildGroupEmpty(group));
-    } else {
-      list.forEach(function (word) {
-        items.appendChild(buildChip(word, { place: "group" }));
-      });
-    }
+    list.forEach(function (word) {
+      items.appendChild(buildChip(word, { place: "group" }));
+    });
 
     box.classList.toggle("is-filled", list.length > 0);
     box.classList.toggle("is-ready", !!selectedId && !submitted);
@@ -364,31 +332,17 @@
     if (!el.feedback) return;
     el.feedback.classList.add("hidden");
     el.feedback.classList.remove("is-correct", "is-wrong");
-    setText(el.feedbackIcon, "");
     setText(el.feedbackTitle, "");
     setText(el.feedbackTitleId, "");
-    setText(el.feedbackSummaryZh, "");
-    setText(el.feedbackSummaryId, "");
-    setText(el.feedbackExplain, "");
-    setText(el.feedbackExplainId, "");
   }
 
-  function showFeedback(wrong) {
+  /* 反馈只留一行标题：对错靠颜色，说明交给词自己的位置和弹窗 */
+  function showFeedback() {
     if (!el.feedback) return;
     el.feedback.classList.remove("hidden", "is-correct", "is-wrong");
     el.feedback.classList.add(lastCorrect ? "is-correct" : "is-wrong");
-    setText(el.feedbackIcon, lastCorrect ? "✓" : "✗");
     setText(el.feedbackTitle, lastCorrect ? "答对了！" : "再想想");
     setText(el.feedbackTitleId, lastCorrect ? "Bagus, semua benar!" : "Coba pikir lagi ya!");
-    setText(el.feedbackSummaryZh, lastCorrect
-      ? WORDS.length + " 个词全部分类正确。"
-      : "有 " + wrong.length + " 个词放错了，已经放回上面的待归类区。");
-    setText(el.feedbackSummaryId, lastCorrect
-      ? WORDS.length + " kata sudah dikelompokkan dengan benar."
-      : wrong.length + " kata salah dan sudah dikembalikan ke atas.");
-
-    setText(el.feedbackExplain, "解析：" + EXPLAIN_ZH);
-    setText(el.feedbackExplainId, "Penjelasan: " + EXPLAIN_ID);
     if (typeof el.feedback.focus === "function") el.feedback.focus({ preventScroll: true });
     if (typeof el.feedback.scrollIntoView === "function") el.feedback.scrollIntoView({ block: "center" });
   }
@@ -398,26 +352,36 @@
     finished = true;
     const bridge = activityBridge();
     if (!bridge || typeof bridge.finish !== "function") return { recorded: false, next: "" };
-    return bridge.finish({ correct: lastCorrect, seconds: lastSeconds, delay: CLASS_REDIRECT_DELAY });
+    return bridge.finish({ correct: lastCorrect, seconds: lastSeconds });
   }
 
-  function showModal() {
-    if (!el.modal) return;
-    setText(el.modalBadge, lastCorrect ? "🎉" : "💪");
-    setText(el.modalTitle, lastCorrect ? "答对了，真棒！" : "再想想也没关系");
-    setText(el.modalId, lastCorrect ? "Bagus! Semua kata sudah benar." : "Tidak apa-apa, coba lagi ya!");
-    setText(el.modalCopyZh, lastCorrect
-      ? WORDS.length + " 个词全部分类正确。可以换一个题型再练一练，或者回到课堂。"
-      : "放错的词已经放回待归类区，上面写着它该去的类别。可以换一个题型再练一练。");
-    setText(el.modalCopyId, lastCorrect
-      ? "Semua kata sudah dikelompokkan dengan benar. Pilih aktivitas lain atau kembali ke kelas."
-      : "Kata yang salah sudah dikembalikan, lihat kategorinya di atas. Pilih aktivitas lain untuk berlatih lagi.");
-    el.modal.classList.remove("hidden");
-    if (el.modalChange && typeof el.modalChange.focus === "function") el.modalChange.focus();
+  function openModal(tier, praise) {
+    if (!modal || typeof modal.open !== "function") return;
+    modal.open({
+      tier: tier,
+      badge: praise ? praise.emoji : "",
+      titleZh: praise ? praise.zh : "",
+      titleId: praise ? praise.id : "",
+      actions: [
+        {
+          label: "返回课堂",
+          onSelect: function () {
+            if (global.location) global.location.href = "classroom.html";
+          }
+        },
+        { label: "再练一次", icon: "↻", onSelect: restartQuestion }
+      ]
+    });
   }
 
-  function hideModal() {
-    if (el.modal) el.modal.classList.add("hidden");
+  function closeModal() {
+    if (modal && typeof modal.close === "function") modal.close();
+  }
+
+  /* 再练一次：关掉弹窗，重新开始本题 */
+  function restartQuestion() {
+    closeModal();
+    startQuestion();
   }
 
   function submit() {
@@ -435,17 +399,20 @@
       }
     });
     lastCorrect = wrong.length === 0;
+    attempts += 1;
+    const tier = lastCorrect ? (attempts === 1 ? "correctFirstTry" : "correct") : "wrong";
+    const praise = typeof copy.draw === "function" ? copy.draw(tier) : null;
 
     render();
-    showFeedback(wrong);
+    showFeedback();
     announce(lastCorrect
-      ? "答对了！" + WORDS.length + " 个词全部分类正确。" + EXPLAIN_ZH
-      : "再想想。" + wrong.length + " 个词放错了，已经放回待归类区。" + EXPLAIN_ZH);
+      ? "答对了！" + WORDS.length + " 个词全部分类正确。"
+      : "再想想。" + wrong.length + " 个词放错了，已经放回上面的待归类区。");
 
-    const outcome = completeOnce();
-    // 课堂模式：公共脚本负责记账并在延迟后跳转；体验模式才由本页弹完成弹窗
-    if (outcome && outcome.recorded) return;
-    modalTimer = global.setTimeout(showModal, SOLO_MODAL_DELAY);
+    completeOnce(); /* 课堂模式记进度；完成弹窗两种模式都走，跳转由弹窗按钮负责 */
+    modalTimer = global.setTimeout(function () {
+      openModal(tier, praise);
+    }, SOLO_MODAL_DELAY);
   }
 
   function bindEvents() {
@@ -474,17 +441,11 @@
       });
     }
 
-    [el.modalChange, el.modalReturn].forEach(function (link) {
-      if (!link) return;
-      link.addEventListener("click", function () {
-        completeOnce();
-      });
-    });
   }
 
   function startQuestion() {
     global.clearTimeout(modalTimer);
-    hideModal();
+    closeModal();
     placed = {};
     wrongInfo = {};
     selectedId = "";

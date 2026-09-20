@@ -1,7 +1,7 @@
 
 /* 情景选择 · interaction-situation.html 页面脚本
    状态机：待作答 → 已选择 → 已提交 → 正确 / 错误（每题只判一次，不提供重试）。
-   进度记账和课堂跳转都由 shared/activity-bridge.js 负责，本页只做界面并调用 finish()。
+   进度记账由 shared/activity-bridge.js 负责（课堂跳转由完成弹窗的按钮执行），本页只做界面并调用 finish()。
    图槽数据固定保留 icon / image / imageAlt 三个字段：image 有值时渲染真图，
    为空时渲染 emoji；以后换真图只改 QUESTION 数据，不改页面结构和样式。 */
 (function (global) {
@@ -9,7 +9,8 @@
 
   const LETTERS = ["A", "B", "C", "D", "E", "F"];
   const SOLO_MODAL_DELAY = 2000;      // 体验模式：提交后留多久看对错，再弹完成弹窗
-  const CLASS_REDIRECT_DELAY = 2600;  // 课堂模式：公共脚本按这个延迟跳转
+  const modal = global.AICloudFeedbackModal || null;
+  const copy = global.AICloudFeedbackCopy || {};
 
   /* 单题数据（题型体验用的模拟题目；选项顺序在进入页面时打乱） */
   const QUESTION = {
@@ -20,11 +21,10 @@
     scene: "你想借同学的笔。",
     sceneId: "Kamu mau meminjam pulpen temanmu.",
     options: [
-      { id: "rude", text: "喂，给我笔！", why: "太生硬" },
-      { id: "polite", text: "请问，我可以借你的笔吗？", correct: true },
-      { id: "blunt", text: "笔。", why: "话没说完" }
+      { id: "rude", text: "喂，给我笔！", textId: "Hei, kasih aku pulpen!" },
+      { id: "polite", text: "请问，我可以借你的笔吗？", textId: "Permisi, boleh saya pinjam pulpenmu?", correct: true },
+      { id: "blunt", text: "笔。", textId: "Pulpen." }
     ],
-    reason: "向别人借东西要用「请问……可以吗」"
   };
 
   const el = {};
@@ -33,6 +33,7 @@
   let submitted = false;
   let finished = false;
   let lastCorrect = false;
+  let attempts = 0;
   let lastSeconds = 0;
   let startedAt = 0;
   let modalTimer = 0;
@@ -62,21 +63,16 @@
     el.scene = document.querySelector("[data-situation-scene-text]");
     el.options = document.querySelector("[data-situation-options]");
     el.submit = document.querySelector("[data-situation-submit]");
+    el.submitLabel = document.querySelector("[data-situation-submit-label]");
+    el.submitLabelId = document.querySelector("[data-situation-submit-label-id]");
     el.feedback = document.querySelector("[data-situation-feedback]");
-    el.feedbackIcon = document.querySelector("[data-situation-feedback-icon]");
+    el.feedbackTitleRow = document.querySelector("[data-situation-feedback-title-row]");
     el.feedbackTitle = document.querySelector("[data-situation-feedback-title]");
-    el.feedbackAnswer = document.querySelector("[data-situation-feedback-answer]");
-    el.feedbackCopy = document.querySelector("[data-situation-feedback-copy]");
+    el.feedbackIcon = document.querySelector("[data-situation-feedback-icon]");
+    el.feedbackSentence = document.querySelector("[data-situation-feedback-sentence]");
+    el.feedbackTranslation = document.querySelector("[data-situation-feedback-translation]");
+    el.optionsLabel = document.querySelector("[data-situation-options-label]");
     el.status = document.querySelector("[data-activity-status]");
-    el.badgeIcon = document.querySelector("[data-situation-type-icon]");
-    el.badgeName = document.querySelector("[data-situation-type-name]");
-    el.modal = document.querySelector("[data-situation-complete]");
-    el.modalBadge = document.querySelector("[data-situation-modal-badge]");
-    el.modalTitle = document.querySelector("[data-situation-modal-title]");
-    el.modalId = document.querySelector("[data-situation-modal-id]");
-    el.modalCopy = document.querySelector("[data-situation-modal-copy]");
-    el.modalChange = document.querySelector("[data-situation-change]");
-    el.modalReturn = document.querySelector("[data-situation-return]");
   }
 
   function activityBridge() {
@@ -96,13 +92,8 @@
     return bridge.context().mode;
   }
 
-  /* 题型角标文案和标题都取自题型清单，不在页面里另写一份 */
+  /* 页头标题由 shared/activity-page.js 从题型清单填，这里只管返回键的去向 */
   function applyShellText() {
-    const meta = activityMeta();
-    if (meta) {
-      setText(el.badgeIcon, meta.icon);
-      setText(el.badgeName, meta.title);
-    }
     const back = document.querySelector("[data-activity-back]");
     if (back) {
       const isClass = mode() === "class";
@@ -189,46 +180,21 @@
     el.feedback.classList.remove("is-correct", "is-wrong");
     setText(el.feedbackIcon, "");
     setText(el.feedbackTitle, "");
-    setText(el.feedbackAnswer, "");
-    setText(el.feedbackCopy, "");
+    setHidden(el.feedbackTitleRow, true);
+    setText(el.feedbackSentence, "");
+    setText(el.feedbackTranslation, "");
   }
 
   function showFeedback(isCorrect, correctOption) {
     if (!el.feedback || !correctOption) return;
     el.feedback.classList.remove("is-correct", "is-wrong");
     el.feedback.classList.add(isCorrect ? "is-correct" : "is-wrong");
-    setText(el.feedbackIcon, isCorrect ? "✓" : "✗");
-    setText(el.feedbackTitle, isCorrect ? "答对了！" : "再想想");
-    const answerLead = isCorrect ? "这个场合这样说最合适。" : "更合适的说法：";
-    const answerQuote = isCorrect
-      ? correctOption.text
-      : correctOption.letter + " " + correctOption.text;
-    el.feedbackAnswer.textContent = "";
-    el.feedbackAnswer.appendChild(document.createTextNode(answerLead));
-    if (isCorrect) {
-      const quote = document.createElement("span");
-      quote.className = "situation-feedback-quote";
-      quote.textContent = answerQuote;
-      el.feedbackAnswer.appendChild(quote);
-    } else {
-      el.feedbackAnswer.appendChild(document.createTextNode(answerQuote));
-    }
-    setText(el.feedbackCopy, buildExplanation());
+    setText(el.feedbackIcon, isCorrect ? "✓" : "");
+    setText(el.feedbackTitle, isCorrect ? "正确" : "");
+    setHidden(el.feedbackTitleRow, !isCorrect);
+    setText(el.feedbackSentence, isCorrect ? "" : correctOption.text);
+    setText(el.feedbackTranslation, isCorrect ? "" : correctOption.textId || "");
     el.feedback.classList.remove("hidden");
-  }
-
-  /* 解析里要说清楚另外两句为什么不合适：
-     选项每次进页面都会打乱，所以字母按当前屏幕上的 A / B / C 现算，
-     不能写死在数据里，不然说的就不是同一句了 */
-  function buildExplanation() {
-    const others = options.filter(function (option) {
-      return !option.correct && option.why;
-    });
-    const why = others.map(function (option) {
-      return option.letter + " " + option.why;
-    });
-    if (!why.length) return QUESTION.reason;
-    return QUESTION.reason + "；" + why.join("，") + "。";
   }
 
   function selectOption(id) {
@@ -243,23 +209,36 @@
     finished = true;
     const bridge = activityBridge();
     if (!bridge || typeof bridge.finish !== "function") return { recorded: false, next: "" };
-    return bridge.finish({ correct: lastCorrect, seconds: lastSeconds, delay: CLASS_REDIRECT_DELAY });
+    return bridge.finish({ correct: lastCorrect, seconds: lastSeconds });
   }
 
-  function showModal() {
-    if (!el.modal) return;
-    setText(el.modalBadge, lastCorrect ? "🎉" : "💪");
-    setText(el.modalTitle, lastCorrect ? "答对了，真棒！" : "再想想也没关系");
-    setText(el.modalId, lastCorrect ? "Bagus! Jawabanmu benar." : "Tidak apa-apa, coba lagi ya!");
-    setText(el.modalCopy, lastCorrect
-      ? "这个场合这样说最合适，可以换一个题型再练一练，或者回到课堂。"
-      : "更得体的说法和解析就在上面，可以换一个题型再练一练。");
-    el.modal.classList.remove("hidden");
-    if (el.modalChange && typeof el.modalChange.focus === "function") el.modalChange.focus();
+  function openModal(tier, praise) {
+    if (!modal || typeof modal.open !== "function") return;
+    modal.open({
+      tier: tier,
+      badge: praise ? praise.emoji : "",
+      titleZh: praise ? praise.zh : "",
+      titleId: praise ? praise.id : "",
+      actions: [
+        {
+          label: "返回课堂",
+          onSelect: function () {
+            if (global.location) global.location.href = "classroom.html";
+          }
+        },
+        { label: "再练一次", icon: "↻", onSelect: restartQuestion }
+      ]
+    });
   }
 
-  function hideModal() {
-    if (el.modal) el.modal.classList.add("hidden");
+  function closeModal() {
+    if (modal && typeof modal.close === "function") modal.close();
+  }
+
+  /* 再练一次：关掉弹窗，重新开始本题（选项重新打乱） */
+  function restartQuestion() {
+    closeModal();
+    startQuestion();
   }
 
   function submitAnswer() {
@@ -271,6 +250,9 @@
       return option.correct;
     })[0];
     lastCorrect = !!correctOption && selectedId === correctOption.id;
+    attempts += 1;
+    const tier = lastCorrect ? (attempts === 1 ? "correctFirstTry" : "correct") : "wrong";
+    const praise = typeof copy.draw === "function" ? copy.draw(tier) : null;
 
     eachOptionButton(function (button, option) {
       button.disabled = true;
@@ -280,7 +262,8 @@
 
     if (el.submit) {
       el.submit.disabled = true;
-      el.submit.textContent = "已提交";
+      setText(el.submitLabel, "已提交");
+      setText(el.submitLabelId, "Terkirim");
     }
 
     showFeedback(lastCorrect, correctOption);
@@ -290,19 +273,15 @@
       if (typeof el.feedback.scrollIntoView === "function") el.feedback.scrollIntoView({ block: "center" });
     }
 
-    const outcome = completeOnce();
-    if (outcome && outcome.recorded) {
-      setText(el.status, outcome.next === "complete.html"
-        ? "已提交，正在进入完成页…"
-        : "已提交，正在返回课堂继续下一题…");
-      return;
-    }
-    modalTimer = global.setTimeout(showModal, SOLO_MODAL_DELAY);
+    completeOnce();
+    modalTimer = global.setTimeout(function () {
+      openModal(tier, praise);
+    }, SOLO_MODAL_DELAY);
   }
 
   function startQuestion() {
     global.clearTimeout(modalTimer);
-    hideModal();
+    closeModal();
 
     submitted = false;
     finished = false;
@@ -314,7 +293,7 @@
         id: option.id,
         letter: LETTERS[index] || "?",
         text: option.text,
-        why: option.why || "",
+        textId: option.textId || "",
         correct: option.correct === true
       };
     });
@@ -326,19 +305,14 @@
     resetFeedback();
     if (el.submit) {
       el.submit.disabled = true;
-      el.submit.textContent = "提交答案";
+      setText(el.submitLabel, "提交");
+      setText(el.submitLabelId, "Kirim");
     }
     updateStatus();
   }
 
   function bindEvents() {
     if (el.submit) el.submit.addEventListener("click", submitAnswer);
-    [el.modalChange, el.modalReturn].forEach(function (link) {
-      if (!link) return;
-      link.addEventListener("click", function () {
-        completeOnce();
-      });
-    });
   }
 
   function boot() {

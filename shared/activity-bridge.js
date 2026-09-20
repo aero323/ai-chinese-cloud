@@ -10,6 +10,7 @@
     phase: "live",
     task1Done: false,
     task2Done: false,
+    task3Done: false,
     results: []
   };
 
@@ -58,6 +59,7 @@
     const patch = { results: results };
     if (slot === 1) patch.task1Done = true;
     if (slot === 2) patch.task2Done = true;
+    if (slot === 3) patch.task3Done = true;
     return write(patch);
   }
 
@@ -92,7 +94,9 @@
     outcome.recorded = true;
     outcome.next = "classroom.html";
     const delay = Math.max(0, Number(result && result.delay) || 0);
-    if (typeof global.setTimeout === "function" && global.location) {
+    /* 默认不自动跳转：课堂模式改由完成弹窗的【返回课堂】按钮负责；
+       调用方明确传了正数 delay 时，仍保留定时跳转能力。 */
+    if (delay > 0 && typeof global.setTimeout === "function" && global.location) {
       global.setTimeout(function () {
         global.location.href = outcome.next;
       }, delay);
