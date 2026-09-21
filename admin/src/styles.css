@@ -3080,6 +3080,10 @@ strong {
   gap: 5px;
 }
 
+.interaction-manage-type {
+  margin: 0 0 9px;
+}
+
 .interaction-type-chips span,
 .lesson-tags span {
   padding: 4px 8px;

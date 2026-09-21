@@ -179,8 +179,7 @@ export function TeacherInteractions() {
         {filteredSets.map((set) => {
           const version = getCurrentInteractionVersion(state, set);
           const lesson = getLesson(state, set.lessonId);
-          const typeCounts = new Map<string, number>();
-          version?.items.forEach((item) => typeCounts.set(item.type, (typeCounts.get(item.type) ?? 0) + 1));
+          const primaryType = version?.items[0]?.type;
           return (
             <Card className="interaction-manage-card" key={set.id}>
               <div className="interaction-manage-head">
@@ -189,6 +188,11 @@ export function TeacherInteractions() {
                 </span>
               </div>
               <h2>{set.title}</h2>
+              {primaryType && (
+                <div className="interaction-type-chips interaction-manage-type">
+                  <span>{interactionTypeShortLabel(primaryType)}</span>
+                </div>
+              )}
               <p>{set.description}</p>
               <div className="interaction-lesson-ref">
                 <BookOpen size={16} />
@@ -210,13 +214,6 @@ export function TeacherInteractions() {
                 ) : (
                   <span className="scope-all">全部课次（{sessionsOfLesson(set.lessonId).length} 节）</span>
                 )}
-              </div>
-              <div className="interaction-type-chips">
-                {[...typeCounts.entries()].map(([type, count]) => (
-                  <span key={type}>
-                    {interactionTypeShortLabel(type as InteractionType)} × {count}
-                  </span>
-                ))}
               </div>
               <div className="interaction-manage-footer">
                 <small><Clock3 size={14} /> {formatDateTime(set.updatedAt, state.ui.timeZone, state.ui.language)}</small>
