@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { FilePlus2, Filter, Layers3, Plus, Search, Sparkles, UploadCloud } from "lucide-react";
+import { Filter, Layers3, Plus, Search, Sparkles, UploadCloud } from "lucide-react";
 import { platform } from "../../lib/platform";
 import { usePlatformStore } from "../../store/usePlatformStore";
 import { currentUser, getLesson, getTeacherSessions } from "../../lib/domain";
@@ -134,25 +134,7 @@ export function TeacherMaterials() {
           const refs = state.materialRefs.filter((ref) => ref.materialId === material.id);
           return (
             <div className="material-card-wrap" key={material.id}>
-              <MaterialCard
-                material={material}
-                actions={
-                  <>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() =>
-                        run(
-                          () => platform.addMaterialVersion({ materialId: material.id, fileName: `${material.title}-v${material.currentVersion + 1}.pdf`, sizeLabel: `${28 + material.currentVersion * 6} KB`, actorId: user.id }),
-                          "已模拟上传新版本"
-                        )
-                      }
-                    >
-                      <FilePlus2 size={15} /> 新版本
-                    </Button>
-                  </>
-                }
-              />
+              <MaterialCard material={material} />
               <div className="material-refs">
                 {refs.length === 0 && <Badge tone="neutral">未关联课节</Badge>}
                 {refs.map((ref) => (

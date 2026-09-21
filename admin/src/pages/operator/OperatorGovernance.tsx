@@ -83,6 +83,7 @@ export function OperatorGovernance() {
             <div className="material-card-wrap" key={material.id}>
               <MaterialCard
                 material={material}
+                showVersion
                 actions={
                   <Button
                     size="sm"

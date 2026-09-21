@@ -3,7 +3,19 @@ import { Download, FileAudio, FileImage, FileText, FileVideo, Link2, PlayCircle,
 import type { Material } from "../domain/types";
 import { Badge, Button } from "./ui";
 
-export function MaterialCard({ material, actions, onDownload, onOpen }: { material: Material; actions?: ReactNode; onDownload?: () => void; onOpen?: () => void }) {
+export function MaterialCard({
+  material,
+  actions,
+  onDownload,
+  onOpen,
+  showVersion = false
+}: {
+  material: Material;
+  actions?: ReactNode;
+  onDownload?: () => void;
+  onOpen?: () => void;
+  showVersion?: boolean;
+}) {
   const Icon =
     material.fileType === "pptx"
       ? Presentation
@@ -31,7 +43,7 @@ export function MaterialCard({ material, actions, onDownload, onOpen }: { materi
         </div>
         <p>{material.description}</p>
         <div className="material-meta">
-          <span>v{material.currentVersion}</span>
+          {showVersion && <span>v{material.currentVersion}</span>}
           <span>{current?.sizeLabel ?? "外链"}</span>
           <span>{material.downloadCount} 次下载</span>
         </div>
