@@ -36,9 +36,7 @@ export function AssignSessionsModal({
       width="760px"
       footer={
         <div className="modal-footer-split">
-          <span>
-            {selected.length === 0 ? "未勾选 = 作用于该课节的全部课次" : `已选 ${selected.length} 节课次`}
-          </span>
+          <span>{selected.length > 0 ? `已选 ${selected.length} 节课次` : ""}</span>
           <div>
             <Button variant="ghost" onClick={onClose}>取消</Button>
             <Button onClick={() => onSave(selected)}>保存配置</Button>
