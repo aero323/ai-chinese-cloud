@@ -86,7 +86,6 @@ export function TeacherMaterials() {
       <PageHeader
         eyebrow="Material library"
         title={t("teacher.materialLibrary")}
-        description={`${t("teacher.materialHint")}课节与排课由运营创建，你只需为自己课次准备材料；互动题目可以直接引用模板库。`}
         actions={
           libraryTab === "materials" ? (
             <Button onClick={() => setUploadOpen(true)}><UploadCloud size={17} /> 模拟上传材料</Button>
