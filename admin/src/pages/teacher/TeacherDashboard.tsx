@@ -165,12 +165,7 @@ export function TeacherDashboard() {
               <span className="eyebrow">Recent content</span>
               <h2>最近添加</h2>
             </div>
-            <div className="card-heading-trailing">
-              <Button variant="ghost" size="sm" onClick={() => navigate("/teacher/interactions")}>
-                查看互动设计 <ArrowRight size={15} />
-              </Button>
-              <ClipboardList size={20} />
-            </div>
+            <ClipboardList size={20} />
           </div>
           <div className="recent-content-list">
             {recentContent.map((item) => (

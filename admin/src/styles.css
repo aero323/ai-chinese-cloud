@@ -555,12 +555,6 @@ strong {
   font-size: 12px;
 }
 
-.card-heading-trailing {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  white-space: nowrap;
-}
 
 .eyebrow {
   display: block;
