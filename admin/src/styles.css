@@ -2864,6 +2864,48 @@ strong {
   white-space: nowrap;
 }
 
+.recent-content-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.recent-content-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.recent-content-row strong {
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recent-content-kind {
+  padding: 3px 8px;
+  border-radius: 8px;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.recent-content-kind.kind-material {
+  color: #5c4ed0;
+  background: #f1eeff;
+}
+
+.recent-content-kind.kind-interaction {
+  color: #0f8a63;
+  background: #e6f7f0;
+}
+
 .content-health-list > div,
 .readiness-list > div,
 .mastery-list > div,

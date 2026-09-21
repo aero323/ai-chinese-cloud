@@ -13,7 +13,7 @@ import {
   UsersRound
 } from "lucide-react";
 import { usePlatformStore } from "../../store/usePlatformStore";
-import { currentUser, getBookedCount, getLesson, teacherMetrics } from "../../lib/domain";
+import { currentUser, getBookedCount, getLesson, setAppliesToSession, teacherMetrics } from "../../lib/domain";
 import { formatDateTime, formatRange } from "../../lib/format";
 import { buildTeacherLiveDemo, setTeacherDemoMode, useTeacherDemoMode } from "../../lib/teacherLiveDemo";
 import { Badge, Button, Card, PageHeader, ProgressBar, StatCard } from "../../components/ui";
@@ -37,19 +37,39 @@ export function TeacherDashboard() {
   const todaySessions = liveDemo
     ? [liveDemo.session, ...today.filter((session) => session.id !== liveDemo.session.id)]
     : today;
-  const healthItems = liveDemo
-    ? [
-        { id: "live-interaction", phase: "live", badge: "课中", label: activeInteraction?.title ?? "实时互动", ready: true },
-        { id: "live-courseware", phase: "live", badge: "课中", label: "课堂课件已投影", ready: true },
-        { id: "live-review", phase: "review", badge: "课后", label: "回顾数据待归档", ready: false }
-      ]
-    : next
-      ? [
-          { id: "next-preview", phase: "preview", badge: "课前", label: "预习互动已发布", ready: true },
-          { id: "next-live", phase: "live", badge: "课中", label: "课堂材料已关联", ready: true },
-          { id: "next-review", phase: "review", badge: "课后", label: "复习内容待确认", ready: false }
-        ]
-      : [];
+  const phaseLabels: Record<string, string> = { preview: "课前", live: "课中", review: "课后" };
+  const focusSession = liveDemo?.session ?? next;
+  /** 每个学习阶段取最近添加的一条内容（课件或互动），一共三条。 */
+  const recentContent = (["preview", "live", "review"] as const)
+    .map((phase) => {
+      const materials = state.materialRefs
+        .filter((ref) => ref.lessonId === focusSession?.lessonId && ref.phase === phase && ref.published)
+        .map((ref) => state.materials.find((material) => material.id === ref.materialId))
+        .filter((material) => material !== undefined)
+        .map((material) => ({
+          id: `material-${material!.id}`,
+          phase,
+          kind: "material" as const,
+          title: material!.title,
+          at: material!.createdAt
+        }));
+      const sets = state.interactionSets
+        .filter((set) =>
+          set.lessonId === focusSession?.lessonId &&
+          set.phase === phase &&
+          set.status === "published" &&
+          setAppliesToSession(set, focusSession?.id)
+        )
+        .map((set) => ({
+          id: `set-${set.id}`,
+          phase,
+          kind: "interaction" as const,
+          title: set.title,
+          at: set.updatedAt
+        }));
+      return [...materials, ...sets].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())[0] ?? null;
+    })
+    .filter((item) => item !== null);
 
   return (
     <>
@@ -142,8 +162,8 @@ export function TeacherDashboard() {
         <Card>
           <div className="card-heading">
             <div>
-              <span className="eyebrow">Content health</span>
-              <h2>内容准备度</h2>
+              <span className="eyebrow">Recent content</span>
+              <h2>最近添加</h2>
             </div>
             <div className="card-heading-trailing">
               <Button variant="ghost" size="sm" onClick={() => navigate("/teacher/interactions")}>
@@ -152,21 +172,15 @@ export function TeacherDashboard() {
               <ClipboardList size={20} />
             </div>
           </div>
-          <div className="content-health-list">
-            {healthItems.map((item) => (
-              <div key={item.id}>
-                <span className={`health-dot ${item.ready ? "done" : ""}`} />
-                <div>
-                  <span className="content-health-title">
-                    <span className={`phase-badge phase-${item.phase} content-health-badge`}>{item.badge}</span>
-                    <strong>{item.label}</strong>
-                  </span>
-                  <small>{item.ready ? "已准备好" : liveDemo ? "课堂结束后自动整理" : "建议课前完成检查"}</small>
-                </div>
-                <ProgressBar value={item.ready ? 100 : 45} tone={item.ready ? "mint" : "orange"} />
+          <div className="recent-content-list">
+            {recentContent.map((item) => (
+              <div className="recent-content-row" key={item.id}>
+                <span className={`phase-badge phase-${item.phase}`}>{phaseLabels[item.phase]}</span>
+                <strong title={item.title}>{item.title}</strong>
+                <span className={`recent-content-kind kind-${item.kind}`}>{item.kind === "material" ? "课件" : "互动"}</span>
               </div>
             ))}
-            {healthItems.length === 0 && <p className="muted-copy">暂时没有待检查的课程内容。</p>}
+            {recentContent.length === 0 && <p className="muted-copy">这节课还没有添加课件或互动。</p>}
           </div>
         </Card>
       </div>
