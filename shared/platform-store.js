@@ -90,14 +90,20 @@
         merged.interactionTemplates.push(clone(template));
       }
     });
-    const demoInteractionSetIds = ["set-greetings-scenario", "set-greetings-batch-three"];
+    const demoInteractionSetIds = ["set-greetings-scenario", "set-greetings-batch-three", "set-food-preview", "set-food-live", "set-food-review"];
     demoInteractionSetIds.forEach((setId) => {
       const demoSet = (seeded.interactionSets || []).find((set) => set.id === setId);
-      if (!demoSet || merged.interactionSets.some((set) => set.id === demoSet.id)) return;
-      merged.interactionSets.push(clone(demoSet));
+      if (!demoSet) return;
+      if (!merged.interactionSets.some((set) => set.id === demoSet.id)) {
+        merged.interactionSets.push(clone(demoSet));
+      }
       (seeded.interactionVersions || [])
         .filter((version) => version.setId === demoSet.id)
-        .forEach((version) => merged.interactionVersions.push(clone(version)));
+        .forEach((version) => {
+          if (!merged.interactionVersions.some((item) => item.id === version.id)) {
+            merged.interactionVersions.push(clone(version));
+          }
+        });
     });
 
     // Repair core demo scenarios for users who already have an older v2 snapshot.
