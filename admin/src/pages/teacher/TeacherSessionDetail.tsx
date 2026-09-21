@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { ArrowLeft, CalendarClock, Eye, FileText, Layers3, Lock, MapPin, Plus, Send, UsersRound } from "lucide-react";
 import { usePlatformStore } from "../../store/usePlatformStore";
 import { getBookedCount, getCurrentInteractionVersion, getLesson, getSession, getStudent, getUser, setsForSession } from "../../lib/domain";
-import { formatDate, formatRange, timeZoneLabel } from "../../lib/format";
+import { formatDate, formatRange } from "../../lib/format";
 import { Avatar, Badge, Button, Card, EmptyState, Field, Modal, PageHeader, ProgressBar, Select, SourceBadge, TextInput } from "../../components/ui";
 import { platform } from "../../lib/platform";
 import { interactionTypeShortLabel } from "../../lib/interactionTypes";
@@ -80,7 +80,6 @@ export function TeacherSessionDetail() {
             <span><UsersRound size={16} /> {booked}/{session.capacity}</span>
           </div>
         </div>
-        <div className="timezone-note">{timeZoneLabel(state.ui.timeZone)}</div>
       </section>
 
       <div className="dashboard-columns teacher-detail-layout">
@@ -99,21 +98,17 @@ export function TeacherSessionDetail() {
               const profile = getStudent(state, booking.studentId);
               if (!user || !profile) return null;
               return (
-                <article className="roster-row" key={booking.id}>
+                <article className="roster-row roster-row-compact" key={booking.id}>
                   <Avatar label={user.avatar} tone="purple" />
                   <div>
                     <strong>{user.name}</strong>
                     <small>{profile.level} · {profile.program}</small>
-                  </div>
-                  <div className="roster-tags">
-                    {profile.tags.slice(0, 2).map((tag) => <Badge key={tag} tone="neutral">{tag}</Badge>)}
                   </div>
                   <SourceBadge source={booking.source} />
                 </article>
               );
             })}
           </div>
-          <p className="privacy-note">{t("teacher.noContact")}</p>
         </Card>
 
         <div className="teacher-detail-side">

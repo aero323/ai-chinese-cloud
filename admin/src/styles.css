@@ -2940,15 +2940,6 @@ strong {
   line-height: 1.6;
 }
 
-.timezone-note {
-  padding: 10px 13px;
-  color: var(--purple);
-  border-radius: 12px;
-  background: var(--purple-soft);
-  font-size: 10px;
-  font-weight: 850;
-}
-
 .teacher-detail-layout,
 .operator-detail-layout {
   margin-top: 20px;
@@ -2972,6 +2963,10 @@ strong {
   background: #fff;
 }
 
+.roster-row-compact {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
 .roster-row strong,
 .roster-row small {
   display: block;
@@ -2981,21 +2976,6 @@ strong {
   margin-top: 3px;
   color: var(--muted);
   font-size: 9px;
-}
-
-.roster-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-
-.privacy-note {
-  margin: 14px 0 0;
-  padding: 10px;
-  color: var(--muted);
-  border-radius: 11px;
-  background: #f7f7fb;
-  font-size: 10px;
 }
 
 .teacher-detail-side {
@@ -4279,10 +4259,6 @@ strong {
     grid-template-columns: auto minmax(0, 1fr) auto;
   }
 
-  .roster-tags {
-    grid-column: 2 / -1;
-  }
-
   .teacher-session-hero,
   .operator-session-summary,
   .student-profile-hero {
@@ -4297,11 +4273,6 @@ strong {
 
   .capacity-ring,
   .profile-joined,
-  .timezone-note {
-    width: 100%;
-    margin: 0 auto;
-  }
-
   .lesson-overview-meta,
   .profile-name-row {
     justify-content: center;
