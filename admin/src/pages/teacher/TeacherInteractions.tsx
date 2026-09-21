@@ -193,7 +193,6 @@ export function TeacherInteractions() {
                   <span>{interactionTypeShortLabel(primaryType)}</span>
                 </div>
               )}
-              <p>{set.description}</p>
               <div className="interaction-lesson-ref">
                 <BookOpen size={16} />
                 <span>{lesson?.coverEmoji} {lesson?.title}</span>
