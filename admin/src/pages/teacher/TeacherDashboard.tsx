@@ -8,7 +8,6 @@ import {
   ClipboardList,
   Clock3,
   PlayCircle,
-  Radio,
   TrendingUp,
   UsersRound
 } from "lucide-react";
@@ -90,7 +89,6 @@ export function TeacherDashboard() {
             <div className="teacher-live-meta">
               <span><Clock3 size={14} /> 已进行 {liveDemo.elapsedMinutes} 分钟</span>
               <span><UsersRound size={14} /> {liveDemo.presentCount}/{liveDemo.participantTotal} 人在线</span>
-              <span><Radio size={14} /> {liveDemo.interactions.length} 组互动同步中</span>
             </div>
           </div>
 
