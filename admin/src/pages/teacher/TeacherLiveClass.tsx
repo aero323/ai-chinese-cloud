@@ -26,7 +26,7 @@ import {
 import { usePlatformStore } from "../../store/usePlatformStore";
 import { currentUser, getCurrentInteractionVersion } from "../../lib/domain";
 import { formatDateTime, formatRange } from "../../lib/format";
-import { interactionTypeLabel, interactionTypeShortLabel } from "../../lib/interactionTypes";
+import { interactionTypeShortLabel } from "../../lib/interactionTypes";
 import {
   buildTeacherLiveDemo,
   liveInteractionStatusLabel,
@@ -403,17 +403,6 @@ export function TeacherLiveClass() {
             </div>
             <h3 className="live-detail-title">学生排名</h3>
             <RankingRows rows={detailInteraction.ranking} />
-            <h3 className="live-detail-title">题目状态</h3>
-            <div className="live-detail-item-list">
-              {detailInteraction.items.map((item, index) => (
-                <div className="live-detail-item-row" key={item.id}>
-                  <span>{index + 1}</span>
-                  <div><strong>{item.prompt}</strong><small>{interactionTypeLabel(item.type)}</small></div>
-                  <b>{item.answered} 人</b>
-                  <em>{item.status === "upcoming" ? "待开始" : `${item.correctRate}% 正确`}</em>
-                </div>
-              ))}
-            </div>
           </div>
         )}
       </Modal>

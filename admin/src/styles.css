@@ -6935,63 +6935,7 @@ strong {
   font-size: 13px;
 }
 
-.live-detail-item-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
 
-.live-detail-item-row {
-  display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) auto auto;
-  gap: 10px;
-  align-items: center;
-  padding: 10px 11px;
-  border: 1px solid var(--line);
-  border-radius: 13px;
-}
-
-.live-detail-item-row > span {
-  display: grid;
-  width: 25px;
-  height: 25px;
-  place-items: center;
-  color: var(--purple);
-  border-radius: 8px;
-  background: var(--purple-soft);
-  font-size: 9px;
-  font-weight: 900;
-}
-
-.live-detail-item-row strong,
-.live-detail-item-row small {
-  display: block;
-}
-
-.live-detail-item-row strong {
-  overflow: hidden;
-  font-size: 10px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.live-detail-item-row small {
-  margin-top: 3px;
-  color: var(--muted);
-  font-size: 8px;
-}
-
-.live-detail-item-row b {
-  color: var(--ink);
-  font-size: 10px;
-}
-
-.live-detail-item-row em {
-  color: var(--mint);
-  font-size: 9px;
-  font-style: normal;
-  font-weight: 850;
-}
 
 .courseware-preview {
   display: flex;
@@ -7198,14 +7142,6 @@ strong {
 
   .live-detail-summary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .live-detail-item-row {
-    grid-template-columns: 28px minmax(0, 1fr) auto;
-  }
-
-  .live-detail-item-row em {
-    grid-column: 2 / -1;
   }
 }
 
