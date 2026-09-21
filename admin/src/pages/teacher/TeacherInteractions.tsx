@@ -179,7 +179,7 @@ export function TeacherInteractions() {
         {filteredSets.map((set) => {
           const version = getCurrentInteractionVersion(state, set);
           const lesson = getLesson(state, set.lessonId);
-          const primaryType = version?.items[0]?.type;
+          const types = [...new Set((version?.items ?? []).map((item) => item.type))];
           return (
             <Card className="interaction-manage-card" key={set.id}>
               <div className="interaction-manage-head">
@@ -188,9 +188,11 @@ export function TeacherInteractions() {
                 </span>
               </div>
               <h2>{set.title}</h2>
-              {primaryType && (
+              {types.length > 0 && (
                 <div className="interaction-type-chips interaction-manage-type">
-                  <span>{interactionTypeShortLabel(primaryType)}</span>
+                  {types.map((type) => (
+                    <span key={type}>{interactionTypeShortLabel(type)}</span>
+                  ))}
                 </div>
               )}
               <div className="interaction-lesson-ref">
