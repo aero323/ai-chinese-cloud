@@ -24,6 +24,7 @@ export function TeacherInteractions() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [tab, setTab] = useState<"all" | Phase>("all");
   const [query, setQuery] = useState("");
+  const [sortKey, setSortKey] = useState<"nearest" | "created-desc" | "created-asc">("nearest");
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
   const [assignTarget, setAssignTarget] = useState<InteractionSet | null>(null);
   const [pendingSessionIds, setPendingSessionIds] = useState<string[]>([]);
@@ -37,12 +38,31 @@ export function TeacherInteractions() {
     publishNote: ""
   });
   const [items, setItems] = useState<InteractionItem[]>([]);
-  const filteredSets = teacherSets.filter((set) => {
-    const matchesTab = tab === "all" || set.phase === tab;
-    const lesson = getLesson(state, set.lessonId);
-    const matchesQuery = !query || set.title.toLowerCase().includes(query.toLowerCase()) || lesson?.title.toLowerCase().includes(query.toLowerCase());
-    return matchesTab && matchesQuery;
-  });
+  /** 一组互动最近一次课次距离当前时间的间隔；用于“按最近课次”排序。 */
+  function nearestSessionDistance(set: InteractionSet) {
+    const lessonSessions = teacherSessions.filter((session) => session.lessonId === set.lessonId);
+    const scoped = set.sessionIds && set.sessionIds.length > 0
+      ? lessonSessions.filter((session) => set.sessionIds?.includes(session.id))
+      : lessonSessions;
+    if (scoped.length === 0) return Number.POSITIVE_INFINITY;
+    const now = Date.now();
+    return Math.min(...scoped.map((session) => Math.abs(new Date(session.startAt).getTime() - now)));
+  }
+
+  /** 卡片上显示的日期就是互动最近一次编辑（创建版本）的时间。 */
+  const filteredSets = teacherSets
+    .filter((set) => {
+      const matchesTab = tab === "all" || set.phase === tab;
+      const lesson = getLesson(state, set.lessonId);
+      const matchesQuery = !query || set.title.toLowerCase().includes(query.toLowerCase()) || lesson?.title.toLowerCase().includes(query.toLowerCase());
+      return matchesTab && matchesQuery;
+    })
+    .sort((a, b) => {
+      if (sortKey === "created-desc") return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+      if (sortKey === "created-asc") return new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
+      const distance = nearestSessionDistance(a) - nearestSessionDistance(b);
+      return distance !== 0 ? distance : new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+    });
 
   const sessionsOfLesson = (lessonId: string) =>
     teacherSessions
@@ -169,9 +189,21 @@ export function TeacherInteractions() {
             { value: "review", label: "复习", count: teacherSets.filter((set) => set.phase === "review").length }
           ]}
         />
-        <div className="search-box">
-          <Search size={17} />
-          <TextInput value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索互动或课节" />
+        <div className="filter-bar-trailing">
+          <div className="search-box">
+            <Search size={17} />
+            <TextInput value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索互动或课节" />
+          </div>
+          <Select
+            className="sort-select"
+            value={sortKey}
+            onChange={(event) => setSortKey(event.target.value as "nearest" | "created-desc" | "created-asc")}
+            aria-label="排序方式"
+          >
+            <option value="nearest">按最近课次</option>
+            <option value="created-desc">按创建时间：新→旧</option>
+            <option value="created-asc">按创建时间：旧→新</option>
+          </Select>
         </div>
       </Card>
 

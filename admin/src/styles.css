@@ -3023,6 +3023,26 @@ strong {
   padding: 13px;
 }
 
+.filter-bar-trailing {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.filter-bar-trailing .search-box {
+  flex: 1 1 240px;
+  max-width: 420px;
+}
+
+.filter-bar-trailing .sort-select {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 168px;
+}
+
 .interaction-list-grid,
 .analytics-set-grid,
 .material-grid {
@@ -4107,6 +4127,17 @@ strong {
 
   .search-box {
     min-width: 0;
+  }
+
+  .filter-bar-trailing {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-bar-trailing .search-box,
+  .filter-bar-trailing .sort-select {
+    width: 100%;
+    max-width: none;
   }
 
   .class-session-card {
