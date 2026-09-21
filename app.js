@@ -5,6 +5,12 @@
   const platformStore = window.AICloudPlatformStore;
   const adminBase = "admin/";
   const TASK_STATE_KEYS = ["task1Done", "task2Done", "task3Done"];
+  /* 班级人数：我 + 39 位同学（卡片人数和名次行共用这一个数，一页不许出现两个数字） */
+  const CLASSROOM_TOTAL = 40;
+  /* 每完成一关得多少分（做错不扣分，同一关重做不重复加） */
+  const LEVEL_POINTS = 5;
+  /* 满分：按关卡数算，不写死 */
+  const MAX_SCORE = TASK_STATE_KEYS.length * LEVEL_POINTS;
   const DEFAULT_STATE = Object.freeze({
     phase: "live",
     task1Done: false,
@@ -317,6 +323,38 @@
     const celebrateOverlay = document.querySelector("[data-celebrate-overlay]");
     const celebrateCard = document.querySelector("[data-celebrate-card]");
     const celebrateButton = document.querySelector("[data-celebrate-ok]");
+    const rankLine = document.querySelector("[data-rank-line]");
+    const rankNum = document.querySelector("[data-rank-num]");
+    const rankSep = document.querySelector("[data-rank-sep]");
+    const rankScore = document.querySelector("[data-rank-score]");
+
+    /* 上一次看到的名次 + 分数：做完一关回课堂时才分得清"分数真的涨了"还是"名次被追/回落"。
+       没有备忘 = 第一次进场；分数没变 = 重做旧关卡，都直接显示不播翻牌。 */
+    const RANK_MEMO_KEY = "ai-chinese-cloud-classroom-rank-memo-v2";
+    const readRankMemo = () => {
+      try {
+        const raw = window.localStorage.getItem(RANK_MEMO_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== "object") return null;
+        return { rank: Number(parsed.rank) || 0, score: Number(parsed.score) || 0 };
+      } catch (error) {
+        return null;
+      }
+    };
+    const writeRankMemo = (rank, score) => {
+      try {
+        window.localStorage.setItem(RANK_MEMO_KEY, JSON.stringify({ rank, score }));
+      } catch (error) {
+        /* 存不了就按"第一次进场"处理，不影响本轮显示 */
+      }
+    };
+
+    /* 人数口径只留一处：卡片上的 /40 与名次行的 / 40 用同一个常量 */
+    document.querySelectorAll(".cls-count-total").forEach((node) => {
+      node.textContent = `/${CLASSROOM_TOTAL}`;
+    });
+    if (rankSep) rankSep.textContent = `/ ${CLASSROOM_TOTAL} ·`;
 
     const PLAY_ICON = `<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"><path d="M8 4.6v14.8l12.2-7.4z"/></svg>`;
     const AGAIN_ICON = `<svg viewBox="-2 -2 28 28" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>`;
@@ -340,36 +378,239 @@
       .slice(0, Math.max(0, index - 1))
       .every((key) => Boolean(appState[key]));
 
-    /* 演示用：每关"大家都在做"的人数，关卡开放后开始往上涨（真实版由老师端推送数据） */
-    const startLevelCount = (el) => {
-      if (!el || el.dataset.started) return;
-      const num = el.querySelector("[data-count-num]");
-      if (!num) return;
-      el.dataset.started = "1";
-      const TOTAL = 30;
-      let value = Number(el.dataset.start || 0);
-      num.textContent = String(value);
-      const tick = () => {
-        if (value >= TOTAL) return;
-        value += 1;
-        num.textContent = String(value);
-        num.classList.remove("is-bump");
-        void num.offsetWidth;
-        num.classList.add("is-bump");
-        if (value >= TOTAL) {
-          el.classList.add("is-full");
-          const flag = document.createElement("span");
-          flag.className = "cls-count-flag";
-          flag.textContent = "🎉";
-          el.appendChild(flag);
-          return;
-        }
-        window.setTimeout(tick, 1500 + Math.random() * 2200 + (value / TOTAL) * 1500);
-      };
-      window.setTimeout(tick, 1200 + Math.random() * 1600);
+    /* ---- 演示用：虚构的班级。只用来算名次和卡片人数，界面上不出现"模拟"字样。
+       正式接后台后只改 myScore / myRank 这两个函数 ---- */
+    const PEER_NAMES = [
+      "Ayu", "Budi", "Citra", "Dewi", "Eka", "Fajar", "Gita", "Hadi", "Indah", "Joko",
+      "Kartika", "Lina", "Made", "Nia", "Oscar", "Putri", "Rani", "Sari", "Tono", "Umi",
+      "Vina", "Wawan", "Yani", "Zaki", "Adi", "Bella", "Chika", "Dimas", "Elsa", "Farid",
+      "Hana", "Iwan", "Jihan", "Kevin", "Lala", "Mira", "Nanda", "Oki", "Rizky"
+    ];
+    const PEER_AVATARS = ["🐼", "🐨", "🦊", "🐯", "🐸", "🐵", "🐙", "🦄", "🐧", "🐰", "🐻", "🐹"];
+
+    /* 进场时的局面：4 人已满分、7 人 10 分、10 人 5 分，其余慢慢往上涨 */
+    const buildPeers = () => PEER_NAMES.map((name, index) => ({
+      name,
+      avatar: PEER_AVATARS[index % PEER_AVATARS.length],
+      score: index < 4 ? MAX_SCORE : index < 11 ? LEVEL_POINTS * 2 : index < 21 ? LEVEL_POINTS : 0
+    }));
+
+    let peers = buildPeers();
+    const rankMemo = readRankMemo();
+    let lastRank = rankMemo ? rankMemo.rank : 0;
+    /* 首帧标记：区分"刚打开页面"和"页面开着时的实时更新" */
+    let booted = false;
+    let dipUsed = false;
+    let stageOneStarted = false;
+    const scriptTimers = [];
+    const rollTimers = new WeakMap();
+
+    /* 我的分数：已完成关卡数 × 每关分值；只认完成状态，所以做错不扣分、重做不重复加
+       —— 正式接后台后只改这里 —— */
+    const myScore = () => TASK_STATE_KEYS.filter((key) => Boolean(appState[key])).length * LEVEL_POINTS;
+
+    /* 名次 = 分数比我高的人数 + 1（同分并列，不比时间）
+       —— 正式接后台后只改这里 —— */
+    const myRank = () => (myScore() <= 0 ? 0 : peers.filter((peer) => peer.score > myScore()).length + 1);
+
+    /* 卡片上的人数 = 完成这一关的同学（含我自己） */
+    const countFor = (index) => {
+      const threshold = index * LEVEL_POINTS;
+      const classmates = peers.filter((peer) => peer.score >= threshold).length;
+      return classmates + (myScore() >= threshold ? 1 : 0);
     };
 
-    const render = () => {
+    /* ---- 名次数字的翻牌：新数字从上落下，旧数字向下滚出 ---- */
+    const ROLL_MS = 340;
+    const slotItems = (slot) => (slot ? [...slot.querySelectorAll(".cls-roll")] : []);
+    const slotText = (slot) => {
+      const items = slotItems(slot);
+      return items.length ? items[items.length - 1].textContent : "";
+    };
+
+    /* 立刻落定：停掉在飞的动画、清掉多余数字，只留当前这一个 */
+    const settleSlot = (slot, keepShine = false) => {
+      if (!slot) return;
+      const pending = rollTimers.get(slot);
+      if (pending) window.clearTimeout(pending);
+      rollTimers.delete(slot);
+      if (typeof slot.getAnimations === "function") {
+        slot.getAnimations({ subtree: true }).forEach((animation) => {
+          if (keepShine && animation.id === "rankShine") return;
+          animation.cancel();
+        });
+      }
+      const items = slotItems(slot);
+      items.slice(0, -1).forEach((item) => item.remove());
+      slot.style.transition = "none";
+      slot.style.width = "";
+      void slot.offsetWidth;
+      slot.style.transition = "";
+    };
+
+    /* 不播翻牌，直接显示某个值（初次进场 / 重来一遍） */
+    const setSlotText = (slot, text) => {
+      if (!slot) return;
+      settleSlot(slot);
+      slotItems(slot).forEach((item) => item.remove());
+      const item = document.createElement("span");
+      item.className = "cls-roll";
+      item.textContent = text;
+      slot.appendChild(item);
+    };
+
+    /* 名次前进时的一道轻金光：挂在槽上（不跟着数字被裁掉） */
+    const shineSlot = (slot) => {
+      if (!slot || typeof slot.animate !== "function") return;
+      const animation = slot.animate([
+        { filter: "drop-shadow(0 0 0 rgba(255, 214, 130, 0))" },
+        { filter: "drop-shadow(0 0 7px rgba(255, 214, 130, 0.95))", offset: 0.3 },
+        { filter: "drop-shadow(0 0 0 rgba(255, 214, 130, 0))" }
+      ], { duration: 880, easing: "ease-out" });
+      animation.id = "rankShine";
+    };
+
+    /* 两个数字上下排着，整条向下滚一格；新数字落地时轻轻弹一下 */
+    const rollSlot = (slot, text, instant = false) => {
+      if (!slot) return;
+      const current = slotText(slot);
+      if (instant || current === text) {
+        if (current !== text) setSlotText(slot, text);
+        return;
+      }
+
+      const fromWidth = slot.getBoundingClientRect().width;
+      const minWidth = parseFloat(window.getComputedStyle(slot).minWidth) || 0;
+
+      const pending = rollTimers.get(slot);
+      if (pending) window.clearTimeout(pending);
+      if (typeof slot.getAnimations === "function") {
+        slot.getAnimations({ subtree: true }).forEach((animation) => {
+          if (animation.id === "rankShine") return;
+          animation.cancel();
+        });
+      }
+      const items = slotItems(slot);
+      const outgoing = items[items.length - 1];
+      items.slice(0, -1).forEach((item) => item.remove());
+
+      const incoming = document.createElement("span");
+      incoming.className = "cls-roll";
+      incoming.textContent = text;
+      slot.appendChild(incoming);
+
+      /* 槽位先定宽再量新数字，保证整行不抖动 */
+      slot.style.transition = "none";
+      slot.style.width = fromWidth + "px";
+      void slot.offsetWidth;
+
+      const range = document.createRange();
+      range.selectNodeContents(incoming);
+      const targetWidth = Math.max(minWidth, range.getBoundingClientRect().width);
+      /* 收窄排在"旧数字已出窗、新数字还没进窗"的当口，避免把旧字横向切掉 */
+      slot.style.transition = "width " + Math.round(ROLL_MS * 0.21) + "ms cubic-bezier(.3, .85, .4, 1) " + Math.round(ROLL_MS * 0.1) + "ms";
+      slot.style.width = targetWidth + "px";
+
+      if (outgoing && typeof outgoing.animate === "function") {
+        outgoing.animate([
+          { transform: "translateY(0)", opacity: 1, easing: "cubic-bezier(.25, .6, .45, 1)" },
+          { transform: "translateY(100%)", opacity: 0, offset: 0.45, easing: "linear" },
+          { transform: "translateY(100%)", opacity: 0 }
+        ], { duration: ROLL_MS, fill: "forwards" });
+      }
+      if (typeof incoming.animate === "function") {
+        incoming.animate([
+          { transform: "translateY(-200%)", opacity: 0, easing: "cubic-bezier(.3, .25, .5, .85)" },
+          { transform: "translateY(-100%)", opacity: 1, offset: 0.74, easing: "ease-out" },
+          { transform: "translateY(-95%)", opacity: 1, offset: 0.87, easing: "ease-in" },
+          { transform: "translateY(-100%)", opacity: 1 }
+        ], { duration: ROLL_MS, fill: "forwards" });
+      }
+
+      rollTimers.set(slot, window.setTimeout(() => settleSlot(slot, true), ROLL_MS + 60));
+    };
+
+    /* 名次行：0 分显示「等你上榜」，有分显示「12 / 40 · 5分」 */
+    const renderRank = (force = false) => {
+      if (!rankLine || !rankNum || !rankScore) return;
+      const score = myScore();
+      const rank = myRank();
+
+      /* 首帧（刚打开页面）：第一次来、或分数和上次一样（重做旧关卡）→ 直接显示，不翻牌不闪光。
+         首帧之后（同学们在涨分、偶尔追过我一位）：名次一变就翻牌，前进才闪光。 */
+      const direct = booted ? force : force || !rankMemo || rankMemo.score === score;
+      booted = true;
+
+      if (rank === 0) {
+        rankLine.classList.add("is-waiting");
+        setSlotText(rankNum, "等你上榜");
+        if (rankSep) rankSep.hidden = true;
+        rankScore.hidden = true;
+        setSlotText(rankScore, "0分");
+        lastRank = 0;
+        writeRankMemo(0, 0);
+        return;
+      }
+
+      rankLine.classList.remove("is-waiting");
+      if (rankSep) rankSep.hidden = false;
+      rankScore.hidden = false;
+      rollSlot(rankNum, String(rank), direct);
+      rollSlot(rankScore, score + "分", direct);
+
+      /* 名次前进了（数字变小）才给金光；被同学追过时不加奖励 */
+      if (!direct && lastRank > 0 && rank < lastRank) shineSlot(rankNum);
+
+      lastRank = rank;
+      writeRankMemo(rank, score);
+    };
+
+    /* ---- 同学们缓慢得分：制造"实时"感，也带动卡片上的人数（演示模拟数据） ---- */
+    const canAdvance = (peer) => {
+      if (peer.score >= MAX_SCORE) return false;
+      if (peer.score === 0) return true;
+      if (peer.score === LEVEL_POINTS) return myScore() >= LEVEL_POINTS * 2;
+      if (peer.score === LEVEL_POINTS * 2) return myScore() >= MAX_SCORE;
+      return false;
+    };
+
+    const promoteBy = (score) => {
+      const pool = peers.filter((peer) => peer.score === score && peer.score < MAX_SCORE);
+      if (!pool.length) return false;
+      pool[Math.floor(Math.random() * pool.length)].score += LEVEL_POINTS;
+      return true;
+    };
+
+    const tick = () => {
+      const pool = peers.filter(canAdvance);
+      if (pool.length) {
+        pool[Math.floor(Math.random() * pool.length)].score += LEVEL_POINTS;
+        render();
+      }
+      window.setTimeout(tick, 2600 + Math.random() * 1400);
+    };
+
+    /* ---- 我的剧本：做完第一关之后两秒左右，名次会自己动一下（演示"实时"） ---- */
+    const scheduleStageOne = () => {
+      scriptTimers.push(window.setTimeout(() => {
+        promoteBy(LEVEL_POINTS * 2);   /* 有人先满分 */
+        render();
+      }, 2200));
+      scriptTimers.push(window.setTimeout(() => {
+        if (dipUsed) return;
+        if (promoteBy(LEVEL_POINTS)) {  /* 有人追平我又超过去：名次轻轻往后一位 */
+          dipUsed = true;
+          render();
+        }
+      }, 5600));
+    };
+
+    const clearScriptTimers = () => {
+      scriptTimers.forEach((timer) => window.clearTimeout(timer));
+      scriptTimers.length = 0;
+    };
+
+    const render = (force = false) => {
       const current = phase();
       const completed = TASK_STATE_KEYS.filter((key) => Boolean(appState[key])).length;
       const open = current.open;
@@ -391,9 +632,36 @@
         if (level.count) {
           const visible = done || canPlay;
           level.count.hidden = !visible;
-          if (visible) startLevelCount(level.count);
+          const value = countFor(level.index);
+          const num = level.count.querySelector("[data-count-num]");
+          if (num && num.textContent !== String(value)) {
+            num.textContent = String(value);
+            num.classList.remove("is-bump");
+            void num.offsetWidth;
+            num.classList.add("is-bump");
+          }
+          level.count.classList.toggle("is-full", value >= CLASSROOM_TOTAL);
+          if (value >= CLASSROOM_TOTAL && !level.count.querySelector(".cls-count-flag")) {
+            const flag = document.createElement("span");
+            flag.className = "cls-count-flag";
+            flag.textContent = "🎉";
+            level.count.appendChild(flag);
+          }
         }
       });
+
+      /* 进场第一帧直接显示，不播翻牌 */
+      renderRank(force);
+
+      /* 做完第一关：两秒后名次自己动一下（演示"实时"）；重来一遍后再做还能重播 */
+      if (completed === 0) {
+        clearScriptTimers();
+        stageOneStarted = false;
+        dipUsed = false;
+      } else if (!stageOneStarted) {
+        stageOneStarted = true;
+        scheduleStageOne();
+      }
     };
 
     levels.forEach((level) => {
@@ -438,12 +706,49 @@
             ], { duration: 500, easing: "ease-in-out" });
           }
         });
+        /* 名次行的奖杯跟着跳一下、扫一遍白光 */
+        const trophy = document.querySelector(".cls-trophy");
+        if (trophy) {
+          if (typeof trophy.animate === "function") {
+            trophy.animate([
+              { transform: "translateY(0) scale(1)" },
+              { transform: "translateY(-2.5px) scale(1.2)", offset: 0.34 },
+              { transform: "translateY(0) scale(1.02)", offset: 0.66 },
+              { transform: "translateY(-1px) scale(1.09)", offset: 0.83 },
+              { transform: "translateY(0) scale(1)" }
+            ], { duration: 640, easing: "cubic-bezier(.3, 1.35, .45, 1)" });
+          }
+          const trophyShine = trophy.querySelector(".cls-shine");
+          if (trophyShine && typeof trophyShine.animate === "function") {
+            trophyShine.animate([
+              { transform: "translateX(-8px) skewX(-18deg)", opacity: 0 },
+              { opacity: 0.95, offset: 0.25 },
+              { opacity: 0.9, offset: 0.7 },
+              { transform: "translateX(26px) skewX(-18deg)", opacity: 0 }
+            ], { duration: 500, easing: "ease-in-out" });
+          }
+        }
         celebrateTimer = window.setTimeout(() => {
           celebrateTimer = null;
           celebrateOverlay.classList.remove("hidden");
           if (celebrateCard && typeof celebrateCard.focus === "function") celebrateCard.focus();
         }, 880);
       }, 1250);
+    };
+
+    /* 重来一遍：清掉在跑的剧本与庆祝倒计时，同学们重新洗牌，名次直接回到「等你上榜」 */
+    const replayRank = () => {
+      clearScriptTimers();
+      stageOneStarted = false;
+      dipUsed = false;
+      lastRank = 0;
+      peers = buildPeers();
+      if (celebrateTimer !== null) {
+        window.clearTimeout(celebrateTimer);
+        celebrateTimer = null;
+      }
+      if (celebrateOverlay) celebrateOverlay.classList.add("hidden");
+      render(true);
     };
 
     if (celebrateButton) {
@@ -455,8 +760,8 @@
 
     if (resetButton) {
       resetButton.addEventListener("click", () => {
-        if (celebrateOverlay) celebrateOverlay.classList.add("hidden");
         updateState({ task1Done: false, task2Done: false, task3Done: false, celebrated: false });
+        replayRank();
         showToast("三关互动进度已重置");
       });
     }
@@ -465,8 +770,11 @@
       render();
       maybeCelebrate();
     });
+    /* 进场：第一次来、或重做旧关卡（分数没变）直接显示；分数真的涨了才翻一次牌（前进才给金光） */
     render();
     maybeCelebrate();
+    /* 演示的同学得分：第一拍晚一点，让开场人数落在既定局面上（4 人满分 / 7 人 10 分 / 10 人 5 分） */
+    window.setTimeout(tick, 2600 + Math.random() * 1400);
 
     const lockedReason = new URLSearchParams(window.location.search).get("locked");
     if (lockedReason) {

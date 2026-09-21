@@ -77,12 +77,6 @@
 
 .header-subtitle { color: var(--text-subtle); }
 
-.icon-button {
-  border: 2px solid var(--line-soft);
-  border-radius: 16px;
-  box-shadow: 0 3px 0 #e2dfee;
-}
-
 /* 读屏专用：题面与播报只给读屏，视觉上不占地方 */
 .read-aloud-sr,
 .read-aloud-announcer {
