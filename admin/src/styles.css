@@ -2832,11 +2832,30 @@ strong {
   background: var(--purple-soft);
 }
 
-.today-time strong { color: var(--purple); font-size: 16px; }
+/* 时间块放课次的起止时间，列宽与字号按“18:30–19:10”调过。 */
+.teacher-today-list button {
+  grid-template-columns: 94px minmax(0, 1fr) auto;
+}
+
+.today-time strong {
+  color: var(--purple);
+  font-size: 13px;
+  white-space: nowrap;
+}
 .today-time small { color: var(--muted); font-size: 8px; }
+.today-lesson {
+  min-width: 0;
+}
 .today-lesson strong,
 .today-lesson small { display: block; }
-.today-lesson small { margin-top: 4px; color: var(--muted); font-size: 10px; }
+.today-lesson small {
+  margin-top: 4px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 .content-health-list > div,
 .readiness-list > div,

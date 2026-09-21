@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { usePlatformStore } from "../../store/usePlatformStore";
 import { currentUser, getBookedCount, getLesson, teacherMetrics } from "../../lib/domain";
-import { formatDateTime, relativeTime } from "../../lib/format";
+import { formatDateTime, formatRange } from "../../lib/format";
 import { buildTeacherLiveDemo, setTeacherDemoMode, useTeacherDemoMode } from "../../lib/teacherLiveDemo";
 import { Badge, Button, Card, PageHeader, ProgressBar, StatCard } from "../../components/ui";
 import { ClassSessionCard } from "../../components/ClassSessionCard";
@@ -108,7 +108,7 @@ export function TeacherDashboard() {
           <div className="card-heading">
             <div>
               <span className="eyebrow">Today</span>
-              <h2>课堂内容</h2>
+              <h2>今日排课</h2>
             </div>
             <Button variant="ghost" size="sm" onClick={() => navigate("/teacher/schedule")}>
               全部排课 <ArrowRight size={15} />
@@ -121,12 +121,15 @@ export function TeacherDashboard() {
               return (
                 <button key={session.id} onClick={() => navigate(isLive ? `/teacher/live/${session.id}` : `/teacher/session/${session.id}`)}>
                   <span className={`today-time ${isLive ? "is-live" : ""}`}>
-                    <strong>{isLive ? "直播中" : new Intl.DateTimeFormat(state.ui.language, { timeZone: state.ui.timeZone, hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(session.startAt))}</strong>
-                    <small>{isLive ? `已 ${liveDemo?.elapsedMinutes ?? 0} 分钟` : relativeTime(session.startAt, state.ui.language)}</small>
+                    <strong>{formatRange(session.startAt, session.endAt, state.ui.timeZone, state.ui.language)}</strong>
                   </span>
                   <span className="today-lesson">
-                    <strong>{isLive ? liveDemo?.lessonTitle : lesson?.coverEmoji} {isLive ? "" : lesson?.title}</strong>
-                    <small>{isLive ? `${activeInteraction?.answered ?? 0} 人已作答当前互动` : `${getBookedCount(state, session.id)} 位学生 · ${session.roomLabel}`}</small>
+                    <strong>{lesson?.coverEmoji} {lesson?.title}</strong>
+                    <small>
+                      {lesson?.description} · {session.roomLabel} · {isLive
+                        ? `${liveDemo?.presentCount ?? 0}/${liveDemo?.participantTotal ?? session.capacity}`
+                        : `${getBookedCount(state, session.id)}/${session.capacity}`} 人
+                    </small>
                   </span>
                   <ArrowRight size={17} />
                 </button>
