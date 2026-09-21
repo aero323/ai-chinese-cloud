@@ -8,7 +8,7 @@ import { formatDate, formatRange } from "../../lib/format";
 import { Avatar, Badge, Button, Card, EmptyState, Field, Modal, PageHeader, ProgressBar, Select, SourceBadge, TextInput } from "../../components/ui";
 import { platform } from "../../lib/platform";
 import { interactionTypeShortLabel } from "../../lib/interactionTypes";
-import type { ChangeRequestKind, InteractionType, Phase } from "../../domain/types";
+import type { ChangeRequestKind, Phase } from "../../domain/types";
 
 export function TeacherSessionDetail() {
   const { sessionId = "" } = useParams();
@@ -124,7 +124,7 @@ export function TeacherSessionDetail() {
             <div className="session-interaction-list">
               {sessionSets.map((set) => {
                 const version = getCurrentInteractionVersion(state, set);
-                const types = [...new Set((version?.items ?? []).map((item) => item.type))] as InteractionType[];
+                const primaryType = version?.items[0]?.type;
                 return (
                   <article key={set.id}>
                     <span className={`phase-badge phase-${set.phase}`}>
@@ -132,11 +132,11 @@ export function TeacherSessionDetail() {
                     </span>
                     <div>
                       <strong>{set.title}</strong>
-                      <div className="interaction-type-chips session-interaction-types">
-                        {types.map((type) => (
-                          <span key={type}>{interactionTypeShortLabel(type)}</span>
-                        ))}
-                      </div>
+                      {primaryType && (
+                        <div className="interaction-type-chips session-interaction-types">
+                          <span>{interactionTypeShortLabel(primaryType)}</span>
+                        </div>
+                      )}
                     </div>
                     <Button size="sm" variant="ghost" onClick={() => navigate(`/teacher/interactions?editSetId=${set.id}`)}>编辑</Button>
                   </article>
