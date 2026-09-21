@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, CalendarClock, Eye, FileText, Layers3, Lock, MapPin, Plus, Send, UsersRound } from "lucide-react";
+import { ArrowLeft, CalendarClock, Eye, FileText, Layers3, MapPin, Plus, Send, UsersRound } from "lucide-react";
 import { usePlatformStore } from "../../store/usePlatformStore";
 import { getBookedCount, getCurrentInteractionVersion, getLesson, getSession, getStudent, getUser, setsForSession } from "../../lib/domain";
-import { formatDate, formatRange } from "../../lib/format";
+import { formatDate, formatDateTime, formatRange, formatTime } from "../../lib/format";
 import { Avatar, Badge, Button, Card, EmptyState, Field, Modal, PageHeader, ProgressBar, Select, SourceBadge, TextInput } from "../../components/ui";
 import { platform } from "../../lib/platform";
 import { interactionTypeShortLabel } from "../../lib/interactionTypes";
@@ -71,11 +71,10 @@ export function TeacherSessionDetail() {
       <section className="teacher-session-hero">
         <div className="session-hero-cover" style={{ background: `linear-gradient(135deg, ${lesson.color}, #f6f2ff)` }}>{lesson.coverEmoji}</div>
         <div>
-          <Badge tone="orange"><Lock size={13} /> 教师只读</Badge>
           <h2>{lesson.title}</h2>
           <p>{lesson.description}</p>
           <div className="lesson-overview-meta">
-            <span><CalendarClock size={16} /> {formatRange(session.startAt, session.endAt, state.ui.timeZone, state.ui.language)}</span>
+            <span><CalendarClock size={16} /> {formatDateTime(session.startAt, state.ui.timeZone, state.ui.language)}–{formatTime(session.endAt, state.ui.timeZone, state.ui.language)}</span>
             <span><MapPin size={16} /> {session.roomLabel}</span>
             <span><UsersRound size={16} /> {booked}/{session.capacity}</span>
           </div>
