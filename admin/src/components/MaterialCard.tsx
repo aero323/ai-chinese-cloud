@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Download, FileAudio, FileImage, FileText, FileVideo, Link2, PlayCircle, Presentation } from "lucide-react";
+import { Download, FileAudio, FileImage, FileText, FileVideo, Link2, Pause, Play, PlayCircle, Presentation } from "lucide-react";
 import type { Material } from "../domain/types";
 import { Badge, Button } from "./ui";
 
@@ -8,12 +8,16 @@ export function MaterialCard({
   actions,
   onDownload,
   onOpen,
+  onPlay,
+  playing = false,
   showVersion = false
 }: {
   material: Material;
   actions?: ReactNode;
   onDownload?: () => void;
   onOpen?: () => void;
+  onPlay?: () => void;
+  playing?: boolean;
   showVersion?: boolean;
 }) {
   const Icon =
@@ -29,6 +33,7 @@ export function MaterialCard({
               ? Link2
               : FileText;
   const current = material.versions.find((version) => version.version === material.currentVersion) ?? material.versions.at(-1);
+  const isAudio = material.fileType === "wav" || material.fileType === "mp3";
   return (
     <article className="material-card">
       <span className={`material-icon material-${material.fileType}`}>
@@ -49,6 +54,11 @@ export function MaterialCard({
         </div>
       </div>
       <div className="material-actions">
+        {isAudio && onPlay && (
+          <Button size="sm" variant="ghost" onClick={onPlay}>
+            {playing ? <Pause size={15} /> : <Play size={15} />} {playing ? "暂停" : "播放"}
+          </Button>
+        )}
         {material.kind === "courseware" && onOpen ? (
           <>
             <Button size="sm" variant="primary" onClick={onOpen}>

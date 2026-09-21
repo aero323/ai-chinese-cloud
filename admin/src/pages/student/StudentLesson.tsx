@@ -18,6 +18,7 @@ import type { Phase } from "../../domain/types";
 import { Badge, Button, Card, EmptyState, Modal, PageHeader, ProgressBar, Tabs } from "../../components/ui";
 import { InteractionPlayer, type PlayerResult } from "../../components/InteractionPlayer";
 import { MaterialCard } from "../../components/MaterialCard";
+import { useMaterialAudio } from "../../lib/useMaterialAudio";
 import { formatDateTime } from "../../lib/format";
 
 const phaseMeta: Array<{ phase: Phase; label: string; icon: typeof Play }> = [
@@ -41,6 +42,7 @@ export function StudentLesson() {
   const [activeSetId, setActiveSetId] = useState<string | null>(null);
   const [activeCoursewareId, setActiveCoursewareId] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<PlayerResult | null>(null);
+  const { playingId, toggle: toggleAudio } = useMaterialAudio();
 
   const content = lessonContent(state, lessonId, phase, sessionId || undefined);
   const activeSet = content.sets.find((set) => set.id === activeSetId);
@@ -196,6 +198,8 @@ export function StudentLesson() {
               <MaterialCard
                 key={material!.id}
                 material={material!}
+                playing={playingId === material!.id}
+                onPlay={() => toggleAudio(material!)}
                 onDownload={() => run(() => platform.trackDownload(material!.id), "下载已记录")}
                 onOpen={() => setActiveCoursewareId(material!.id)}
               />

@@ -17,6 +17,7 @@ import {
 import { Badge, Button, Card, EmptyState, Field, Modal, PageHeader, Select, Tabs, TextInput } from "../../components/ui";
 import { ClassSessionCard } from "../../components/ClassSessionCard";
 import { MaterialCard } from "../../components/MaterialCard";
+import { useMaterialAudio } from "../../lib/useMaterialAudio";
 import { formatDate } from "../../lib/format";
 
 type BookingTab = "single" | "series";
@@ -27,6 +28,7 @@ export function StudentBook() {
   const { state, run } = usePlatformStore();
   const user = currentUser(state);
   const [tab, setTab] = useState<BookingTab>("single");
+  const { playingId, toggle: toggleAudio } = useMaterialAudio();
   const [day, setDay] = useState("all");
   const [teacherId, setTeacherId] = useState("all");
   const [folderId, setFolderId] = useState("all");
@@ -279,7 +281,14 @@ export function StudentBook() {
                   .filter((ref) => ref.lessonId === selectedLesson.id && ref.phase === "preview")
                   .map((ref) => state.materials.find((material) => material.id === ref.materialId))
                   .filter(Boolean)
-                  .map((material) => <MaterialCard key={material!.id} material={material!} />)}
+                  .map((material) => (
+                    <MaterialCard
+                      key={material!.id}
+                      material={material!}
+                      playing={playingId === material!.id}
+                      onPlay={() => toggleAudio(material!)}
+                    />
+                  ))}
                 {state.materialRefs.filter((ref) => ref.lessonId === selectedLesson.id && ref.phase === "preview").length === 0 && (
                   <p className="muted-copy">{t("student.noMaterials")}</p>
                 )}
