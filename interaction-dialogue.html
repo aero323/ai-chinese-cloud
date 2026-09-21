@@ -25,75 +25,53 @@
     </header>
 
     <main class="page page-content">
-      <div class="game-intro">
-        <div>
-          <h2 data-activity-task>看上一句，选出合适的下一句，填进对话气泡。</h2>
-          <p>先看对方说了什么，再选合适的下一句，选好点提交。<br>Lihat kalimat sebelumnya, pilih lanjutannya, lalu kirim.</p>
-        </div>
-        <span class="progress-pill" data-activity-step>题型体验</span>
-      </div>
-
-      <section class="dialogue-card" data-dialogue-card aria-labelledby="dialogue-question">
-        <div class="dialogue-card-head">
-          <span class="dialogue-type-badge">
-            <span aria-hidden="true" data-dialogue-type-icon>💬</span>
-            <strong data-dialogue-type-name>对话补全</strong>
-          </span>
-          <span class="progress-pill" data-dialogue-step>第 1 / 1 题</span>
-        </div>
-
-        <h3 class="dialogue-question" id="dialogue-question" data-dialogue-question>选出合适的下一句</h3>
-
+      <section class="dialogue-card" data-dialogue-card aria-label="对话补全">
         <ul class="dialogue-thread" data-dialogue-thread>
           <li class="dialogue-turn is-them">
-            <span class="dialogue-speaker">对方</span>
-            <p class="dialogue-bubble" data-dialogue-them>请问，洗手间在哪儿？</p>
+            <span class="dialogue-avatar" aria-hidden="true">🧑</span>
+            <div class="dialogue-turn-body">
+              <span class="dialogue-sr">对方说：</span>
+              <p class="dialogue-bubble" data-dialogue-them data-dialogue-them-id="Permisi, di mana kamar kecilnya?">请问，洗手间在哪儿？</p>
+            </div>
           </li>
           <li class="dialogue-turn is-me">
-            <span class="dialogue-speaker">我</span>
-            <div class="dialogue-me-row">
-              <p class="dialogue-bubble is-placeholder" data-dialogue-me aria-live="polite">？</p>
-              <span class="dialogue-mark hidden" data-dialogue-mark aria-hidden="true">✓</span>
+            <div class="dialogue-turn-body">
+              <span class="dialogue-sr">我说：</span>
+              <div class="dialogue-me-row">
+                <p class="dialogue-bubble is-placeholder" data-dialogue-me aria-live="polite">？</p>
+                <span class="dialogue-mark hidden" data-dialogue-mark aria-hidden="true">✓</span>
+              </div>
             </div>
-            <p class="dialogue-correct-line hidden" data-dialogue-correct-line></p>
           </li>
         </ul>
 
-        <div class="dialogue-options" role="group" aria-labelledby="dialogue-question" data-dialogue-options></div>
+        <div class="dialogue-options" role="group" aria-label="选出合适的下一句" data-dialogue-options></div>
 
-        <button type="button" class="primary-button dialogue-submit" data-dialogue-submit disabled>提交答案</button>
+        <button type="button" class="primary-button dialogue-submit btn-stacked" data-dialogue-submit disabled>
+          <span data-dialogue-submit-label>提交</span>
+          <span class="btn-id" lang="id" data-dialogue-submit-label-id>Kirim</span>
+        </button>
 
         <div class="dialogue-feedback hidden" role="status" aria-live="polite" tabindex="-1" data-dialogue-feedback>
-          <strong class="dialogue-feedback-title">
+          <strong class="dialogue-feedback-title hidden" data-dialogue-feedback-title-row>
             <span aria-hidden="true" data-dialogue-feedback-icon></span>
             <span data-dialogue-feedback-title></span>
           </strong>
-          <p class="dialogue-feedback-answer hidden" data-dialogue-feedback-answer></p>
-          <p class="dialogue-feedback-copy" data-dialogue-feedback-copy></p>
+          <div class="dialogue-quote hidden" data-dialogue-quote>
+            <p class="dialogue-quote-row">
+              <span class="dialogue-quote-zh" data-dialogue-quote-question-zh></span>
+              <span class="dialogue-quote-id" lang="id" data-dialogue-quote-question-id></span>
+            </p>
+            <p class="dialogue-quote-row is-answer">
+              <span class="dialogue-quote-zh" data-dialogue-quote-answer-zh></span>
+              <span class="dialogue-quote-id" lang="id" data-dialogue-quote-answer-id></span>
+            </p>
+          </div>
         </div>
       </section>
 
-      <div class="helper-note">
-        <span aria-hidden="true">💡</span>
-        <div>看上一句说了什么，再选下一句。<br>Lihat kalimat sebelumnya, lalu pilih lanjutannya.</div>
-      </div>
-
-      <p class="activity-status" data-activity-status>当前状态：待作答</p>
-      <p class="activity-meta" data-activity-meta></p>
+      <p class="dialogue-sr" role="status" aria-live="polite" data-activity-status>当前状态：待作答</p>
     </main>
-  </div>
-
-  <div class="modal-overlay hidden" data-dialogue-complete>
-    <section class="completion-modal" role="dialog" aria-modal="true" aria-labelledby="dialogue-complete-title">
-      <div class="modal-badge" data-dialogue-modal-badge>🎉</div>
-      <h3 id="dialogue-complete-title" data-dialogue-modal-title>答对了，真棒！</h3>
-      <p class="id-copy" data-dialogue-modal-id>Bagus! Jawabanmu benar.</p>
-      <p class="modal-description" data-dialogue-modal-copy>本题已完成，可以换一个题型再练一练，或者回到课堂。</p>
-      <div class="dialogue-modal-actions">
-        <a class="primary-button" href="classroom.html?activities=1" data-dialogue-change>换一个题型</a>
-        <a class="secondary-button" href="classroom.html" data-dialogue-return>返回课堂</a>
-      </div>
-    </section>
   </div>
 
   <script type="module" src="shared/activity-types.js"></script>
@@ -101,6 +79,8 @@
   <script type="module" src="shared/activity-bridge.js"></script>
   <script type="module" src="app.js"></script>
   <script type="module" src="shared/activity-page.js"></script>
+  <script type="module" src="shared/feedback-copy.js"></script>
+  <script type="module" src="shared/feedback-modal.js"></script>
   <script type="module" src="interaction-dialogue.js"></script>
 </body>
 </html>

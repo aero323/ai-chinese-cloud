@@ -7,8 +7,28 @@
   <title>课堂互动 · AI Chinese Cloud</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="classroom.css">
 </head>
 <body data-page="classroom">
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <path id="clsStarShape" d="M10.41 4.98Q12 2.55 13.59 4.98L13.91 5.48Q15.25 7.53 17.61 8.17L18.19 8.32Q20.99 9.08 19.17 11.34L18.79 11.8Q17.26 13.71 17.38 16.16L17.41 16.75Q17.55 19.65 14.84 18.61L14.29 18.4Q12 17.53 9.71 18.4L9.16 18.61Q6.45 19.65 6.59 16.75L6.62 16.16Q6.74 13.71 5.21 11.8L4.83 11.34Q3.01 9.08 5.81 8.32L6.39 8.17Q8.75 7.53 10.09 5.48L10.41 4.98Z"/>
+      <clipPath id="clsStarClip">
+        <path d="M10.41 4.98Q12 2.55 13.59 4.98L13.91 5.48Q15.25 7.53 17.61 8.17L18.19 8.32Q20.99 9.08 19.17 11.34L18.79 11.8Q17.26 13.71 17.38 16.16L17.41 16.75Q17.55 19.65 14.84 18.61L14.29 18.4Q12 17.53 9.71 18.4L9.16 18.61Q6.45 19.65 6.59 16.75L6.62 16.16Q6.74 13.71 5.21 11.8L4.83 11.34Q3.01 9.08 5.81 8.32L6.39 8.17Q8.75 7.53 10.09 5.48L10.41 4.98Z"/>
+      </clipPath>
+      <linearGradient id="clsStarGold" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#ffe08a"/>
+        <stop offset=".48" stop-color="#ffc433"/>
+        <stop offset="1" stop-color="#e89709"/>
+      </linearGradient>
+      <linearGradient id="clsShineGrad" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#ffffff" stop-opacity="0"/>
+        <stop offset=".5" stop-color="#ffffff" stop-opacity=".95"/>
+        <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+  </svg>
+
   <div class="app-shell">
     <div class="status-bar" aria-hidden="true">
       <span>11:20</span>
@@ -20,59 +40,176 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
       </a>
       <h1>课堂互动<span class="header-subtitle">Interaksi Kelas</span></h1>
-      <span class="header-spacer"></span>
+      <button type="button" class="icon-button" data-classroom-reset aria-label="重来一遍">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 5 2 11 8 11"/><path d="M4.6 15a9 9 0 1 0 2-9.5L2 11"/></svg>
+      </button>
     </header>
 
-    <main class="page page-content classroom-page">
-      <section class="course-status-card" data-phase="live">
-        <div class="course-status-head">
-          <span class="course-state" data-classroom-status><span class="dot"></span>课堂互动进行中</span>
-          <span class="course-lesson">LESSON 1</span>
-        </div>
-        <h2>嗨！你好！</h2>
-        <p class="course-meta"><strong>中文大班课</strong> · Lina 老师 · <span data-classroom-detail>今天 10:00 - 10:40</span></p>
-        <div class="course-progress-row">
-          <span data-course-progress>0 / 2 已完成</span>
-          <span class="progress-dots" aria-hidden="true">
-            <span class="progress-dot" data-progress-dot></span>
-            <span class="progress-dot" data-progress-dot></span>
-          </span>
-        </div>
-      </section>
-
-      <section class="classroom-tip">
-        <span class="tip-icon">💡</span>
-        <div>
-          <strong data-classroom-tip-title>两个互动依次完成</strong>
-          <p data-classroom-description>互动 1 和互动 2 已开放，完成一个后再进入下一个。</p>
-        </div>
-      </section>
-
-      <div class="section-title-row">
-        <h3>今日互动</h3>
-        <span>Aktivitas hari ini</span>
+    <main class="page page-content cls-page">
+      <div class="cls-strip" data-phase="live">
+        <span class="cls-guide" aria-hidden="true">🐼</span>
+        <strong class="cls-strip-lesson">嗨！你好！</strong>
+        <span class="cls-stars" data-stars aria-hidden="true">
+          <svg class="cls-star" viewBox="0 0 24 24"><use href="#clsStarShape"/><g clip-path="url(#clsStarClip)"><rect class="cls-shine" x="0" y="-6" width="7" height="36"/></g></svg>
+          <svg class="cls-star" viewBox="0 0 24 24"><use href="#clsStarShape"/><g clip-path="url(#clsStarClip)"><rect class="cls-shine" x="0" y="-6" width="7" height="36"/></g></svg>
+          <svg class="cls-star" viewBox="0 0 24 24"><use href="#clsStarShape"/><g clip-path="url(#clsStarClip)"><rect class="cls-shine" x="0" y="-6" width="7" height="36"/></g></svg>
+        </span>
       </div>
 
-      <section class="task-list" aria-label="课堂互动任务">
-        <button type="button" class="task-card" data-task1-card>
-          <span class="task-number">1</span>
-          <span class="task-copy">
-            <h4>问候时间连线</h4>
-            <p data-task1-description>把中文时间和正确的印尼语意思连起来。</p>
+      <section class="cls-levels" aria-label="课堂互动任务">
+        <button type="button" class="cls-level" data-tone="violet" data-level="1" data-state="todo">
+          <span class="cls-level-badge" data-badge>1</span>
+          <span class="cls-level-copy">
+            <span class="cls-level-title">快速选择</span>
+            <span class="cls-level-id">Pilihan cepat</span>
+            <span class="cls-class-count" data-level-count data-start="21">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"></circle><path d="M3.6 19a5.4 5.4 0 0 1 10.8 0"></path><circle cx="16.8" cy="8.6" r="2.6" opacity=".6"></circle><path d="M13.8 19a5 5 0 0 1 10 0" opacity=".6"></path></svg>
+              <b data-count-num>21</b><span class="cls-count-total">/30</span>
+            </span>
           </span>
-          <span class="task-status" data-task1-status>开始互动</span>
+          <span class="cls-level-action is-play" data-action aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"><path d="M8 4.6v14.8l12.2-7.4z"/></svg>
+          </span>
+          <svg class="cls-level-art" viewBox="0 0 120 120" aria-hidden="true">
+            <rect x="18" y="30" width="84" height="24" rx="12" fill="none" stroke="currentColor" stroke-width="9"/>
+            <rect x="18" y="66" width="84" height="24" rx="12" fill="currentColor"/>
+          </svg>
         </button>
 
-        <button type="button" class="task-card is-locked" data-task2-card>
-          <span class="task-number">2</span>
-          <span class="task-copy">
-            <h4>问候翻翻乐</h4>
-            <p data-task2-description>完成互动 1 后自动解锁。</p>
+        <span class="cls-link" aria-hidden="true">
+          <svg viewBox="0 0 78 58" fill="none" stroke="#d5d1e6" stroke-width="3.5" stroke-dasharray="6 8" stroke-linecap="round"><line x1="10" y1="5" x2="68" y2="53"/></svg>
+        </span>
+
+        <button type="button" class="cls-level" data-tone="mint" data-level="2" data-state="locked">
+          <span class="cls-level-badge" data-badge>2</span>
+          <span class="cls-level-copy">
+            <span class="cls-level-title">看图单选</span>
+            <span class="cls-level-id">Pilih gambar</span>
+            <span class="cls-class-count" data-level-count data-start="3" hidden>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"></circle><path d="M3.6 19a5.4 5.4 0 0 1 10.8 0"></path><circle cx="16.8" cy="8.6" r="2.6" opacity=".6"></circle><path d="M13.8 19a5 5 0 0 1 10 0" opacity=".6"></path></svg>
+              <b data-count-num>3</b><span class="cls-count-total">/30</span>
+            </span>
           </span>
-          <span class="task-status" data-task2-status>先完成 1</span>
+          <span class="cls-level-action is-lock" data-action aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4.8" y="10.6" width="14.4" height="9.2" rx="2.9" fill="currentColor" stroke="none"/><path d="M8.4 10.6V8.3a3.6 3.6 0 0 1 7.2 0v2.3"/></svg></span>
+          <svg class="cls-level-art" viewBox="0 0 120 120" aria-hidden="true">
+            <rect x="22" y="28" width="76" height="62" rx="14" fill="none" stroke="currentColor" stroke-width="9"/>
+            <circle cx="76" cy="50" r="8" fill="currentColor"/>
+            <path d="M34 82l16-18 11 12 9-8 14 14" stroke="currentColor" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          </svg>
+        </button>
+
+        <span class="cls-link" aria-hidden="true">
+          <svg viewBox="0 0 78 58" fill="none" stroke="#d5d1e6" stroke-width="3.5" stroke-dasharray="6 8" stroke-linecap="round"><line x1="68" y1="5" x2="10" y2="53"/></svg>
+        </span>
+
+        <button type="button" class="cls-level" data-tone="orange" data-level="3" data-state="locked">
+          <span class="cls-level-badge" data-badge>3</span>
+          <span class="cls-level-copy">
+            <span class="cls-level-title">问候时间连线</span>
+            <span class="cls-level-id">Hubungkan waktu</span>
+            <span class="cls-class-count" data-level-count data-start="1" hidden>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"></circle><path d="M3.6 19a5.4 5.4 0 0 1 10.8 0"></path><circle cx="16.8" cy="8.6" r="2.6" opacity=".6"></circle><path d="M13.8 19a5 5 0 0 1 10 0" opacity=".6"></path></svg>
+              <b data-count-num>1</b><span class="cls-count-total">/30</span>
+            </span>
+          </span>
+          <span class="cls-level-action is-lock" data-action aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4.8" y="10.6" width="14.4" height="9.2" rx="2.9" fill="currentColor" stroke="none"/><path d="M8.4 10.6V8.3a3.6 3.6 0 0 1 7.2 0v2.3"/></svg></span>
+          <svg class="cls-level-art" viewBox="0 0 120 120" aria-hidden="true">
+            <circle cx="34" cy="34" r="13" fill="currentColor"/>
+            <path d="M45 45c13 2 23 12 30 30" stroke="currentColor" stroke-width="11" stroke-linecap="round" fill="none"/>
+            <circle cx="86" cy="86" r="13" fill="currentColor"/>
+          </svg>
         </button>
       </section>
     </main>
+  </div>
+
+  <div class="celebrate-overlay hidden" data-celebrate-overlay>
+    <section class="celebrate-card" role="dialog" aria-modal="true" aria-labelledby="celebrate-title" tabindex="-1" data-celebrate-card>
+      <span class="celebrate-confetti cc1" aria-hidden="true"></span>
+      <span class="celebrate-confetti cc2" aria-hidden="true"></span>
+      <span class="celebrate-confetti cc3" aria-hidden="true"></span>
+      <span class="celebrate-confetti cc4" aria-hidden="true"></span>
+      <span class="celebrate-confetti cc5" aria-hidden="true"></span>
+      <span class="celebrate-confetti cc6" aria-hidden="true"></span>
+      <span class="celebrate-confetti cc7" aria-hidden="true"></span>
+      <span class="celebrate-confetti cc8" aria-hidden="true"></span>
+      <span class="celebrate-confetti cc9" aria-hidden="true"></span>
+      <span class="celebrate-confetti cc10" aria-hidden="true"></span>
+      <span class="celebrate-confetti cc11" aria-hidden="true"></span>
+      <span class="celebrate-confetti cc12" aria-hidden="true"></span>
+      <span class="celebrate-confetti cc13" aria-hidden="true"></span>
+      <span class="celebrate-confetti cc14" aria-hidden="true"></span>
+      <span class="celebrate-confetti cc15" aria-hidden="true"></span>
+      <span class="celebrate-confetti cc16" aria-hidden="true"></span>
+      <span class="celebrate-flash" aria-hidden="true"></span>
+      <span class="celebrate-cannon boom-left boom-a" aria-hidden="true" style="--dx: 130px; --dy: -560px; --rot: 260deg; background: #ffd86d; width: 10px; height: 18px;"></span>
+      <span class="celebrate-cannon boom-left boom-a" aria-hidden="true" style="--dx: 230px; --dy: -620px; --rot: 320deg; background: #69d5c5; width: 9px; height: 16px;"></span>
+      <span class="celebrate-cannon boom-left boom-a" aria-hidden="true" style="--dx: 60px; --dy: -520px; --rot: 200deg; background: #ffad67; width: 11px; height: 19px;"></span>
+      <span class="celebrate-cannon boom-left boom-a" aria-hidden="true" style="--dx: 320px; --dy: -430px; --rot: 380deg; background: #ffffff; width: 8px; height: 14px;"></span>
+      <span class="celebrate-cannon boom-left boom-a" aria-hidden="true" style="--dx: 180px; --dy: -680px; --rot: 290deg; background: #a5b4ff; width: 10px; height: 17px;"></span>
+      <span class="celebrate-cannon boom-right boom-a" aria-hidden="true" style="--dx: -130px; --dy: -560px; --rot: -260deg; background: #ffd86d; width: 10px; height: 18px;"></span>
+      <span class="celebrate-cannon boom-right boom-a" aria-hidden="true" style="--dx: -230px; --dy: -620px; --rot: -320deg; background: #f3a8d3; width: 9px; height: 16px;"></span>
+      <span class="celebrate-cannon boom-right boom-a" aria-hidden="true" style="--dx: -60px; --dy: -520px; --rot: -200deg; background: #ffffff; width: 11px; height: 19px;"></span>
+      <span class="celebrate-cannon boom-right boom-a" aria-hidden="true" style="--dx: -320px; --dy: -430px; --rot: -380deg; background: #69d5c5; width: 8px; height: 14px;"></span>
+      <span class="celebrate-cannon boom-right boom-a" aria-hidden="true" style="--dx: -180px; --dy: -680px; --rot: -290deg; background: #ffad67; width: 10px; height: 17px;"></span>
+      <span class="celebrate-cannon boom-left boom-b" aria-hidden="true" style="--dx: 140px; --dy: -600px; --rot: 300deg; background: #ff8f8f; width: 9px; height: 15px;"></span>
+      <span class="celebrate-cannon boom-left boom-b" aria-hidden="true" style="--dx: 260px; --dy: -500px; --rot: 360deg; background: #ffd86d; width: 8px; height: 14px;"></span>
+      <span class="celebrate-cannon boom-right boom-b" aria-hidden="true" style="--dx: -140px; --dy: -600px; --rot: -300deg; background: #a5b4ff; width: 9px; height: 15px;"></span>
+      <span class="celebrate-cannon boom-right boom-b" aria-hidden="true" style="--dx: -260px; --dy: -500px; --rot: -360deg; background: #ffffff; width: 8px; height: 14px;"></span>
+      <div class="celebrate-content">
+        <div class="celebrate-panda">
+          <svg viewBox="0 0 200 200" aria-hidden="true">
+            <defs>
+              <clipPath id="celebrateHatClip"><path d="M70 52 L130 52 L100 2 Z" /></clipPath>
+            </defs>
+            <g transform="rotate(-3 100 108)">
+              <circle cx="45" cy="44" r="22" fill="#332e52" />
+              <circle cx="155" cy="44" r="22" fill="#332e52" />
+              <g transform="rotate(-10 100 48)">
+                <path d="M70 52 L130 52 L100 2 Z" fill="#ff7fa8" />
+                <g clip-path="url(#celebrateHatClip)" stroke="#ffffff" stroke-width="7">
+                  <path d="M66 46 L134 38" />
+                  <path d="M70 30 L130 20" />
+                </g>
+                <circle cx="100" cy="6" r="8" fill="#ffd86d" />
+              </g>
+              <ellipse cx="100" cy="104" rx="78" ry="68" fill="#ffffff" stroke="#332e52" stroke-width="5" />
+              <ellipse cx="68" cy="98" rx="19" ry="22" fill="#332e52" transform="rotate(-15 68 98)" />
+              <ellipse cx="132" cy="98" rx="19" ry="22" fill="#332e52" transform="rotate(15 132 98)" />
+              <path d="M59 101 Q68 90 77 101" fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round" />
+              <path d="M123 101 Q132 90 141 101" fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round" />
+              <ellipse cx="100" cy="119" rx="6" ry="4.5" fill="#332e52" />
+              <path d="M84 127 A16 15 0 0 0 116 127 Z" fill="#332e52" />
+              <path d="M93 135 A8 6 0 0 0 107 135 Z" fill="#ff9db8" />
+              <ellipse cx="53" cy="121" rx="12" ry="7.5" fill="#ff9db8" opacity="0.6" />
+              <ellipse cx="147" cy="121" rx="12" ry="7.5" fill="#ff9db8" opacity="0.6" />
+            </g>
+            <path d="M20 68 L23.5 78 L34 81.5 L23.5 85 L20 95 L16.5 85 L6 81.5 L16.5 78 Z" fill="#ffd86d" />
+            <path d="M180 54 L183 62 L191 64.5 L183 67 L180 75 L177 67 L169 64.5 L177 62 Z" fill="#ffffff" opacity="0.9" />
+          </svg>
+          <span class="celebrate-core spark-a" aria-hidden="true" style="--dx: -170px; --dy: -150px; --rot: -160deg; background: #ffd86d; width: 11px; height: 19px;"></span>
+          <span class="celebrate-core spark-a" aria-hidden="true" style="--dx: 170px; --dy: -150px; --rot: 160deg; background: #ffffff; width: 9px; height: 16px;"></span>
+          <span class="celebrate-core spark-a" aria-hidden="true" style="--dx: -215px; --dy: -30px; --rot: -240deg; background: #69d5c5; width: 12px; height: 20px;"></span>
+          <span class="celebrate-core spark-a" aria-hidden="true" style="--dx: 215px; --dy: -30px; --rot: 240deg; background: #a5b4ff; width: 10px; height: 17px;"></span>
+          <span class="celebrate-core spark-a" aria-hidden="true" style="--dx: -150px; --dy: 120px; --rot: -300deg; background: #ffad67; width: 10px; height: 17px;"></span>
+          <span class="celebrate-core spark-a" aria-hidden="true" style="--dx: 150px; --dy: 120px; --rot: 300deg; background: #f3a8d3; width: 9px; height: 15px;"></span>
+          <span class="celebrate-core spark-a" aria-hidden="true" style="--dx: -60px; --dy: -210px; --rot: -100deg; background: #ffffff; width: 8px; height: 14px;"></span>
+          <span class="celebrate-core spark-a" aria-hidden="true" style="--dx: 60px; --dy: -210px; --rot: 100deg; background: #ffd86d; width: 11px; height: 18px;"></span>
+          <span class="celebrate-core spark-b" aria-hidden="true" style="--dx: -190px; --dy: -90px; --rot: -200deg; background: #ff8f8f; width: 9px; height: 15px;"></span>
+          <span class="celebrate-core spark-b" aria-hidden="true" style="--dx: 190px; --dy: -90px; --rot: 200deg; background: #ffd86d; width: 10px; height: 18px;"></span>
+          <span class="celebrate-core spark-b" aria-hidden="true" style="--dx: -110px; --dy: 170px; --rot: -320deg; background: #a5b4ff; width: 11px; height: 19px;"></span>
+          <span class="celebrate-core spark-b" aria-hidden="true" style="--dx: 110px; --dy: 170px; --rot: 320deg; background: #69d5c5; width: 9px; height: 16px;"></span>
+          <span class="celebrate-core spark-b" aria-hidden="true" style="--dx: -30px; --dy: -230px; --rot: -70deg; background: #f3a8d3; width: 10px; height: 16px;"></span>
+          <span class="celebrate-core spark-b" aria-hidden="true" style="--dx: 30px; --dy: -230px; --rot: 70deg; background: #ffffff; width: 8px; height: 14px;"></span>
+        </div>
+        <h2 id="celebrate-title">全部完成啦！</h2>
+        <p class="celebrate-kicker">你真厉害！</p>
+        <p class="celebrate-id">Semua sudah selesai! Kamu hebat!</p>
+      </div>
+      <div class="celebrate-actions">
+        <button type="button" class="celebrate-button" data-celebrate-ok>Mantap!</button>
+      </div>
+    </section>
   </div>
 
   <script type="module" src="shared/seed-data.js"></script>

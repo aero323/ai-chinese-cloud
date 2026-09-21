@@ -1,9 +1,10 @@
 /* 图片—词语连线 · interaction-picture-match.html 页面脚本
-   状态机：待作答 → 已配对 N / 4 组 → 全部配对成功。
-   交互和原版连线题（app.js 的 initMatch）同一套判定：先点左列的图，再点右列对应的词，
-   配对成功两边变绿打勾并锁定，配错两边红框抖动约 0.7 秒后复原，可以继续尝试；
+   精简：页面不写字，只留一张作答卡——"说话"的是图卡和词卡本身。
+   交互和原版连线题（app.js 的 initMatch）同一套判定：左右任一侧先点都行，
+   点另一侧即判定；配对成功两边变绿打勾并锁定，配错两边红框抖动约 0.7 秒后复原。
    本题是纯点选配对、不画线：没有连线层（<svg>），也没有窗口尺寸重算逻辑。
-   进度记账和课堂跳转都由 shared/activity-bridge.js 负责，本页只做界面并调用 finish()。
+   进度和结果不再显示成文字行，只通过视觉隐藏的播报区说给读屏软件。
+   进度记账由 shared/activity-bridge.js 负责（课堂跳转由完成弹窗的按钮执行），本页只做界面并调用 finish()。
    图槽数据固定保留 icon / image / imageAlt 三个字段：image 有值时渲染真图，
    为空时渲染 emoji；以后换真图只改 PAIRS 数据，不改页面结构和样式。 */
 (function (global) {
@@ -23,7 +24,8 @@
   const GROUP_TOTAL = PAIRS.length;
   const WRONG_RESET_DELAY = 720;      // 配错：红框和抖动保留 720ms 后复原（照原版连线题）
   const SOLO_MODAL_DELAY = 600;       // 体验模式：全部配对成功后约 0.6 秒弹完成弹窗
-  const CLASS_REDIRECT_DELAY = 2600;  // 课堂模式：公共脚本按这个延迟跳转
+  const modal = global.AICloudFeedbackModal || null;
+  const copy = global.AICloudFeedbackCopy || {};
 
   const el = {};
   const matched = new Set();
@@ -33,37 +35,19 @@
   let lastSeconds = 0;
   let startedAt = 0;
   let modalTimer = 0;
+  let madeMistake = false;
 
   function setText(node, text) {
     if (node) node.textContent = text;
   }
 
-  function setHidden(node, hidden) {
-    if (node) node.classList.toggle("hidden", !!hidden);
-  }
-
   function cache() {
     el.board = document.querySelector("[data-pm-board]");
-    el.progress = document.querySelector("[data-pm-progress]");
-    el.step = document.querySelector("[data-pm-step]");
     el.announcer = document.querySelector("[data-pm-announcer]");
-    el.status = document.querySelector("[data-activity-status]");
-    el.badgeIcon = document.querySelector("[data-pm-badge-icon]");
-    el.badgeName = document.querySelector("[data-pm-badge-name]");
-    el.modal = document.querySelector("[data-pm-complete]");
-    el.modalChange = document.querySelector("[data-pm-change]");
-    el.modalReturn = document.querySelector("[data-pm-return]");
   }
 
   function activityBridge() {
     return global.AICloudActivity || null;
-  }
-
-  function activityMeta() {
-    const types = global.AICloudActivityTypes;
-    const type = document.body.dataset.activityType || "picture-match";
-    if (!types || typeof types.get !== "function") return null;
-    return types.get(type);
   }
 
   function mode() {
@@ -72,13 +56,8 @@
     return bridge.context().mode;
   }
 
-  /* 题型角标文案取自题型清单，不在页面里另写一份；返回按钮跟着模式走 */
+  /* 返回按钮跟着模式走（题型名由页头标题承担，页面里不再放角标） */
   function applyShellText() {
-    const meta = activityMeta();
-    if (meta) {
-      setText(el.badgeIcon, meta.icon);
-      setText(el.badgeName, meta.title);
-    }
     const back = document.querySelector("[data-activity-back]");
     if (back) {
       const isClass = mode() === "class";
@@ -164,23 +143,6 @@
     });
   }
 
-  function updateProgress() {
-    setText(el.progress, matched.size + " / " + GROUP_TOTAL + " 组");
-  }
-
-  function updateStatus() {
-    if (!el.status) return;
-    if (matched.size >= GROUP_TOTAL) {
-      setText(el.status, "当前状态：全部配对成功");
-      return;
-    }
-    if (matched.size > 0) {
-      setText(el.status, "当前状态：已配对 " + matched.size + " / " + GROUP_TOTAL + " 组");
-      return;
-    }
-    setText(el.status, "当前状态：待作答");
-  }
-
   function announce(message) {
     if (el.announcer) el.announcer.textContent = message || "";
   }
@@ -190,28 +152,47 @@
     finished = true;
     const bridge = activityBridge();
     if (!bridge || typeof bridge.finish !== "function") return { recorded: false, next: "" };
-    return bridge.finish({ correct: true, seconds: seconds, delay: CLASS_REDIRECT_DELAY });
+    return bridge.finish({ correct: true, seconds: seconds });
   }
 
-  function showModal() {
-    if (!el.modal) return;
-    el.modal.classList.remove("hidden");
-    if (el.modalChange && typeof el.modalChange.focus === "function") el.modalChange.focus();
+  /* 完成弹窗：公共模具（从"通用＋配对专属"句池抽；一局没连错过走升级档） */
+  function openModal() {
+    if (!modal || typeof modal.open !== "function") return;
+    const perfect = !madeMistake;
+    const praise = (typeof copy.draw === "function" ? copy.draw("pair", { perfect: perfect }) : null)
+      || { zh: "全部连对啦！", id: "Semua pasangan benar!", emoji: "🎉" };
+    modal.open({
+      tier: perfect ? "correctFirstTry" : "correct",
+      badge: praise.emoji,
+      titleZh: praise.zh,
+      titleId: praise.id,
+      actions: [
+        {
+          label: "返回课堂",
+          onSelect: function () {
+            if (global.location) global.location.href = "classroom.html";
+          }
+        },
+        { label: "再练一次", icon: "↻", onSelect: restartBoard }
+      ]
+    });
   }
 
-  function hideModal() {
-    if (el.modal) el.modal.classList.add("hidden");
+  function closeModal() {
+    if (modal && typeof modal.close === "function") modal.close();
   }
 
-  /* 全部 4 组配对成功：调用 finish()；课堂模式交给公共脚本跳转，体验模式自己弹窗 */
+  /* 再练一次：关掉弹窗，牌面重置，可以重新连一遍 */
+  function restartBoard() {
+    closeModal();
+    startBoard();
+  }
+
+  /* 全部 4 组配对成功：调用 finish()（课堂模式记进度）；两种模式都弹完成弹窗 */
   function finishBoard() {
     lastSeconds = Math.max(1, Math.round((Date.now() - startedAt) / 1000));
-    const outcome = completeOnce(lastSeconds);
-    if (outcome && outcome.recorded) {
-      setText(el.status, "已全部配对，正在返回课堂继续下一题…");
-      return;
-    }
-    modalTimer = global.setTimeout(showModal, SOLO_MODAL_DELAY);
+    completeOnce(lastSeconds);
+    modalTimer = global.setTimeout(openModal, SOLO_MODAL_DELAY);
   }
 
   /* 点选流转（照 initMatch，去掉画线）：同一项再点＝取消；同侧另一项＝选中转移；另一侧＝判定 */
@@ -248,8 +229,6 @@
       right.classList.remove("selected");
       selected = null;
       markCorrect(key);
-      updateProgress();
-      updateStatus();
       announce("配对成功：" + (pair ? pair.word : key) + "，还剩 " + (GROUP_TOTAL - matched.size) + " 组");
       if (matched.size === GROUP_TOTAL) finishBoard();
       return;
@@ -260,6 +239,7 @@
     right.classList.remove("selected");
     left.classList.add("wrong");
     right.classList.add("wrong");
+    madeMistake = true;
     selected = null;
     announce("这两个不是一对，再试试");
 
@@ -272,31 +252,20 @@
 
   function startBoard() {
     global.clearTimeout(modalTimer);
-    hideModal();
+    closeModal();
     matched.clear();
     selected = null;
     resolving = false;
     finished = false;
+    madeMistake = false;
     startedAt = Date.now();
     announce("");
     renderBoard();
-    updateProgress();
-    updateStatus();
-  }
-
-  function bindEvents() {
-    [el.modalChange, el.modalReturn].forEach(function (link) {
-      if (!link) return;
-      link.addEventListener("click", function () {
-        completeOnce(lastSeconds);
-      });
-    });
   }
 
   function boot() {
     cache();
     applyShellText();
-    bindEvents();
     startBoard();
   }
 

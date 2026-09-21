@@ -19,35 +19,11 @@
 
     setText(document.querySelector("[data-activity-title]"), meta ? meta.title : "题型页面");
     setText(document.querySelector("[data-activity-subtitle]"), meta ? meta.titleId : "Aktivitas");
-    setText(document.querySelector("[data-activity-task]"), meta ? meta.cardDescription : "");
-
-    const step = document.querySelector("[data-activity-step]");
-    if (step) {
-      step.textContent = ctx.mode === "class" && ctx.slot ? "互动 " + ctx.slot + " / 2" : "题型体验";
-    }
 
     const back = document.querySelector("[data-activity-back]");
     if (back) {
       back.setAttribute("href", "classroom.html");
       back.setAttribute("aria-label", ctx.mode === "class" ? "返回课堂互动" : "返回课堂");
-    }
-
-    const status = document.querySelector("[data-activity-status]");
-    const demo = document.querySelector("[data-activity-demo-finish]");
-    if (demo) {
-      demo.addEventListener("click", function () {
-        const outcome = bridge && bridge.finish ? bridge.finish({ correct: true, seconds: 8, detail: "占位页面标记完成" }) : { recorded: false };
-        if (outcome.recorded) {
-          setText(status, outcome.next === "complete.html" ? "本题已完成，正在进入完成页…" : "本题已完成，正在返回课堂继续下一题…");
-        } else {
-          setText(status, "本题已完成（单独体验不会计入课堂进度）。");
-        }
-      });
-    }
-
-    const meta2 = document.querySelector("[data-activity-meta]");
-    if (meta2 && meta) {
-      meta2.textContent = "题型标识：" + meta.type + " · 页面文件：" + meta.page;
     }
 
     // 完成弹窗：点弹窗外的灰色区域可以关掉，回到页面继续看

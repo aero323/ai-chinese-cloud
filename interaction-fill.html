@@ -25,61 +25,33 @@
     </header>
 
     <main class="page page-content">
-      <div class="game-intro">
-        <div>
-          <h2 data-activity-task>在句子的空格里输入词语，答案支持多种写法。</h2>
-          <p>看句子，把空里缺的词从下面的词库里选出来。<br>Baca kalimat, pilih kata yang tepat dari pilihan di bawah.</p>
-        </div>
-        <span class="progress-pill" data-activity-step>题型体验</span>
-      </div>
-
       <section class="fill-card" data-activity-slot data-fill-state="idle" aria-label="补全句子作答区">
-        <div class="fill-card-head">
-          <span class="fill-badge" data-fill-badge>✏️ 补全句子</span>
-          <span class="fill-count">第 1 / 1 题</span>
-        </div>
         <p class="fill-sentence" data-fill-sentence lang="zh-CN"></p>
         <div class="fill-bank" data-fill-bank role="group" aria-label="词库，点一个词把它填进空格"></div>
       </section>
 
       <div class="fill-actions">
-        <button type="button" class="secondary-button fill-clear" data-fill-clear disabled>清空</button>
-        <button type="button" class="primary-button fill-submit" data-fill-submit disabled>提交答案</button>
+        <button type="button" class="secondary-button fill-clear btn-stacked" data-fill-clear disabled>
+          <span data-fill-clear-label>重置</span>
+          <span class="btn-id" lang="id">Ulangi</span>
+        </button>
+        <button type="button" class="primary-button fill-submit btn-stacked" data-fill-submit disabled>
+          <span data-fill-submit-label>提交</span>
+          <span class="btn-id" lang="id" data-fill-submit-label-id>Kirim</span>
+        </button>
       </div>
-      <p class="fill-progress-note" data-fill-progress>还有 3 个空没填</p>
+
       <p class="fill-live" data-fill-live role="status" aria-live="polite"></p>
 
-      <div class="fill-feedback hidden" data-fill-feedback role="status" aria-live="polite">
-        <span class="fill-feedback-icon" data-fill-feedback-icon aria-hidden="true">🎉</span>
-        <div class="fill-feedback-copy">
-          <strong data-fill-verdict>答对了！</strong>
-          <p class="fill-full-sentence hidden" data-fill-full-sentence></p>
-          <p class="fill-answer-line hidden" data-fill-answer-line></p>
-          <p class="fill-explanation" data-fill-explanation></p>
-        </div>
-      </div>
-
-      <p class="activity-status" data-activity-status>当前状态：待作答</p>
-      <p class="activity-meta" data-activity-meta></p>
-
-      <div class="helper-note">
-        <span aria-hidden="true">💡</span>
-        <div>点下面的词，把它填进空格里。<br>Ketuk kata di bawah untuk mengisi kotak kosong.</div>
+      <div class="fill-feedback hidden" role="status" aria-live="polite" data-fill-feedback>
+        <strong class="fill-feedback-title">
+          <span aria-hidden="true" data-fill-feedback-icon></span>
+          <span data-fill-verdict></span>
+        </strong>
+        <p class="fill-feedback-sentence hidden" data-fill-full-sentence></p>
+        <p class="fill-feedback-translation hidden" data-fill-full-sentence-id lang="id"></p>
       </div>
     </main>
-  </div>
-
-  <div class="modal-overlay hidden" data-fill-complete>
-    <section class="completion-modal" role="dialog" aria-modal="true" aria-labelledby="fill-complete-title">
-      <div class="modal-badge" data-fill-modal-badge>🎉</div>
-      <h3 id="fill-complete-title" data-fill-modal-title>全部答对，太棒了！</h3>
-      <p class="id-copy" data-fill-modal-copy>Semua jawaban benar!</p>
-      <p class="modal-description" data-fill-modal-description></p>
-      <div class="complete-actions">
-        <a class="primary-button fill-modal-link" href="classroom.html?activities=1">换一个题型</a>
-        <a class="secondary-button fill-modal-link" href="classroom.html">返回课堂</a>
-      </div>
-    </section>
   </div>
 
   <script type="module" src="shared/activity-types.js"></script>
@@ -87,6 +59,8 @@
   <script type="module" src="shared/activity-bridge.js"></script>
   <script type="module" src="app.js"></script>
   <script type="module" src="shared/activity-page.js"></script>
+  <script type="module" src="shared/feedback-copy.js"></script>
+  <script type="module" src="shared/feedback-modal.js"></script>
   <script type="module" src="interaction-fill.js"></script>
 </body>
 </html>

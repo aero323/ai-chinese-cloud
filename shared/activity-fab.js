@@ -74,7 +74,7 @@
       '  <div class="demo-handle"></div>',
       '  <div class="demo-sheet-head">',
       '    <h3 id="activity-sheet-title">题型体验</h3>',
-      '    <p>挑一个题型单独体验：不计分，也不会影响课堂页那两道题的进度。</p>',
+      '    <p>挑一个题型单独体验：不计分，也不会影响课堂页那三关的进度。</p>',
       '  </div>',
       '  <div class="demo-activity-list" data-activity-list></div>',
       '  <p class="activity-sheet-note">灰底的行还在认领中，做完会自动出现在这里；标「占位」的行是占位演示。</p>',

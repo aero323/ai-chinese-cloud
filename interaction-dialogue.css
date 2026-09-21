@@ -1,8 +1,26 @@
 /* 对话补全 · interaction-dialogue.html 专用样式
-   公共外壳（app-shell / page-header / game-intro / progress-pill / helper-note /
-   modal-overlay / completion-modal / primary-button）全部复用 styles.css，
-   这里只写本页面自己的部件：对话气泡、候选句、反馈区和完成弹窗按钮排列。
-   以后要加可选的场景小图槽（72×72）时直接用 .dialogue-slot，布局不用改。 */
+   本页只有一个"说话的人"：对话气泡。数值来自《视觉打磨规范 v0.2》——
+   气泡（本页主角）、选项（第十一节「选项按钮通用规格」五件事）、
+   结果条（对齐快速选择样板：✓ 只给答对，答错靠颜色表达）。
+   公共外壳与主按钮复用 styles.css，本页不改公共件。 */
+
+:root {
+  --line-soft: #e9e7f2;
+  --edge-quiet: #ece9f5;
+  --edge-select: #c9bcff;
+  --select-fill: #f1eeff;
+  --answer-correct: #1fbf8f;
+  --answer-correct-text: #0f8f68;
+  --answer-wrong: #f2555f;
+  --answer-wrong-fill: #fff0f1;
+  --text-quiet: #3f3a5c;
+  --chip-fill: #f1f0f6;
+  --dur-press: .15s;
+  --dur-enter: .26s;
+  --dur-pop: .3s;
+  --ease-enter: cubic-bezier(.2, .85, .25, 1);
+  --ease-pop: cubic-bezier(.2, .9, .3, 1.25);
+}
 
 .page-content {
   padding-bottom: 190px;
@@ -15,117 +33,87 @@
   box-shadow: var(--shadow-soft);
 }
 
-.dialogue-card-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-
-.dialogue-type-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-  padding: 6px 11px;
-  border-radius: 999px;
-  color: var(--purple-deep);
-  background: var(--purple-soft);
-  font-size: 10px;
-  font-weight: 900;
-}
-
-.dialogue-card-head .progress-pill {
-  flex: 0 0 auto;
-}
-
-.dialogue-question {
-  margin: 0 0 13px;
-  font-size: 17px;
-  line-height: 1.4;
-  overflow-wrap: anywhere;
-}
-
-/* 预留给以后的可选场景小图槽：本批不渲染，尺寸和字号先定好（72×72、emoji 32px） */
-.dialogue-slot {
-  display: grid;
-  width: 72px;
-  height: 72px;
-  place-items: center;
-  border-radius: 16px;
-  background: linear-gradient(160deg, #f6f4ff, #ece7ff);
+/* 读屏专用：视觉上不显示，无障碍播报照旧 */
+.dialogue-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
   overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
-.dialogue-slot-emoji {
-  font-size: 32px;
-  line-height: 1;
-}
-
-.dialogue-slot img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-/* 对话区：对方在左（浅色气泡），自己在右（主色气泡，提交前只放「？」占位） */
+/* ---------- 对话气泡：页面主角 ---------- */
 .dialogue-thread {
   display: grid;
-  gap: 13px;
-  margin: 0 0 15px;
+  gap: 16px;
+  margin: 0 0 20px;
   padding: 0;
   list-style: none;
 }
 
 .dialogue-turn {
-  display: grid;
-  gap: 5px;
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
 }
 
 .dialogue-turn.is-them {
-  justify-items: start;
+  justify-content: flex-start;
 }
 
 .dialogue-turn.is-me {
-  justify-items: end;
+  justify-content: flex-end;
 }
 
-.dialogue-speaker {
-  color: var(--muted);
-  font-size: 10px;
-  font-weight: 900;
+.dialogue-turn-body {
+  min-width: 0;
+  max-width: 80%;
+}
+
+/* 对方：浅灰圆标 + 浅灰气泡；我：不放头像，紫色气泡靠右（位置＋颜色即身份） */
+.dialogue-avatar {
+  flex: 0 0 auto;
+  display: grid;
+  width: 52px;
+  height: 52px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--chip-fill);
+  font-size: 28px;
+  line-height: 1;
 }
 
 .dialogue-bubble {
-  max-width: 100%;
   margin: 0;
-  padding: 11px 14px;
-  border-radius: 18px;
-  font-size: 14px;
-  font-weight: 800;
+  padding: 14px 18px;
+  border-radius: 22px;
+  font-size: 16px;
+  font-weight: 900;
   line-height: 1.5;
   overflow-wrap: anywhere;
 }
 
 .is-them .dialogue-bubble {
-  border-bottom-left-radius: 6px;
-  color: #4f4775;
-  background: #f3f1fa;
+  border-bottom-left-radius: 8px;
+  color: var(--text-quiet);
+  background: var(--chip-fill);
 }
 
 .is-me .dialogue-bubble {
-  border-bottom-right-radius: 6px;
+  border-bottom-right-radius: 8px;
   color: #ffffff;
-  background: linear-gradient(135deg, #735dff, #503be5);
-  box-shadow: 0 10px 22px rgba(79, 58, 224, 0.2);
-  transition: background 0.2s ease, box-shadow 0.2s ease;
+  background: var(--purple);
+  transition: background .2s ease;
 }
 
 .dialogue-bubble.is-placeholder {
-  min-width: 58px;
-  color: rgba(255, 255, 255, 0.86);
+  min-width: 64px;
+  padding: 10px 20px;
+  font-size: 24px;
   text-align: center;
 }
 
@@ -133,81 +121,57 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 8px;
+  gap: 9px;
   max-width: 100%;
 }
 
+/* 答对：气泡旁勾徽章轻弹（答错不打叉，红色气泡自己说明） */
 .dialogue-mark {
   flex: 0 0 auto;
   display: grid;
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   place-items: center;
   border-radius: 50%;
   color: #ffffff;
-  background: var(--success);
-  font-size: 13px;
+  background: var(--answer-correct);
+  font-size: 14px;
   font-weight: 900;
-  animation: dialoguePop 0.28s ease;
+  animation: dialoguePop var(--dur-pop) var(--ease-pop);
 }
 
-/* 选错时把选中的句子标红（同时还有 ✗ 和无障碍播报，不只靠颜色区分） */
 .dialogue-bubble.is-wrong {
-  background: linear-gradient(135deg, #f2707a, #df4753);
-  box-shadow: 0 10px 22px rgba(223, 71, 83, 0.24);
-  animation: dialogueShake 0.35s ease;
+  background: var(--answer-wrong);
+  animation: shake .35s ease;
 }
 
-.dialogue-correct-line {
-  max-width: 100%;
-  margin: 7px 0 0;
-  padding: 9px 12px;
-  border: 1px dashed rgba(239, 95, 105, 0.45);
-  border-radius: 13px;
-  color: #c23a45;
-  background: #fff0f1;
-  font-size: 11px;
-  font-weight: 900;
-  line-height: 1.5;
-  overflow-wrap: anywhere;
-  animation: dialoguePop 0.28s ease;
-}
-
-@keyframes dialoguePop {
-  from { opacity: 0; transform: scale(0.86); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-@keyframes dialogueShake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-4px); }
-  75% { transform: translateX(4px); }
-}
-
+/* ---------- 候选句：第十一节通用规格 ---------- */
 .dialogue-options {
   display: grid;
-  gap: 9px;
-  margin-bottom: 14px;
+  gap: 11px;
+  margin-bottom: 16px;
 }
 
 .dialogue-option {
   display: flex;
   align-items: center;
-  gap: 11px;
+  gap: 12px;
   width: 100%;
-  min-height: 54px;
-  padding: 10px 13px;
-  border: 2px solid #e8e5f4;
-  border-radius: 19px;
+  min-height: 64px;
+  padding: 12px 14px;
+  border: 2px solid var(--line-soft);
+  border-radius: 20px;
   background: #ffffff;
-  box-shadow: 0 6px 18px rgba(58, 48, 116, 0.07);
+  box-shadow: 0 2px 0 var(--edge-quiet);
   text-align: left;
   cursor: pointer;
-  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+  transition: transform var(--dur-press) ease, box-shadow var(--dur-press) ease,
+    border-color var(--dur-press) ease, background var(--dur-press) ease;
 }
 
 .dialogue-option:active:not(:disabled) {
-  transform: scale(0.99);
+  transform: translateY(2px);
+  box-shadow: 0 0 0 var(--edge-quiet);
 }
 
 .dialogue-option:disabled {
@@ -217,30 +181,30 @@
 .dialogue-letter {
   flex: 0 0 auto;
   display: grid;
-  width: 30px;
-  height: 30px;
+  width: 34px;
+  height: 34px;
   place-items: center;
-  border-radius: 11px;
-  color: var(--purple-deep);
-  background: var(--purple-soft);
-  font-size: 12px;
+  border-radius: 12px;
+  color: #7b7690;
+  background: var(--chip-fill);
+  font-size: 13px;
   font-weight: 900;
-  transition: color 0.18s ease, background 0.18s ease;
+  transition: color var(--dur-press) ease, background var(--dur-press) ease;
 }
 
 .dialogue-option-text {
   flex: 1 1 auto;
   min-width: 0;
-  font-size: 14px;
-  font-weight: 800;
+  font-size: 15px;
+  font-weight: 900;
   line-height: 1.35;
   overflow-wrap: anywhere;
 }
 
 .dialogue-option.selected {
   border-color: var(--purple);
-  background: var(--purple-soft);
-  box-shadow: 0 10px 24px rgba(89, 68, 225, 0.16);
+  background: var(--select-fill);
+  box-shadow: 0 4px 0 var(--edge-select);
 }
 
 .dialogue-option.selected .dialogue-letter {
@@ -249,28 +213,29 @@
 }
 
 .dialogue-option.correct {
-  border-color: rgba(34, 173, 131, 0.55);
-  background: #e9faf4;
+  border-color: var(--answer-correct);
+  background: #e8fbf3;
+  box-shadow: 0 4px 0 #a9e8d3;
 }
 
 .dialogue-option.correct .dialogue-letter {
   color: #ffffff;
-  background: var(--success);
+  background: var(--answer-correct);
 }
 
 .dialogue-option.wrong {
-  border-color: var(--danger);
-  background: #fff0f1;
-  animation: dialogueShake 0.35s ease;
+  border-color: var(--answer-wrong);
+  background: var(--answer-wrong-fill);
+  box-shadow: 0 4px 0 #f8c3c7;
+  animation: shake .35s ease;
 }
 
 .dialogue-option.wrong .dialogue-letter {
   color: #ffffff;
-  background: var(--danger);
+  background: var(--answer-wrong);
 }
 
-.dialogue-option.correct::after,
-.dialogue-option.wrong::after {
+.dialogue-option.correct::after {
   flex: 0 0 auto;
   display: grid;
   width: 22px;
@@ -284,27 +249,44 @@
 
 .dialogue-option.correct::after {
   content: "✓";
-  background: var(--success);
+  background: var(--answer-correct);
+  animation: dialoguePop var(--dur-pop) var(--ease-pop);
 }
 
-.dialogue-option.wrong::after {
-  content: "✗";
-  background: var(--danger);
+/* 提交按钮：样板页同款厚度（紫色只出现在"可提交"这一刻，禁用=灰底灰字） */
+.dialogue-card .primary-button {
+  min-height: 60px;
+  border-radius: 20px;
+  font-size: 17px;
+  letter-spacing: 0.02em;
+  background: linear-gradient(180deg, #7d68ff, #5b45ee);
+  box-shadow: 0 6px 0 #4331c4, 0 14px 26px rgba(79, 58, 224, 0.28);
+  transition: transform var(--dur-press) ease, box-shadow var(--dur-press) ease,
+    background .2s ease, color .2s ease;
 }
 
-.dialogue-submit[disabled] {
-  opacity: 0.5;
-  box-shadow: none;
+.dialogue-card .primary-button:not([disabled]):active {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 #4331c4, 0 8px 16px rgba(79, 58, 224, 0.24);
+}
+
+.dialogue-card .primary-button[disabled] {
+  opacity: 1;
+  color: #a5a0bd;
+  background: #eceaf4;
+  box-shadow: 0 3px 0 #e2dfee;
   cursor: not-allowed;
 }
 
+/* ---------- 结果条 ---------- */
 .dialogue-feedback {
-  margin-top: 13px;
-  padding: 13px 14px;
-  border: 1.5px solid transparent;
-  border-radius: 18px;
-  font-size: 11px;
+  margin-top: 15px;
+  padding: 15px 16px;
+  border: 2px solid transparent;
+  border-radius: 20px;
+  font-size: 12px;
   line-height: 1.6;
+  animation: dialogueFeedbackIn var(--dur-enter) var(--ease-enter);
 }
 
 .dialogue-feedback:focus {
@@ -312,63 +294,99 @@
 }
 
 .dialogue-feedback.is-correct {
-  border-color: rgba(34, 173, 131, 0.32);
-  background: #e9faf4;
+  border-color: #a9e8d3;
+  background: #e8fbf3;
+  box-shadow: 0 4px 0 #d3f2e7;
 }
 
 .dialogue-feedback.is-wrong {
-  border-color: rgba(239, 95, 105, 0.32);
-  background: #fff0f1;
+  border-color: #f8c3c7;
+  background: var(--answer-wrong-fill);
+  box-shadow: 0 4px 0 #fbdde0;
 }
 
 .dialogue-feedback-title {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 900;
 }
 
 .dialogue-feedback.is-correct .dialogue-feedback-title {
-  color: #17836a;
+  color: var(--answer-correct-text);
 }
 
 .dialogue-feedback.is-wrong .dialogue-feedback-title {
-  color: #c23a45;
+  color: var(--text-quiet);
 }
 
-.dialogue-feedback-answer {
-  margin: 7px 0 0;
-  color: #3f3a5c;
-  font-size: 12px;
-  font-weight: 900;
-}
-
-.dialogue-feedback-copy {
-  margin: 5px 0 0;
-  color: #6e6984;
-}
-
-.dialogue-modal-actions {
+/* 答错：给"上一句 + 正确的那一句"的中印对照（不出现评判词） */
+.dialogue-quote {
   display: grid;
-  gap: 9px;
+  gap: 10px;
+  margin-top: 2px;
 }
 
-.dialogue-modal-actions .primary-button,
-.dialogue-modal-actions .secondary-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-decoration: none;
+.dialogue-quote-row {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+}
+
+.dialogue-quote-zh {
+  color: #6e6984;
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.45;
+}
+
+.dialogue-quote-id {
+  color: #8f8aa3;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.dialogue-quote-row.is-answer .dialogue-quote-zh {
+  color: var(--text-quiet);
+  font-size: 14px;
+}
+
+@keyframes dialogueFeedbackIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes dialoguePop {
+  0% { transform: scale(.4); opacity: 0; }
+  65% { transform: scale(1.14); opacity: 1; }
+  100% { transform: scale(1); }
 }
 
 @media (max-width: 360px) {
-  .dialogue-question {
-    font-size: 16px;
+  .dialogue-turn-body {
+    max-width: 78%;
+  }
+
+  .dialogue-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 22px;
   }
 
   .dialogue-bubble {
-    font-size: 13px;
+    padding: 12px 15px;
+    font-size: 15px;
+  }
+
+  .dialogue-bubble.is-placeholder {
+    font-size: 22px;
+  }
+
+  .dialogue-option {
+    min-height: 56px;
+    padding: 10px 12px;
   }
 
   .dialogue-option-text {

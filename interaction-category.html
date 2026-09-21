@@ -25,96 +25,40 @@
     </header>
 
     <main class="page page-content">
-      <div class="game-intro">
-        <div>
-          <h2 data-activity-task>把下面的词放到对应的类别里。</h2>
-          <p>先点一个词，再点它该去的类别，全部放好再提交。<br>Ketuk satu kata, lalu ketuk kategorinya, lalu kirim.</p>
-        </div>
-        <span class="progress-pill" data-activity-step>题型体验</span>
-      </div>
-
       <section class="category-card" aria-labelledby="category-prompt">
-        <div class="category-card-head">
-          <span class="category-type-badge">
-            <span aria-hidden="true" data-category-badge-icon>📦</span>
-            <span class="category-type-badge-text">
-              <strong data-category-badge-name>分类归组</strong>
-              <small lang="id" data-category-badge-id>Kelompokkan kata</small>
-            </span>
-          </span>
-          <span class="category-head-pills">
-            <span class="progress-pill" data-category-step>第 1 / 1 题</span>
-            <span class="progress-pill" data-category-progress>已归类 0 / 6</span>
-          </span>
-        </div>
-
         <div class="category-prompt-block">
-          <h3 class="category-prompt" id="category-prompt">把下面的词放到对应的类别里。</h3>
-          <p class="category-prompt-id" lang="id">Kelompokkan kata di bawah ini ke kategori yang tepat.</p>
+          <h3 class="category-prompt" id="category-prompt"><span aria-hidden="true">🐼</span>把下面的词放进对应的类别里吧！</h3>
+          <p class="category-prompt-id" lang="id">Ayo, kelompokkan kata-kata di bawah ini ke kategori yang tepat!</p>
         </div>
 
         <div class="category-pool-block">
-          <p class="category-area-label">待归类 <span lang="id">Belum dikelompokkan</span></p>
           <div class="category-pool" role="group" aria-label="待归类的词" data-category-pool></div>
-          <p class="category-pool-done hidden" data-category-pool-done>词都归好类了，点「提交」看看结果。<br><span lang="id">Semua kata sudah masuk kategori, tekan Kirim.</span></p>
         </div>
 
-        <p class="category-area-label">类别 <span lang="id">Kategori</span></p>
         <div class="category-groups" data-category-groups></div>
 
         <div class="category-actions">
-          <button type="button" class="secondary-button" data-category-reset>
+          <button type="button" class="secondary-button btn-stacked" data-category-reset>
             <span data-category-reset-label>重置</span>
-            <span class="category-btn-id" lang="id">Ulangi</span>
+            <span class="btn-id" lang="id">Ulangi</span>
           </button>
-          <button type="button" class="primary-button" data-category-submit disabled>
+          <button type="button" class="primary-button btn-stacked" data-category-submit disabled>
             <span data-category-submit-label>提交</span>
-            <span class="category-btn-id" lang="id" data-category-submit-label-id>Kirim</span>
+            <span class="btn-id" lang="id" data-category-submit-label-id>Kirim</span>
           </button>
         </div>
 
         <div class="category-feedback hidden" role="status" aria-live="polite" tabindex="-1" data-category-feedback>
           <strong class="category-feedback-title">
-            <span aria-hidden="true" data-category-feedback-icon></span>
             <span data-category-feedback-title></span>
+            <span class="category-feedback-title-sep" aria-hidden="true">·</span>
             <span class="category-feedback-title-id" lang="id" data-category-feedback-title-id></span>
           </strong>
-          <p class="category-feedback-summary">
-            <span data-category-feedback-summary-zh></span>
-            <span class="category-feedback-summary-id" lang="id" data-category-feedback-summary-id></span>
-          </p>
-          <p class="category-feedback-copy">
-            <span data-category-feedback-explain></span>
-            <span class="category-feedback-explain-id" lang="id" data-category-feedback-explain-id></span>
-          </p>
         </div>
       </section>
 
-      <div class="helper-note">
-        <span aria-hidden="true">💡</span>
-        <div>先点一个词，再点它该去的类别。<br>Ketuk satu kata, lalu ketuk kategorinya.</div>
-      </div>
-
       <p class="category-announcer" role="status" aria-live="polite" data-category-announcer></p>
-      <p class="activity-status" data-activity-status>当前状态：待作答</p>
-      <p class="activity-meta" data-activity-meta></p>
     </main>
-  </div>
-
-  <div class="modal-overlay hidden" data-category-complete>
-    <section class="completion-modal" role="dialog" aria-modal="true" aria-labelledby="category-complete-title">
-      <div class="modal-badge" data-category-modal-badge>🎉</div>
-      <h3 id="category-complete-title" data-category-modal-title>答对了，真棒！</h3>
-      <p class="id-copy" data-category-modal-id>Bagus! Semua kata sudah benar.</p>
-      <p class="modal-description" data-category-modal-copy>
-        <span data-category-modal-copy-zh></span>
-        <span class="category-modal-id" lang="id" data-category-modal-copy-id></span>
-      </p>
-      <div class="category-modal-actions">
-        <a class="primary-button" href="classroom.html?activities=1" data-category-change>换一个题型</a>
-        <a class="secondary-button" href="classroom.html" data-category-return>返回课堂</a>
-      </div>
-    </section>
   </div>
 
   <script type="module" src="shared/activity-types.js"></script>
@@ -122,6 +66,8 @@
   <script type="module" src="shared/activity-bridge.js"></script>
   <script type="module" src="app.js"></script>
   <script type="module" src="shared/activity-page.js"></script>
+  <script type="module" src="shared/feedback-copy.js"></script>
+  <script type="module" src="shared/feedback-modal.js"></script>
   <script type="module" src="interaction-category.js"></script>
 </body>
 </html>

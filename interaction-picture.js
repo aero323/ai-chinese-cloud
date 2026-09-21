@@ -1,14 +1,18 @@
 /* 看图单选 · interaction-picture.html 页面脚本
    状态机：待作答 → 已选择 → 已提交 → 正确 / 错误（每题只判一次，不提供重试）。
-   进度记账和课堂跳转都由 shared/activity-bridge.js 负责，本页只做界面并调用 finish()。
+   页面只留事实：图和题干在说话，结果条写对错与正确词的意思；
+   情绪交给公共弹窗（shared/feedback-modal.js ＋ shared/feedback-copy.js）。
+   进度记账由 shared/activity-bridge.js 负责（课堂跳转由完成弹窗的按钮执行），本页只做界面并调用 finish()。
    图槽数据固定保留 icon / image / imageAlt 三个字段：image 有值时渲染真图，
-   为空时渲染 emoji；以后换真图只改 QUESTION 数据，不改页面结构和样式。 */
+  为空时渲染 emoji；以后换真图只改 QUESTION 数据，不改页面结构和样式。
+  动效按《视觉打磨规范》第十二节：待作答时常驻摇摆，提交后停住，答对补跳一次。 */
 (function (global) {
   "use strict";
 
   const LETTERS = ["A", "B", "C", "D", "E", "F"];
   const SOLO_MODAL_DELAY = 2000;      // 体验模式：提交后留多久看对错，再弹完成弹窗
-  const CLASS_REDIRECT_DELAY = 2600;  // 课堂模式：公共脚本按这个延迟跳转
+  const modal = global.AICloudFeedbackModal || null;
+  const copy = global.AICloudFeedbackCopy || {};
 
   /* 单题数据（题型体验用的模拟题目；选项顺序在进入页面时打乱） */
   const QUESTION = {
@@ -19,12 +23,11 @@
     prompt: "这是什么？",
     promptPinyin: "Zhè shì shénme?",
     options: [
-      { id: "cat", text: "猫", pinyin: "māo", correct: true },
-      { id: "dog", text: "狗", pinyin: "gǒu" },
-      { id: "bird", text: "鸟", pinyin: "niǎo" },
-      { id: "fish", text: "鱼", pinyin: "yú" }
-    ],
-    explanation: "「猫」是家里常见的小动物，māo；「狗」是 gǒu。"
+      { id: "cat", text: "猫", pinyin: "māo", translate: "Kucing", correct: true },
+      { id: "dog", text: "狗", pinyin: "gǒu", translate: "Anjing" },
+      { id: "bird", text: "鸟", pinyin: "niǎo", translate: "Burung" },
+      { id: "fish", text: "鱼", pinyin: "yú", translate: "Ikan" }
+    ]
   };
 
   const el = {};
@@ -33,6 +36,7 @@
   let submitted = false;
   let finished = false;
   let lastCorrect = false;
+  let attempts = 0;
   let lastSeconds = 0;
   let startedAt = 0;
   let modalTimer = 0;
@@ -58,39 +62,22 @@
 
   function cache() {
     el.slot = document.querySelector("[data-picture-slot]");
-    el.answer = document.querySelector("[data-picture-answer]");
-    el.answerWord = document.querySelector("[data-picture-answer-word]");
-    el.answerPinyin = document.querySelector("[data-picture-answer-pinyin]");
     el.pinyin = document.querySelector("[data-picture-pinyin]");
     el.stem = document.querySelector("[data-picture-question]");
     el.options = document.querySelector("[data-picture-options]");
     el.submit = document.querySelector("[data-picture-submit]");
+    el.submitLabel = document.querySelector("[data-picture-submit-label]");
+    el.submitLabelId = document.querySelector("[data-picture-submit-label-id]");
     el.feedback = document.querySelector("[data-picture-feedback]");
+    el.feedbackTitleRow = document.querySelector(".picture-feedback-title");
     el.feedbackIcon = document.querySelector("[data-picture-feedback-icon]");
     el.feedbackTitle = document.querySelector("[data-picture-feedback-title]");
     el.feedbackAnswer = document.querySelector("[data-picture-feedback-answer]");
-    el.feedbackCopy = document.querySelector("[data-picture-feedback-copy]");
     el.status = document.querySelector("[data-activity-status]");
-    el.badgeIcon = document.querySelector("[data-picture-type-icon]");
-    el.badgeName = document.querySelector("[data-picture-type-name]");
-    el.modal = document.querySelector("[data-picture-complete]");
-    el.modalBadge = document.querySelector("[data-picture-modal-badge]");
-    el.modalTitle = document.querySelector("[data-picture-modal-title]");
-    el.modalId = document.querySelector("[data-picture-modal-id]");
-    el.modalCopy = document.querySelector("[data-picture-modal-copy]");
-    el.modalChange = document.querySelector("[data-picture-change]");
-    el.modalReturn = document.querySelector("[data-picture-return]");
   }
 
   function activityBridge() {
     return global.AICloudActivity || null;
-  }
-
-  function activityMeta() {
-    const types = global.AICloudActivityTypes;
-    const type = document.body.dataset.activityType || "picture";
-    if (!types || typeof types.get !== "function") return null;
-    return types.get(type);
   }
 
   function mode() {
@@ -99,12 +86,8 @@
     return bridge.context().mode;
   }
 
-  /* 题型角标文案和标题都取自题型清单，不在页面里另写一份 */
+  /* 返回键：课堂模式回课堂互动，体验模式也回课堂页（和其余题型页一致） */
   function applyShellText() {
-    const meta = activityMeta();
-    if (!meta) return;
-    setText(el.badgeIcon, meta.icon);
-    setText(el.badgeName, meta.title);
     const back = document.querySelector("[data-activity-back]");
     if (back) {
       const isClass = mode() === "class";
@@ -130,6 +113,19 @@
     emoji.setAttribute("aria-label", QUESTION.imageAlt || "");
     emoji.textContent = QUESTION.icon;
     el.slot.appendChild(emoji);
+  }
+
+  /* 提交后：常驻摇摆停住；答对时补一次"角色呼应"的跳（第十二节：≤0.5s、一次性） */
+  function settlePictureMove(isCorrect) {
+    if (!el.slot) return;
+    el.slot.classList.add("is-answered");
+    if (isCorrect) el.slot.classList.add("is-hop");
+  }
+
+  /* 再练一次：把跳的痕迹清干净，摇摆重新开始 */
+  function resetPictureMove() {
+    if (!el.slot) return;
+    el.slot.classList.remove("is-answered", "is-hop");
   }
 
   function eachOptionButton(callback) {
@@ -191,30 +187,21 @@
     el.feedback.classList.remove("is-correct", "is-wrong");
     setText(el.feedbackIcon, "");
     setText(el.feedbackTitle, "");
+    setHidden(el.feedbackTitleRow, false);
     setText(el.feedbackAnswer, "");
-    setText(el.feedbackCopy, "");
     setHidden(el.feedbackAnswer, true);
-  }
-
-  /* 提交后图槽下方出现答案文字和拼音 */
-  function showAnswerCaption(correctOption) {
-    if (!el.answer || !correctOption) return;
-    setText(el.answerWord, correctOption.text);
-    setText(el.answerPinyin, correctOption.pinyin || "");
-    setHidden(el.answer, false);
   }
 
   function showFeedback(isCorrect, correctOption) {
     if (!el.feedback || !correctOption) return;
     el.feedback.classList.remove("is-correct", "is-wrong");
     el.feedback.classList.add(isCorrect ? "is-correct" : "is-wrong");
-    setText(el.feedbackIcon, isCorrect ? "✓" : "✗");
-    setText(el.feedbackTitle, isCorrect ? "答对了！" : "再想想");
-    setText(el.feedbackAnswer, isCorrect
-      ? "图上是 " + correctOption.text + " " + correctOption.pinyin
-      : "正确答案：" + correctOption.letter + " " + correctOption.text + " " + correctOption.pinyin);
-    setHidden(el.feedbackAnswer, false);
-    setText(el.feedbackCopy, QUESTION.explanation);
+    setText(el.feedbackIcon, isCorrect ? "✓" : "");
+    setText(el.feedbackTitle, isCorrect ? "正确" : "");
+    setHidden(el.feedbackTitleRow, !isCorrect); // 答错时框里只有意思行，没有标题行
+    // 结果条只写事实：答对给一句「正确」；答错给正确的词和它的印尼语意思，不加中文标签
+    setText(el.feedbackAnswer, isCorrect ? "" : correctOption.text + " " + correctOption.translate);
+    setHidden(el.feedbackAnswer, isCorrect);
     el.feedback.classList.remove("hidden");
   }
 
@@ -230,23 +217,36 @@
     finished = true;
     const bridge = activityBridge();
     if (!bridge || typeof bridge.finish !== "function") return { recorded: false, next: "" };
-    return bridge.finish({ correct: lastCorrect, seconds: lastSeconds, delay: CLASS_REDIRECT_DELAY });
+    return bridge.finish({ correct: lastCorrect, seconds: lastSeconds });
   }
 
-  function showModal() {
-    if (!el.modal) return;
-    setText(el.modalBadge, lastCorrect ? "🎉" : "💪");
-    setText(el.modalTitle, lastCorrect ? "答对了，真棒！" : "再想想也没关系");
-    setText(el.modalId, lastCorrect ? "Bagus! Jawabanmu benar." : "Tidak apa-apa, coba lagi ya!");
-    setText(el.modalCopy, lastCorrect
-      ? "本题已完成，可以换一个题型再练一练，或者回到课堂。"
-      : "正确答案和解析就在上面，可以换一个题型再练一练。");
-    el.modal.classList.remove("hidden");
-    if (el.modalChange && typeof el.modalChange.focus === "function") el.modalChange.focus();
+  function openModal(tier, praise) {
+    if (!modal || typeof modal.open !== "function") return;
+    modal.open({
+      tier: tier,
+      badge: praise ? praise.emoji : "",
+      titleZh: praise ? praise.zh : "",
+      titleId: praise ? praise.id : "",
+      actions: [
+        {
+          label: "返回课堂",
+          onSelect: function () {
+            if (global.location) global.location.href = "classroom.html";
+          }
+        },
+        { label: "再练一次", icon: "↻", onSelect: restartQuestion }
+      ]
+    });
   }
 
-  function hideModal() {
-    if (el.modal) el.modal.classList.add("hidden");
+  function closeModal() {
+    if (modal && typeof modal.close === "function") modal.close();
+  }
+
+  /* 再练一次：关掉弹窗，重新开始本题（选项重新打乱） */
+  function restartQuestion() {
+    closeModal();
+    startQuestion();
   }
 
   function submitAnswer() {
@@ -258,19 +258,25 @@
       return option.correct;
     })[0];
     lastCorrect = !!correctOption && selectedId === correctOption.id;
+    attempts += 1;
+    settlePictureMove(lastCorrect);
+    const tier = lastCorrect ? (attempts === 1 ? "correctFirstTry" : "correct") : "wrong";
+    const praise = typeof copy.draw === "function" ? copy.draw(tier) : null;
 
     eachOptionButton(function (button, option) {
       button.disabled = true;
+      button.classList.remove("selected");
+      button.setAttribute("aria-pressed", "false");
       if (option.correct) button.classList.add("correct");
       else if (option.id === selectedId) button.classList.add("wrong");
     });
 
     if (el.submit) {
       el.submit.disabled = true;
-      el.submit.textContent = "已提交";
+      setText(el.submitLabel, "已提交");
+      setText(el.submitLabelId, "Terkirim");
     }
 
-    showAnswerCaption(correctOption);
     showFeedback(lastCorrect, correctOption);
     updateStatus();
     if (el.feedback) {
@@ -278,19 +284,15 @@
       if (typeof el.feedback.scrollIntoView === "function") el.feedback.scrollIntoView({ block: "center" });
     }
 
-    const outcome = completeOnce();
-    if (outcome && outcome.recorded) {
-      setText(el.status, outcome.next === "complete.html"
-        ? "已提交，正在进入完成页…"
-        : "已提交，正在返回课堂继续下一题…");
-      return;
-    }
-    modalTimer = global.setTimeout(showModal, SOLO_MODAL_DELAY);
+    completeOnce();
+    modalTimer = global.setTimeout(function () {
+      openModal(tier, praise);
+    }, SOLO_MODAL_DELAY);
   }
 
   function startQuestion() {
     global.clearTimeout(modalTimer);
-    hideModal();
+    closeModal();
 
     submitted = false;
     finished = false;
@@ -303,6 +305,7 @@
         letter: LETTERS[index] || "?",
         text: option.text,
         pinyin: option.pinyin || "",
+        translate: option.translate || "",
         correct: option.correct === true
       };
     });
@@ -310,26 +313,21 @@
     setText(el.pinyin, QUESTION.promptPinyin || "");
     setHidden(el.pinyin, !QUESTION.promptPinyin);
     setText(el.stem, QUESTION.prompt);
-    setHidden(el.answer, true);
 
+    resetPictureMove();
     renderPictureSlot();
     renderOptions();
     resetFeedback();
     if (el.submit) {
       el.submit.disabled = true;
-      el.submit.textContent = "提交答案";
+      setText(el.submitLabel, "提交");
+      setText(el.submitLabelId, "Kirim");
     }
     updateStatus();
   }
 
   function bindEvents() {
     if (el.submit) el.submit.addEventListener("click", submitAnswer);
-    [el.modalChange, el.modalReturn].forEach(function (link) {
-      if (!link) return;
-      link.addEventListener("click", function () {
-        completeOnce();
-      });
-    });
   }
 
   function boot() {

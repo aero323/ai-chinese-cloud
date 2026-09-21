@@ -25,79 +25,32 @@
     </header>
 
     <main class="page page-content">
-      <div class="game-intro">
-        <div>
-          <h2 data-activity-task>听一听，选出你听到的。</h2>
-          <p>先点播放按钮听音频，再选出你听到的内容，选好提交。<br>Putar audionya dulu, lalu pilih yang kamu dengar dan kirim.</p>
-        </div>
-        <span class="progress-pill" data-activity-step>题型体验</span>
-      </div>
-
       <section class="listening-card" aria-labelledby="listening-prompt">
-        <div class="listening-card-head">
-          <span class="listening-type-badge">
-            <span aria-hidden="true" data-listening-type-icon>🔊</span>
-            <strong data-listening-type-name>听音选图/选词</strong>
-          </span>
-          <span class="progress-pill">第 1 / 1 题</span>
-        </div>
 
-        <div class="listening-stem">
-          <h3 class="listening-prompt" id="listening-prompt" data-listening-prompt>听一听，选出你听到的</h3>
-          <p class="listening-prompt-id" lang="id" data-listening-prompt-id>Dengarkan, lalu pilih yang kamu dengar.</p>
-        </div>
+        <!-- 题面只说给读屏听：页面上让大按钮「🔊 听一听」自己说话 -->
+        <p class="listening-sr" id="listening-prompt" data-listening-prompt>听一听，选出你听到的</p>
 
         <div class="listening-player">
           <button type="button" class="listening-play" data-listening-play>
-            <span class="listening-play-icon" aria-hidden="true">🔊</span>
+            <span class="listening-play-circle">
+              <span class="listening-play-icon" aria-hidden="true">🔊</span>
+            </span>
             <span class="listening-play-label" data-listening-play-label>听一听</span>
           </button>
-          <p class="listening-play-hint" data-listening-play-hint aria-hidden="true"><span data-listening-play-hint-text></span></p>
           <!-- 占位：src 由题目数据的 audio 字段填入，填上真实录音路径就能真播 -->
           <audio data-listening-audio preload="none"></audio>
         </div>
 
         <div class="listening-options" role="group" aria-labelledby="listening-prompt" data-listening-options></div>
 
-        <button type="button" class="primary-button listening-submit" data-listening-submit disabled>提交</button>
-
-        <div class="listening-feedback hidden" role="status" aria-live="polite" tabindex="-1" data-listening-feedback>
-          <strong class="listening-feedback-title">
-            <span class="listening-feedback-icon" aria-hidden="true" data-listening-feedback-icon></span>
-            <span data-listening-feedback-title></span>
-          </strong>
-          <p class="listening-feedback-title-id" lang="id" data-listening-feedback-title-id></p>
-          <p class="listening-feedback-answer" data-listening-feedback-answer></p>
-          <p class="listening-feedback-copy" data-listening-feedback-copy></p>
-          <p class="listening-feedback-id" lang="id" data-listening-feedback-id></p>
-        </div>
+        <button type="button" class="primary-button listening-submit btn-stacked" data-listening-submit disabled>
+          <span data-listening-submit-label>提交</span>
+          <span class="btn-id" lang="id" data-listening-submit-label-id>Kirim</span>
+        </button>
       </section>
 
       <p class="listening-announcer" data-listening-announcer role="status" aria-live="polite"></p>
-
-      <div class="helper-note">
-        <span aria-hidden="true">🔁</span>
-        <div>可以反复播放，听清楚再选。<br>Boleh diputar berulang kali, dengarkan dulu.</div>
-      </div>
-
-      <p class="activity-status" data-activity-status>当前状态：待作答</p>
-      <p class="activity-meta" data-activity-meta></p>
     </main>
-  </div>
-
-  <p class="listening-placeholder-tag">🧩 占位演示</p>
-
-  <div class="modal-overlay hidden" data-listening-complete>
-    <section class="completion-modal" role="dialog" aria-modal="true" aria-labelledby="listening-complete-title">
-      <div class="modal-badge" data-listening-modal-badge>🎉</div>
-      <h3 id="listening-complete-title" data-listening-modal-title>答对了，真棒！</h3>
-      <p class="id-copy" data-listening-modal-id>Bagus! Jawabanmu benar.</p>
-      <p class="modal-description" data-listening-modal-copy>本题已完成，可以换一个题型再练一练，或者回到课堂。</p>
-      <div class="listening-modal-actions">
-        <a class="primary-button" href="classroom.html?activities=1" data-listening-change>换一个题型</a>
-        <a class="secondary-button" href="classroom.html" data-listening-return>返回课堂</a>
-      </div>
-    </section>
   </div>
 
   <script type="module" src="shared/activity-types.js"></script>
@@ -105,6 +58,8 @@
   <script type="module" src="shared/activity-bridge.js"></script>
   <script type="module" src="app.js"></script>
   <script type="module" src="shared/activity-page.js"></script>
+  <script type="module" src="shared/feedback-copy.js"></script>
+  <script type="module" src="shared/feedback-modal.js"></script>
   <script type="module" src="interaction-listening.js"></script>
 </body>
 </html>

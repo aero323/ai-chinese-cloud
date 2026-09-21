@@ -1,377 +1,90 @@
 /* 跟读模仿（占位版）· interaction-read-aloud.html 专用样式
-   假流程的状态（录音中 / 识别中 / 波形）都在这里，全部是 CSS 动画，不接麦克风。 */
+   这页只有一个说话的人：陪读熊猫。它说的话就在大话语盒这个气泡里，气泡的小尾巴朝着它。
+   版面：熊猫 → 气泡（你好 / nǐ hǎo，出结果多一行鼓励）→ 听范读 → 按住说话 → 一行小字。
+   尺子与黄金样板 interaction-choice.css / 同批听音页对齐：顶部变量整块照抄，
+   不自造颜色 / 厚度 / 时长。
+   动效（规范第十二节，任何时刻同屏只有一组在循环）——
+   · 常驻 · 角色：熊猫呼吸 readAloudPandaBreathe（3.8s，全页唯一的循环动效，只在静止 / 结果时转）；
+   · 状态 · 进行中：录音的假波形 readAloudWave、识别中的按钮脉冲 readAloudWait；
+   · 一次性：入场轻弹 readAloudPandaIn、录音前倾 readAloudPandaLean、读完跳一下 readAloudPandaHop。
+   录音、识别、弹窗打开时呼吸都停；弹窗关掉或"再读一次"后恢复。 */
 
-/* 给左下角固定的「占位演示」标签和底部提示文字留出空隙，别互相压住 */
+:root {
+  /* 熊猫出题（规范第四节）：表情只写在这一处，将来换插画只替换这个变量 */
+  --avatar-size: 52px;
+  --avatar-glyph: "🐼";
+  --avatar-fill: linear-gradient(145deg, #eeeaff, #dff7f2);
+
+  /* 颜色 */
+  --surface-page: #f5f4fb;
+  --line-soft: #e9e7f2;
+  --line-card: #eceaf4;
+  --edge-quiet: #ece9f5;
+  --edge-select: #c9bcff;
+  --edge-button: #4331c4;
+  --select-fill: #f1eeff;
+  --answer-correct: #1fbf8f;
+  --answer-correct-text: #0f8f68;
+  --answer-wrong: #f2555f;
+  --answer-wrong-fill: #fff0f1;
+  --text-quiet: #3f3a5c;
+  --text-subtle: #8f8aa3;
+  --chip-fill: #f1f0f6;
+  --button-disabled-fill: #eceaf4;
+  --button-disabled-text: #a5a0bd;
+  /* 圆角 / 厚度 / 按下幅度 */
+  --radius-card: 28px;
+  --radius-option: 20px;
+  --radius-button: 20px;
+  --edge-quiet-w: 2px;
+  --edge-active-w: 4px;
+  --edge-button-w: 6px;
+  --press-option: 2px;
+  --press-button: 4px;
+
+  /* 字号 */
+  --text-question: 23px;
+  --text-option: 15px;
+  --text-button: 17px;
+
+  /* 动效 */
+  --dur-press: .15s;
+  --dur-enter: .26s;
+  --dur-pop: .3s;
+  --ease-enter: cubic-bezier(.2, .85, .25, 1);
+  --ease-pop: cubic-bezier(.2, .9, .3, 1.25);
+}
+
+/* 与开放问答同一把尺子：正文只撑到「屏幕 − 假状态栏 − 顶栏」，不再留听音页那 160px 缓冲
+   （卡片最后一件事是绿条，滚到底时它始终在右下角两个小胶囊上方） */
 .page-content {
-  padding-bottom: 230px;
+  min-height: calc(100svh - 92px);
+  padding-bottom: 12px;
 }
 
-.read-aloud-card {
-  padding: 16px 15px;
-  border-radius: 24px;
-  background: #ffffff;
-  box-shadow: var(--shadow-soft);
+/* ---------- 页面底子（与听音页同一套） ---------- */
+.app-shell {
+  background: var(--surface-page);
 }
 
-.read-aloud-card-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 14px;
+.page-header {
+  min-height: 64px;
+  background: rgba(245, 244, 251, 0.94);
+  border-bottom: 0;
 }
 
-.read-aloud-type-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-  padding: 6px 11px;
-  border-radius: 999px;
-  color: var(--purple-deep);
-  background: var(--purple-soft);
-  font-size: 10px;
-  font-weight: 900;
+.page-header h1 { font-size: 18px; }
+
+.header-subtitle { color: var(--text-subtle); }
+
+.icon-button {
+  border: 2px solid var(--line-soft);
+  border-radius: 16px;
+  box-shadow: 0 3px 0 #e2dfee;
 }
 
-.read-aloud-card-head .progress-pill {
-  flex: 0 0 auto;
-}
-
-.read-aloud-stem {
-  margin-bottom: 14px;
-}
-
-.read-aloud-prompt {
-  margin: 0;
-  font-size: 16px;
-  line-height: 1.4;
-  overflow-wrap: anywhere;
-}
-
-.read-aloud-prompt-id {
-  margin: 4px 0 0;
-  color: var(--purple);
-  font-size: 11px;
-  font-weight: 800;
-  line-height: 1.45;
-  overflow-wrap: anywhere;
-}
-
-/* 要读的内容：大字 + 拼音，这一块是真的，不是占位 */
-.read-aloud-target {
-  margin-bottom: 14px;
-  padding: 16px 14px 17px;
-  border: 2px solid #e6e1ff;
-  border-radius: 20px;
-  background: linear-gradient(160deg, #f4f1ff, #eef4ff);
-  text-align: center;
-}
-
-.read-aloud-target-label {
-  margin: 0;
-  color: #8d88a0;
-  font-size: 10px;
-  font-weight: 900;
-  letter-spacing: 0.03em;
-  line-height: 1.5;
-}
-
-.read-aloud-text {
-  margin: 10px 0 0;
-  color: var(--ink);
-  font-size: 42px;
-  font-weight: 900;
-  line-height: 1.2;
-  letter-spacing: 0.08em;
-  overflow-wrap: anywhere;
-}
-
-.read-aloud-pinyin {
-  margin: 6px 0 0;
-  color: var(--purple-deep);
-  font-size: 17px;
-  font-weight: 900;
-  line-height: 1.35;
-  letter-spacing: 0.06em;
-  overflow-wrap: anywhere;
-}
-
-/* 听范读：不发声，点完只在按钮下面出一行占位小字（2 秒淡出，可反复点） */
-.read-aloud-listen {
-  margin-bottom: 13px;
-  text-align: center;
-}
-
-.read-aloud-listen-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  min-height: 52px;
-  padding: 0 16px;
-  border: 2px solid #d8d1ff;
-  border-radius: 20px;
-  color: var(--purple-deep);
-  background: #ffffff;
-  box-shadow: 0 8px 20px rgba(89, 68, 225, 0.1);
-  font-size: 15px;
-  font-weight: 900;
-  cursor: pointer;
-  transition: transform .18s ease, border-color .18s ease;
-}
-
-.read-aloud-listen-button:active {
-  transform: scale(0.99);
-}
-
-.read-aloud-listen-hint {
-  display: flex;
-  justify-content: center;
-  min-height: 23px;
-  margin: 8px 0 0;
-  opacity: 0;
-  transition: opacity .35s ease;
-}
-
-.read-aloud-listen-hint span {
-  padding: 3px 10px;
-  border-radius: 999px;
-  color: #a75d15;
-  background: #fff1de;
-  font-size: 10px;
-  font-weight: 900;
-}
-
-.read-aloud-listen-hint.is-visible {
-  opacity: 1;
-}
-
-@media (hover: hover) {
-  .read-aloud-listen-button:hover {
-    border-color: #b9adff;
-  }
-}
-
-/* 说话按钮：按住 / 点一下都能走假流程；录音态、识别态各有自己的样子 */
-.read-aloud-record {
-  text-align: center;
-}
-
-.read-aloud-record-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  width: 100%;
-  min-height: 78px;
-  padding: 0 18px;
-  border: 0;
-  border-radius: 26px;
-  color: #ffffff;
-  background: linear-gradient(135deg, #735dff, #503be5);
-  box-shadow: 0 15px 30px rgba(79, 58, 224, 0.26);
-  font-size: 18px;
-  font-weight: 900;
-  cursor: pointer;
-  touch-action: none;
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
-  transition: transform .18s ease, background .18s ease, box-shadow .18s ease;
-}
-
-.read-aloud-record-button:active {
-  transform: scale(0.99);
-}
-
-.read-aloud-record-button.is-recording {
-  background: linear-gradient(135deg, #ff7280, #e2465a);
-  box-shadow: 0 15px 30px rgba(226, 70, 90, 0.28);
-}
-
-.read-aloud-record-button.is-recognizing {
-  background: linear-gradient(135deg, #8d79ff, #6a55e8);
-  animation: readAloudWait 1s ease-in-out infinite;
-}
-
-.read-aloud-record-label {
-  overflow-wrap: anywhere;
-}
-
-@keyframes readAloudWait {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.78; }
-}
-
-/* 假音量波形：只是 CSS 动画，不代表真的收到声音 */
-.read-aloud-wave {
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  gap: 4px;
-  height: 34px;
-  margin-top: 12px;
-  opacity: 0;
-  transition: opacity .2s ease;
-}
-
-.read-aloud-wave.is-visible {
-  opacity: 1;
-}
-
-.read-aloud-wave span {
-  width: 6px;
-  height: 10px;
-  border-radius: 999px;
-  background: linear-gradient(180deg, #ff9aa4, #e2465a);
-  animation: readAloudWave 900ms ease-in-out infinite;
-}
-
-.read-aloud-wave span:nth-child(2) { animation-delay: .12s; }
-.read-aloud-wave span:nth-child(3) { animation-delay: .24s; }
-.read-aloud-wave span:nth-child(4) { animation-delay: .36s; }
-.read-aloud-wave span:nth-child(5) { animation-delay: .48s; }
-
-@keyframes readAloudWave {
-  0%, 100% { height: 10px; }
-  50% { height: 30px; }
-}
-
-.read-aloud-record-hint {
-  margin: 10px 0 0;
-  color: #8d88a0;
-  font-size: 10px;
-  line-height: 1.55;
-}
-
-/* 占位结果卡：整组评分都是固定示例，不是真实评分 */
-.read-aloud-result {
-  margin-top: 15px;
-  padding: 14px 14px 16px;
-  border: 2px solid #d8d1ff;
-  border-radius: 20px;
-  background: #f8f6ff;
-  animation: readAloudResultIn .28s cubic-bezier(.2, .85, .25, 1);
-}
-
-.read-aloud-result:focus {
-  outline: none;
-}
-
-@keyframes readAloudResultIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.read-aloud-flag {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin: 0 0 12px;
-  padding: 5px 11px;
-  border-radius: 999px;
-  color: #a75d15;
-  background: #fff1de;
-  font-size: 10px;
-  font-weight: 900;
-}
-
-.read-aloud-reference-label {
-  margin: 0;
-  color: #8d88a0;
-  font-size: 10px;
-  font-weight: 900;
-}
-
-.read-aloud-reference {
-  margin: 6px 0 0;
-  color: var(--ink);
-  font-size: 21px;
-  font-weight: 900;
-  line-height: 1.35;
-  overflow-wrap: anywhere;
-}
-
-.read-aloud-reference-note {
-  margin: 4px 0 0;
-  color: #8d88a0;
-  font-size: 10px;
-  line-height: 1.55;
-}
-
-.read-aloud-scores {
-  display: grid;
-  gap: 8px;
-  margin: 13px 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.read-aloud-score {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 9px 12px;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  background: #ffffff;
-}
-
-.read-aloud-score-name {
-  min-width: 0;
-}
-
-.read-aloud-score-name strong {
-  display: block;
-  color: #3f3a5c;
-  font-size: 12px;
-}
-
-.read-aloud-score-name small {
-  display: block;
-  margin-top: 2px;
-  color: #9a95ad;
-  font-size: 9px;
-  line-height: 1.4;
-}
-
-.read-aloud-stars {
-  flex: 0 0 auto;
-  font-size: 14px;
-  letter-spacing: 0.1em;
-  white-space: nowrap;
-}
-
-.read-aloud-stars-on {
-  color: #ffb020;
-}
-
-.read-aloud-stars-off {
-  color: #ddd9e8;
-}
-
-.read-aloud-disclaimer {
-  margin: 12px 0 0;
-  color: #8d88a0;
-  font-size: 10px;
-  line-height: 1.55;
-}
-
-.read-aloud-disclaimer-id {
-  margin: 3px 0 0;
-  color: #9a95ad;
-  font-size: 9px;
-  line-height: 1.5;
-}
-
-.read-aloud-finish {
-  width: 100%;
-  margin-top: 14px;
-}
-
+/* 读屏专用：题面与播报只给读屏，视觉上不占地方 */
+.read-aloud-sr,
 .read-aloud-announcer {
   position: absolute;
   width: 1px;
@@ -384,56 +97,357 @@
   white-space: nowrap;
 }
 
-.read-aloud-modal-actions {
-  display: grid;
-  gap: 10px;
-  margin-top: 6px;
+/* ---------- 卡片：熊猫 → 大话语盒 → 听范读 → 按住说话 → 一行小字 ----------
+   内边距与块间空当照开放问答那把尺子：16 / 16 / 14，块与块之间 12 */
+.read-aloud-card {
+  padding: 16px 16px 14px;
+  border: 2px solid var(--line-card);
+  border-radius: var(--radius-card);
+  background: #ffffff;
+  box-shadow: 0 6px 0 #e6e3ef, 0 22px 40px rgba(71, 57, 142, 0.08);
 }
 
-.read-aloud-modal-actions .primary-button,
-.read-aloud-modal-actions .secondary-button {
+/* 熊猫：陪读伙伴。圆形、无描边无厚度；尺寸 / 形象 / 配色照旧，--avatar-* 仍是换插画的唯一插槽 */
+.read-aloud-panda {
+  display: grid;
+  width: var(--avatar-size);
+  height: var(--avatar-size);
+  margin: 2px auto 12px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--avatar-fill);
+}
+
+.read-aloud-panda::before {
+  content: var(--avatar-glyph);
+  font-size: calc(var(--avatar-size) * .58);
+  line-height: 1;
+}
+
+/* 静止 / 结果：入场轻弹一下，接着轻轻呼吸（缩放 1.04、上下 2px） */
+.read-aloud-card.is-idle .read-aloud-panda,
+.read-aloud-card.is-result .read-aloud-panda {
+  animation:
+    readAloudPandaIn var(--dur-pop) var(--ease-pop) both,
+    readAloudPandaBreathe 3.8s ease-in-out .3s infinite;
+}
+
+/* 出结果：先跳一下（一次性，从凑近的姿势起跳），跳完接着呼吸 */
+.read-aloud-card.is-result .read-aloud-panda {
+  animation:
+    readAloudPandaHop .48s var(--ease-pop) both,
+    readAloudPandaBreathe 3.8s ease-in-out .48s infinite;
+}
+
+/* 录音 / 识别：凑近听，保持住；这段时间呼吸停（循环动效让给波形和按钮脉冲） */
+.read-aloud-card.is-recording .read-aloud-panda,
+.read-aloud-card.is-recognizing .read-aloud-panda {
+  animation: readAloudPandaLean .24s var(--ease-pop) both;
+}
+
+/* 弹层出现时页面里不再有循环动效：呼吸暂停 */
+.read-aloud-card.is-modal-open .read-aloud-panda {
+  animation-play-state: paused;
+}
+
+@keyframes readAloudPandaIn {
+  from { opacity: 0; transform: scale(.6); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes readAloudPandaBreathe {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-2px) scale(1.04); }
+}
+
+@keyframes readAloudPandaLean {
+  from { transform: translateY(0) scale(1); }
+  to { transform: translateY(3px) scale(1.03); }
+}
+
+@keyframes readAloudPandaHop {
+  0% { transform: translateY(3px) scale(1.03); }
+  45% { transform: translateY(-4px) scale(1.02); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+/* 大话语盒＝熊猫的气泡：圆角 20、无描边无厚度；加一个朝上指着它的小尾巴 */
+.read-aloud-plate {
+  position: relative;
+  margin-bottom: 12px;
+  padding: 16px 14px 17px;
+  border-radius: var(--radius-option);
+  background: var(--surface-page);
+  text-align: center;
+}
+
+.read-aloud-plate::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  width: 0;
+  height: 0;
+  transform: translateX(-50%);
+  border-right: 9px solid transparent;
+  border-bottom: 9px solid var(--surface-page);
+  border-left: 9px solid transparent;
+}
+
+.read-aloud-text {
+  grid-column: 2;
+  min-width: 0;
+  margin: 0;
+  color: var(--ink);
+  font-size: 42px;
+  font-weight: 900;
+  line-height: 1.15;
+  letter-spacing: 0.08em;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
+.read-aloud-pinyin {
+  margin: 6px 0 0;
+  color: var(--text-subtle);
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.4;
+  letter-spacing: 0.06em;
+  overflow-wrap: anywhere;
+}
+
+/* 听范读＝多邻国式裸喇叭：左列放图标、右列留等宽空位，中间的文字才是真正居中
+   （词典卡片那种感觉）；喇叭贴它左边、不把它挤偏，长句仍在中间列换行 */
+.read-aloud-line {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  align-items: start;
+  column-gap: 6px;
+  margin: 0;
+}
+
+.read-aloud-line::after {
+  content: "";
+  grid-column: 3;
+}
+
+.read-aloud-speaker {
+  grid-column: 1;
+  justify-self: center;
+  flex: 0 0 auto;
+  display: grid;
+  min-width: 44px;
+  min-height: 44px;
+  margin-top: 2px;
+  padding: 6px;
+  place-items: center;
+  border: 0;
+  color: var(--purple);
+  background: none;
+  cursor: pointer;
+  transition: transform var(--dur-press) ease;
+}
+
+.read-aloud-speaker svg {
+  width: 32px;
+  height: 32px;
+}
+
+.read-aloud-speaker:active {
+  transform: scale(.94);
+}
+
+/* 播放中：图标脉冲（状态动效，播完就停；没有文字，凭脉冲和读屏知道在播） */
+.read-aloud-speaker.is-playing svg {
+  animation: readAloudListenPulse 1s ease-in-out infinite;
+}
+
+@keyframes readAloudListenPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.18); }
+}
+
+/* 按住说话：全页唯一主动作，同听音页「提交」一套厚度 */
+.read-aloud-record-button {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 14px;
-  line-height: 1.3;
-  text-align: center;
-  text-decoration: none;
+  gap: 10px;
+  width: 100%;
+  min-height: 66px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: var(--radius-button);
+  color: #ffffff;
+  background: linear-gradient(180deg, #7d68ff, #5b45ee);
+  box-shadow: 0 var(--edge-button-w) 0 var(--edge-button), 0 14px 26px rgba(79, 58, 224, 0.28);
+  font-size: var(--text-button);
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  transition: transform var(--dur-press) ease, box-shadow var(--dur-press) ease, background var(--dur-press) ease;
 }
 
-/* 固定占位标签：放左下角，躲开右下角的「演示」「题型体验」两个悬浮按钮；
-   比听音页再往上让一点，底部提示文字不会被压住 */
-.read-aloud-placeholder-tag {
-  position: fixed;
-  z-index: 79;
-  left: max(12px, calc((100vw - 430px) / 2 + 12px));
-  bottom: calc(22px + env(safe-area-inset-bottom, 0px));
-  margin: 0;
-  padding: 6px 11px;
-  border: 1px dashed #c9c1ff;
+.read-aloud-record-button:active {
+  transform: translateY(var(--press-button));
+  box-shadow: 0 2px 0 var(--edge-button), 0 8px 16px rgba(79, 58, 224, 0.24);
+}
+
+/* 录音中：红只在这一刻出现（和看图说话 / 开放问答同一族） */
+.read-aloud-record-button.is-recording {
+  background: linear-gradient(180deg, #ff7b86, #e2465a);
+  box-shadow: 0 6px 0 #b3303f, 0 14px 26px rgba(226, 70, 90, 0.26);
+}
+
+/* 识别中：按钮脉冲（状态动效，出结果就停） */
+.read-aloud-record-button.is-recognizing {
+  background: linear-gradient(180deg, #8d79ff, #6a55e8);
+  animation: readAloudWait 1s ease-in-out infinite;
+}
+
+.read-aloud-record-label {
+  overflow-wrap: anywhere;
+}
+
+@keyframes readAloudWait {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.78; }
+}
+
+/* 假音量波形：只是 CSS 动画，不代表真的收到声音。
+   同开放问答：静止 / 结果态把这一槽收成 0 高，别让隐形占位把结果态撑松 */
+.read-aloud-wave {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 4px;
+  height: 0;
+  margin-top: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity .2s ease;
+}
+
+.read-aloud-wave.is-visible {
+  height: 30px;
+  margin-top: 10px;
+  opacity: 1;
+}
+
+.read-aloud-wave span {
+  width: 6px;
+  height: 10px;
   border-radius: 999px;
-  color: #6e6984;
-  background: rgba(255, 255, 255, 0.97);
-  box-shadow: 0 6px 16px rgba(58, 48, 116, 0.12);
-  font-size: 10px;
+  background: linear-gradient(180deg, #ff9aa4, #e2465a);
+}
+
+/* 波形只在录音时动：状态一结束立刻停（规范第十二节） */
+.read-aloud-wave.is-visible span {
+  animation: readAloudWave 900ms ease-in-out infinite;
+}
+
+.read-aloud-wave span:nth-child(2) { animation-delay: .12s; }
+.read-aloud-wave span:nth-child(3) { animation-delay: .24s; }
+.read-aloud-wave span:nth-child(4) { animation-delay: .36s; }
+.read-aloud-wave span:nth-child(5) { animation-delay: .48s; }
+
+@keyframes readAloudWave {
+  0%, 100% { height: 10px; }
+  50% { height: 26px; }
+}
+
+/* 一行小字：只写怎么按，不教手势 */
+.read-aloud-hint {
+  margin: 8px 0 0;
+  color: var(--text-subtle);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.5;
+  text-align: center;
+}
+
+/* 结果态：录音即交卷，这里只有绿条那句反馈；页面不再有【完成】按钮 */
+.read-aloud-result {
+  margin-top: 14px;
+}
+
+.read-aloud-result:focus {
+  outline: none;
+}
+
+@keyframes readAloudCheerIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 鼓励是"读得怎么样"，不跟要读的东西混在一个盒子里：
+   在结果区里做成淡紫的短条（同看图说话 / 开放问答：--select-fill 底、16 圆角、
+   无描边无厚度、内边距 11/14），中文大字 + 「·」+ 印尼小字一行居中 */
+.read-aloud-cheer {
+  margin: 0;
+  padding: 11px 14px;
+  border-radius: 16px;
+  color: var(--ink);
+  background: var(--select-fill);
+  font-size: 18px;
   font-weight: 900;
-  pointer-events: none;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  line-height: 1.4;
+  animation: readAloudCheerIn var(--dur-enter) var(--ease-enter) both;
+  text-align: center;
+}
+
+.read-aloud-cheer-dot {
+  margin: 0 6px;
+  color: #bdb8d4;
+  font-size: 11px;
+  font-style: normal;
+}
+
+.read-aloud-cheer-id {
+  color: var(--text-subtle);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* 结果态：小字提示收起（"再读一次"回到初始时自己回来） */
+.read-aloud-card.is-result .read-aloud-hint {
+  display: none;
+}
+
+/* 结果态：录音按钮原地变成整条白按钮——和「按住说话」同大小同位置，只是安静款 */
+.read-aloud-record-button.is-retry {
+  border: 2px solid var(--line-soft);
+  color: var(--text-quiet);
+  background: #ffffff;
+  box-shadow: 0 2px 0 var(--edge-quiet);
+}
+
+.read-aloud-record-button.is-retry:active {
+  transform: translateY(var(--press-option));
+  box-shadow: 0 0 0 var(--edge-quiet);
 }
 
 @media (max-width: 360px) {
+  :root {
+    --avatar-size: 40px;
+  }
+
   .read-aloud-text {
     font-size: 36px;
   }
 
+  /* 两种状态的录音键一样大（结果态只是换颜色），窄屏照开放问答缩一档 */
   .read-aloud-record-button {
-    min-height: 70px;
+    min-height: 58px;
     font-size: 16px;
   }
 
-  .read-aloud-listen-button {
-    min-height: 48px;
-    font-size: 14px;
+  .read-aloud-cheer {
+    font-size: 17px;
   }
 }

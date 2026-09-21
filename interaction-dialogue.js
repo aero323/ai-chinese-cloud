@@ -1,15 +1,19 @@
 /* 对话补全 · interaction-dialogue.html 页面脚本
    状态机：待作答 → 已选择 → 已提交 → 正确 / 错误（每题只判一次，不提供重试）。
    提交后把选中的句子填进右边气泡，学生能直接看出对话是否通顺。
-   进度记账和课堂跳转都由 shared/activity-bridge.js 负责，本页只做界面并调用 finish()。 */
+   页面只留事实：答对只给 ✓「答对了！」；答错不给评判词，直接给"上一句 + 正确的那一句"的
+   中文＋印尼语对照（不再出现解析和"正确答案："这类中文标签）。
+   进度记账由 shared/activity-bridge.js 负责（课堂跳转由完成弹窗的按钮执行），本页只做界面并调用 finish()。 */
 (function (global) {
   "use strict";
 
   const LETTERS = ["A", "B", "C", "D", "E", "F"];
   const SOLO_MODAL_DELAY = 2000;      // 体验模式：提交后留多久看对错，再弹完成弹窗
-  const CLASS_REDIRECT_DELAY = 2600;  // 课堂模式：公共脚本按这个延迟跳转
+  const modal = global.AICloudFeedbackModal || null;
+  const copy = global.AICloudFeedbackCopy || {};
 
-  /* 单题数据：候选句顺序固定 A / B / C，和任务书一致，不做打乱。
+  /* 单题数据：候选句顺序固定 A / B / C，和任务书一致，不做打乱；
+     textId 是答错时结果条里要显示的那一行印尼语。
      icon / image / imageAlt 是留给以后可选场景小图槽（72×72）的字段，
      本批不渲染图槽，样式位置已经在 interaction-dialogue.css 里留好。 */
   const QUESTION = {
@@ -17,13 +21,11 @@
     icon: "🚻",
     image: "",
     imageAlt: "洗手间的标志",
-    prompt: "选出合适的下一句",
     options: [
-      { id: "a", text: "在二楼，往左走。", correct: true },
-      { id: "b", text: "我叫小明。" },
-      { id: "c", text: "今天很热。" }
-    ],
-    explanation: "上一句问的是「在哪儿」，所以要回答位置；B 是在自我介绍，C 是在说天气，都接不上。"
+      { id: "a", text: "在二楼，往左走。", textId: "Di lantai dua, jalan ke kiri.", correct: true },
+      { id: "b", text: "我叫小明。", textId: "Nama saya Xiaoming." },
+      { id: "c", text: "今天很热。", textId: "Hari ini panas." }
+    ]
   };
 
   const el = {};
@@ -32,6 +34,7 @@
   let submitted = false;
   let finished = false;
   let lastCorrect = false;
+  let attempts = 0;
   let lastSeconds = 0;
   let startedAt = 0;
   let modalTimer = 0;
@@ -45,38 +48,27 @@
   }
 
   function cache() {
-    el.question = document.querySelector("[data-dialogue-question]");
     el.me = document.querySelector("[data-dialogue-me]");
     el.mark = document.querySelector("[data-dialogue-mark]");
-    el.correctLine = document.querySelector("[data-dialogue-correct-line]");
     el.options = document.querySelector("[data-dialogue-options]");
     el.submit = document.querySelector("[data-dialogue-submit]");
+    el.submitLabel = document.querySelector("[data-dialogue-submit-label]");
+    el.submitLabelId = document.querySelector("[data-dialogue-submit-label-id]");
     el.feedback = document.querySelector("[data-dialogue-feedback]");
     el.feedbackIcon = document.querySelector("[data-dialogue-feedback-icon]");
     el.feedbackTitle = document.querySelector("[data-dialogue-feedback-title]");
-    el.feedbackAnswer = document.querySelector("[data-dialogue-feedback-answer]");
-    el.feedbackCopy = document.querySelector("[data-dialogue-feedback-copy]");
+    el.feedbackTitleRow = document.querySelector("[data-dialogue-feedback-title-row]");
+    el.quote = document.querySelector("[data-dialogue-quote]");
+    el.quoteQuestionZh = document.querySelector("[data-dialogue-quote-question-zh]");
+    el.quoteQuestionId = document.querySelector("[data-dialogue-quote-question-id]");
+    el.quoteAnswerZh = document.querySelector("[data-dialogue-quote-answer-zh]");
+    el.quoteAnswerId = document.querySelector("[data-dialogue-quote-answer-id]");
+    el.them = document.querySelector("[data-dialogue-them]");
     el.status = document.querySelector("[data-activity-status]");
-    el.badgeIcon = document.querySelector("[data-dialogue-type-icon]");
-    el.badgeName = document.querySelector("[data-dialogue-type-name]");
-    el.modal = document.querySelector("[data-dialogue-complete]");
-    el.modalBadge = document.querySelector("[data-dialogue-modal-badge]");
-    el.modalTitle = document.querySelector("[data-dialogue-modal-title]");
-    el.modalId = document.querySelector("[data-dialogue-modal-id]");
-    el.modalCopy = document.querySelector("[data-dialogue-modal-copy]");
-    el.modalChange = document.querySelector("[data-dialogue-change]");
-    el.modalReturn = document.querySelector("[data-dialogue-return]");
   }
 
   function activityBridge() {
     return global.AICloudActivity || null;
-  }
-
-  function activityMeta() {
-    const types = global.AICloudActivityTypes;
-    const type = document.body.dataset.activityType || "dialogue";
-    if (!types || typeof types.get !== "function") return null;
-    return types.get(type);
   }
 
   function mode() {
@@ -85,18 +77,13 @@
     return bridge.context().mode;
   }
 
-  /* 题型角标文案和标题都取自题型清单，不在页面里另写一份 */
+  /* 返回键：课堂模式回课堂互动，体验模式回课堂页 */
   function applyShellText() {
-    const meta = activityMeta();
-    if (!meta) return;
-    setText(el.badgeIcon, meta.icon);
-    setText(el.badgeName, meta.title);
     const back = document.querySelector("[data-activity-back]");
-    if (back) {
-      const isClass = mode() === "class";
-      back.setAttribute("href", "classroom.html");
-      back.setAttribute("aria-label", isClass ? "返回课堂互动" : "返回课堂");
-    }
+    if (!back) return;
+    const isClass = mode() === "class";
+    back.setAttribute("href", "classroom.html");
+    back.setAttribute("aria-label", isClass ? "返回课堂互动" : "返回课堂");
   }
 
   function eachOptionButton(callback) {
@@ -156,11 +143,14 @@
     if (!el.feedback) return;
     el.feedback.classList.add("hidden");
     el.feedback.classList.remove("is-correct", "is-wrong");
+    setHidden(el.feedbackTitleRow, true);
+    setHidden(el.quote, true);
     setText(el.feedbackIcon, "");
     setText(el.feedbackTitle, "");
-    setText(el.feedbackAnswer, "");
-    setText(el.feedbackCopy, "");
-    setHidden(el.feedbackAnswer, true);
+    setText(el.quoteQuestionZh, "");
+    setText(el.quoteQuestionId, "");
+    setText(el.quoteAnswerZh, "");
+    setText(el.quoteAnswerId, "");
   }
 
   /* 提交后把选中的句子填进右边气泡；选对了保持主色并给对勾，选错了变红 */
@@ -172,22 +162,21 @@
     setHidden(el.mark, !isCorrect);
   }
 
-  function showCorrectLine(correctOption) {
-    if (!el.correctLine || !correctOption) return;
-    setText(el.correctLine, "正确的下一句：" + correctOption.text);
-    setHidden(el.correctLine, false);
-  }
-
-  /* 全对：绿色「答对了！」＋ 一行解析；有错：红色「再想想」＋ 正确的下一句 ＋ 解析 */
+  /* 答对：绿色「答对了！」（不解释）；答错：红色结果条里只给中文＋印尼语对照 */
   function showFeedback(isCorrect, correctOption) {
     if (!el.feedback || !correctOption) return;
     el.feedback.classList.remove("is-correct", "is-wrong");
     el.feedback.classList.add(isCorrect ? "is-correct" : "is-wrong");
-    setText(el.feedbackIcon, isCorrect ? "✓" : "✗");
-    setText(el.feedbackTitle, isCorrect ? "答对了！" : "再想想");
-    setText(el.feedbackAnswer, "正确的下一句：" + correctOption.text);
-    setHidden(el.feedbackAnswer, isCorrect);
-    setText(el.feedbackCopy, QUESTION.explanation);
+    setHidden(el.feedbackTitleRow, !isCorrect);
+    setText(el.feedbackIcon, isCorrect ? "✓" : "");
+    setText(el.feedbackTitle, isCorrect ? "答对了！" : "");
+    setHidden(el.quote, isCorrect);
+    if (!isCorrect) {
+      setText(el.quoteQuestionZh, el.them ? el.them.textContent : "");
+      setText(el.quoteQuestionId, el.them ? el.them.dataset.dialogueThemId || "" : "");
+      setText(el.quoteAnswerZh, correctOption.text);
+      setText(el.quoteAnswerId, correctOption.textId || "");
+    }
     el.feedback.classList.remove("hidden");
   }
 
@@ -203,23 +192,36 @@
     finished = true;
     const bridge = activityBridge();
     if (!bridge || typeof bridge.finish !== "function") return { recorded: false, next: "" };
-    return bridge.finish({ correct: lastCorrect, seconds: lastSeconds, delay: CLASS_REDIRECT_DELAY });
+    return bridge.finish({ correct: lastCorrect, seconds: lastSeconds });
   }
 
-  function showModal() {
-    if (!el.modal) return;
-    setText(el.modalBadge, lastCorrect ? "🎉" : "💪");
-    setText(el.modalTitle, lastCorrect ? "答对了，真棒！" : "再想想也没关系");
-    setText(el.modalId, lastCorrect ? "Bagus! Jawabanmu benar." : "Tidak apa-apa, coba lagi ya!");
-    setText(el.modalCopy, lastCorrect
-      ? "本题已完成，可以换一个题型再练一练，或者回到课堂。"
-      : "正确的下一句和解析就在上面，可以换一个题型再练一练。");
-    el.modal.classList.remove("hidden");
-    if (el.modalChange && typeof el.modalChange.focus === "function") el.modalChange.focus();
+  function openModal(tier, praise) {
+    if (!modal || typeof modal.open !== "function") return;
+    modal.open({
+      tier: tier,
+      badge: praise ? praise.emoji : "",
+      titleZh: praise ? praise.zh : "",
+      titleId: praise ? praise.id : "",
+      actions: [
+        {
+          label: "返回课堂",
+          onSelect: function () {
+            if (global.location) global.location.href = "classroom.html";
+          }
+        },
+        { label: "再练一次", icon: "↻", onSelect: restartQuestion }
+      ]
+    });
   }
 
-  function hideModal() {
-    if (el.modal) el.modal.classList.add("hidden");
+  function closeModal() {
+    if (modal && typeof modal.close === "function") modal.close();
+  }
+
+  /* 再练一次：关掉弹窗，重新开始本题（候选句顺序不变） */
+  function restartQuestion() {
+    closeModal();
+    startQuestion();
   }
 
   function submitAnswer() {
@@ -234,6 +236,9 @@
       return option.id === selectedId;
     })[0];
     lastCorrect = !!correctOption && selectedId === correctOption.id;
+    attempts += 1;
+    const tier = lastCorrect ? (attempts === 1 ? "correctFirstTry" : "correct") : "wrong";
+    const praise = typeof copy.draw === "function" ? copy.draw(tier) : null;
 
     eachOptionButton(function (button, option) {
       button.disabled = true;
@@ -243,11 +248,11 @@
 
     if (el.submit) {
       el.submit.disabled = true;
-      el.submit.textContent = "已提交";
+      setText(el.submitLabel, "已提交");
+      setText(el.submitLabelId, "Terkirim");
     }
 
     fillBubble(picked, lastCorrect);
-    if (!lastCorrect) showCorrectLine(correctOption);
     showFeedback(lastCorrect, correctOption);
     updateStatus();
     if (el.feedback) {
@@ -255,19 +260,15 @@
       if (typeof el.feedback.scrollIntoView === "function") el.feedback.scrollIntoView({ block: "center" });
     }
 
-    const outcome = completeOnce();
-    if (outcome && outcome.recorded) {
-      setText(el.status, outcome.next === "complete.html"
-        ? "已提交，正在进入完成页…"
-        : "已提交，正在返回课堂继续下一题…");
-      return;
-    }
-    modalTimer = global.setTimeout(showModal, SOLO_MODAL_DELAY);
+    completeOnce();
+    modalTimer = global.setTimeout(function () {
+      openModal(tier, praise);
+    }, SOLO_MODAL_DELAY);
   }
 
   function startQuestion() {
     global.clearTimeout(modalTimer);
-    hideModal();
+    closeModal();
 
     submitted = false;
     finished = false;
@@ -279,37 +280,30 @@
         id: option.id,
         letter: LETTERS[index] || "?",
         text: option.text,
+        textId: option.textId || "",
         correct: option.correct === true
       };
     });
 
-    setText(el.question, QUESTION.prompt);
     if (el.me) {
       setText(el.me, "？");
       el.me.classList.add("is-placeholder");
       el.me.classList.remove("is-wrong");
     }
     setHidden(el.mark, true);
-    setHidden(el.correctLine, true);
-    setText(el.correctLine, "");
 
     renderOptions();
     resetFeedback();
     if (el.submit) {
       el.submit.disabled = true;
-      el.submit.textContent = "提交答案";
+      setText(el.submitLabel, "提交");
+      setText(el.submitLabelId, "Kirim");
     }
     updateStatus();
   }
 
   function bindEvents() {
     if (el.submit) el.submit.addEventListener("click", submitAnswer);
-    [el.modalChange, el.modalReturn].forEach(function (link) {
-      if (!link) return;
-      link.addEventListener("click", function () {
-        completeOnce();
-      });
-    });
   }
 
   function boot() {

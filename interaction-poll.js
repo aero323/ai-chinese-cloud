@@ -1,27 +1,19 @@
 /* 课堂投票 · interaction-poll.html 页面脚本
    状态机：待作答 → 已选择 → 已提交（每题只提交一次；投票不计分，没有对错）
-   进度记账和课堂跳转都由 shared/activity-bridge.js 负责，本页只负责界面和调用 finish() */
+   进度记账由 shared/activity-bridge.js 负责（课堂跳转由完成弹窗的按钮执行），本页只负责界面和调用 finish() */
 (() => {
   "use strict";
 
-  const types = window.AICloudActivityTypes;
   const bridge = window.AICloudActivity;
+  const modal = window.AICloudFeedbackModal || null;
+  const copy = window.AICloudFeedbackCopy || {};
 
   const card = document.querySelector("[data-poll-card]");
   const options = Array.from(document.querySelectorAll("[data-poll-option]"));
   const submitButton = document.querySelector("[data-poll-submit]");
-  const feedback = document.querySelector("[data-poll-feedback]");
-  const statusLine = document.querySelector("[data-activity-status]");
-  const badge = document.querySelector("[data-poll-badge]");
-  const completeModal = document.querySelector("[data-poll-complete]");
-  const completeCopy = document.querySelector("[data-poll-complete-copy]");
-  const moreButton = document.querySelector("[data-poll-more]");
+  const submitLabel = document.querySelector("[data-poll-submit-label]");
+  const submitLabelId = document.querySelector("[data-poll-submit-label-id]");
 
-  const type = (document.body.dataset.activityType || "poll").trim();
-  const ctx = bridge && typeof bridge.context === "function"
-    ? bridge.context()
-    : { mode: "solo", slot: 0, type };
-  const inClass = ctx.mode === "class" && Number(ctx.slot) > 0;
   const startedAt = Date.now();
 
   let submitted = false;
@@ -42,20 +34,12 @@
     };
   };
 
-  const setStatus = (text) => {
-    if (statusLine) statusLine.textContent = text;
-  };
-
-  /* 圆点、边框、右侧的小标签一起变，不只靠颜色 */
+  /* 选中态整块一起变（描边 + 底色 + 右上角对勾），不只靠颜色 */
   const paintOptions = () => {
     options.forEach((option) => {
       const input = inputOf(option);
       const selected = Boolean(input && input.checked);
-      const tag = option.querySelector("[data-poll-option-state]");
       option.classList.toggle("is-selected", selected);
-      if (!tag) return;
-      if (submitted) tag.textContent = selected ? "已记录" : "未选择";
-      else tag.textContent = selected ? "已选择" : "选择";
     });
   };
 
@@ -63,14 +47,43 @@
     if (submitButton) submitButton.disabled = submitted || !selectedOption();
   };
 
-  const showFeedback = (picked) => {
-    if (!feedback) return;
-    feedback.textContent = "";
-    const title = document.createElement("strong");
-    title.textContent = `已记录你的选择 · ${picked.zh}`;
-    const sub = document.createElement("span");
-    sub.textContent = `Pilihanmu sudah dicatat · ${picked.id}`;
-    feedback.append(title, sub);
+  /* 完成弹窗：公共模具（投票没有对错，用中性样式 + 记录类文案） */
+  const openModal = () => {
+    if (!modal || typeof modal.open !== "function") return;
+    const praise = copy && copy.record ? copy.record : { zh: "收到啦！", id: "Sudah diterima!" };
+    modal.open({
+      badge: "🗳️",
+      titleZh: praise.zh,
+      titleId: praise.id,
+      actions: [
+        {
+          label: "返回课堂",
+          onSelect: () => {
+            window.location.href = "classroom.html";
+          }
+        },
+        { label: "再练一次", icon: "↻", onSelect: restartRound }
+      ]
+    });
+  };
+
+  /* 再练一次：清掉已记录状态，重新投一次 */
+  const restartRound = () => {
+    if (modal && typeof modal.close === "function") modal.close();
+    submitted = false;
+    options.forEach((option) => {
+      const input = inputOf(option);
+      if (input) {
+        input.disabled = false;
+        input.checked = false;
+      }
+      option.classList.remove("is-selected");
+    });
+    if (card) card.classList.remove("is-submitted");
+    if (submitLabel) submitLabel.textContent = "提交";
+    if (submitLabelId) submitLabelId.textContent = "Kirim";
+    paintOptions();
+    refreshSubmit();
   };
 
   const submitAnswer = () => {
@@ -89,36 +102,19 @@
     paintOptions();
 
     if (submitButton) {
-      submitButton.textContent = "已提交";
       submitButton.disabled = true;
     }
-
-    showFeedback(picked);
-
-    if (completeCopy) {
-      completeCopy.textContent = `已记录你的选择 · ${picked.zh}。不计分，老师会在课堂上看到全班的统计。`;
-    }
+    if (submitLabel) submitLabel.textContent = "已提交";
+    if (submitLabelId) submitLabelId.textContent = "Terkirim";
 
     const seconds = Math.max(1, Math.round((Date.now() - startedAt) / 1000));
-    const outcome = bridge && typeof bridge.finish === "function"
-      ? bridge.finish({ correct: true, seconds, detail: `投票：${picked.zh}`, delay: inClass ? 900 : 0 })
-      : { recorded: false, next: "" };
-
-    if (inClass) {
-      /* 课堂模式：公共脚本记进度并跳转，页面不自己写跳转 */
-      setStatus(outcome.next === "complete.html"
-        ? "已提交：本题已完成，正在进入完成页… / Sudah dikirim, membuka halaman selesai…"
-        : "已提交：本题已完成，正在返回课堂继续下一题… / Sudah dikirim, kembali ke kelas…");
-      return;
+    if (bridge && typeof bridge.finish === "function") {
+      /* 课堂模式：公共脚本只记进度；跳转由弹窗按钮负责，页面不自己写跳转 */
+      bridge.finish({ correct: true, seconds, detail: `投票：${picked.zh}` });
     }
 
-    /* 体验模式：不记账、不跳转，自己弹完成弹窗 */
-    setStatus("已提交：每题只能提交一次，不能再改了。 / Sudah dikirim dan tidak bisa diubah.");
-    window.setTimeout(() => {
-      if (!completeModal) return;
-      completeModal.classList.remove("hidden");
-      if (moreButton && typeof moreButton.focus === "function") moreButton.focus();
-    }, 650);
+    /* 两种模式都弹公共情绪弹窗 */
+    window.setTimeout(openModal, 650);
   };
 
   options.forEach((option) => {
@@ -128,8 +124,6 @@
       if (submitted) return;
       paintOptions();
       refreshSubmit();
-      const picked = textOf(option);
-      setStatus(`已选择：${picked.zh}。改主意就点别的那个，然后点「提交」。 / Sudah memilih: ${picked.id}.`);
     });
   });
 
@@ -137,19 +131,6 @@
 
   /* 顶栏返回：统一回课堂页，href 与文案由 shared/activity-page.js 负责 */
 
-  /* 题型角标取自题型清单，不在页面里另写一份文案 */
-  const meta = types && typeof types.get === "function" ? types.get(type) : null;
-  if (badge && meta) {
-    badge.textContent = "";
-    const icon = document.createElement("span");
-    icon.setAttribute("aria-hidden", "true");
-    icon.textContent = meta.icon || "📊";
-    const name = document.createElement("span");
-    name.textContent = meta.title || "课堂投票";
-    badge.append(icon, name);
-  }
-
   paintOptions();
   refreshSubmit();
-  setStatus("待作答：先选一个选项，再点下面的「提交」。 / Belum memilih: pilih satu opsi lalu tekan kirim.");
 })();

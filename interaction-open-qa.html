@@ -25,89 +25,52 @@
     </header>
 
     <main class="page page-content">
-      <div class="game-intro">
-        <div>
-          <h2 data-activity-task>回答一个开放问题，说说你的想法。</h2>
-          <p>按住麦克风按钮，用中文说一说你的想法，说完松开。<br>Tahan tombol mikrofon, ucapkan jawabanmu dalam bahasa Mandarin, lalu lepaskan.</p>
-        </div>
-        <span class="progress-pill" data-activity-step>题型体验</span>
-      </div>
-
       <section class="openqa-card" aria-labelledby="openqa-question">
-        <div class="openqa-card-head">
-          <span class="openqa-type-badge">
-            <span aria-hidden="true" data-openqa-type-icon>❓</span>
-            <strong data-openqa-type-name>开放问答</strong>
-          </span>
-          <span class="progress-pill">第 1 / 1 题</span>
-        </div>
-
         <div class="openqa-stem">
           <h3 class="openqa-question" id="openqa-question" data-openqa-question>你周末喜欢做什么？</h3>
           <p class="openqa-question-id" lang="id" data-openqa-question-id>Akhir pekan kamu suka melakukan apa?</p>
         </div>
 
         <div class="openqa-hints">
-          <p class="openqa-hints-label" id="openqa-hints-label">提示词 · Kata kunci</p>
+          <p class="openqa-hints-label" id="openqa-hints-label">关键词 · Kata kunci</p>
           <ul class="openqa-hint-list" aria-labelledby="openqa-hints-label" data-openqa-hints></ul>
         </div>
 
-        <div class="openqa-mic-wrap">
-          <button type="button" class="openqa-mic" data-openqa-mic aria-pressed="false" aria-describedby="openqa-mic-hint">
-            <span class="openqa-mic-icon" aria-hidden="true">🎤</span>
-            <span class="openqa-mic-label" data-openqa-mic-label>按住说话</span>
-          </button>
-          <p class="openqa-mic-hint" id="openqa-mic-hint" data-openqa-mic-hint>按住说，松开结束；也可以点一下开始、再点一下结束。占位演示，不会真的开麦克风。<br>Tahan untuk bicara, lepaskan untuk selesai; bisa juga ketuk untuk mulai dan ketuk lagi untuk berhenti. Ini demo, mikrofon tidak dinyalakan.</p>
-          <div class="openqa-wave" aria-hidden="true" data-openqa-wave>
-            <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-          </div>
+        <button type="button" class="openqa-mic" data-openqa-mic aria-pressed="false" aria-busy="false">
+          <span class="openqa-mic-icon" aria-hidden="true">🎤</span>
+          <span class="openqa-mic-label" data-openqa-mic-label>按住说话</span>
+        </button>
+
+        <!-- 假波形：只在录音中出现（状态动效），纯 CSS 动画，不接麦克风 -->
+        <div class="openqa-wave" aria-hidden="true" data-openqa-wave>
+          <span class="openqa-wave-bar"></span>
+          <span class="openqa-wave-bar"></span>
+          <span class="openqa-wave-bar"></span>
+          <span class="openqa-wave-bar"></span>
+          <span class="openqa-wave-bar"></span>
         </div>
 
-        <div class="openqa-result hidden" tabindex="-1" data-openqa-result>
-          <p class="openqa-result-tag"><span aria-hidden="true">🧩</span> 占位演示 · 不是真实评分</p>
+        <p class="openqa-record-hint">按住说完松开 · Tahan, lepas setelah selesai</p>
 
-          <p class="openqa-result-label">参考答案 · Contoh jawaban</p>
-          <p class="openqa-result-answer" data-openqa-answer>我周末喜欢听音乐。</p>
-          <p class="openqa-result-pinyin" lang="zh-Latn-pinyin" data-openqa-answer-pinyin>Wǒ zhōumò xǐhuan tīng yīnyuè.</p>
+        <!-- 学习卡：假识别 1 秒之后出现。只放两样——一句鼓励（只夸「你开口了」，不评结果）
+             和能带走的内容（句型框）。这一页不打分，也没有【完成】：录音本身就是交卷，
+             卡片一出现就记账；课堂模式自动回课堂，演示模式约 2 秒后自动弹窗
+             （见 interaction-open-qa.js） -->
+        <div class="openqa-result hidden" role="status" aria-live="polite" tabindex="-1" data-openqa-result>
+          <p class="openqa-praise">
+            <span data-openqa-praise>说得不错！</span>
+            <i class="openqa-praise-dot" aria-hidden="true">·</i>
+            <span class="openqa-praise-id" lang="id" data-openqa-praise-id>Bagus!</span>
+          </p>
 
-          <div class="openqa-pattern">
-            <p class="openqa-pattern-label">你可以这样说 · Kamu bisa bilang</p>
-            <p class="openqa-pattern-text" data-openqa-pattern>我周末喜欢 ______ 。</p>
-            <p class="openqa-pattern-id" lang="id" data-openqa-pattern-id>Pada akhir pekan saya suka ______ .</p>
-          </div>
-
-          <ul class="openqa-scores" data-openqa-scores></ul>
-
-          <p class="openqa-result-note">分数为占位示例，接入语音识别后替换。</p>
-          <button type="button" class="primary-button openqa-finish" data-openqa-finish>完成</button>
+          <p class="openqa-pattern-label">你可以这样说 · Kamu bisa bilang</p>
+          <p class="openqa-pattern-text" lang="zh-CN" data-openqa-pattern>我周末喜欢 ______ 。</p>
+          <p class="openqa-pattern-id" lang="id" data-openqa-pattern-id>Pada akhir pekan saya suka ______ .</p>
         </div>
       </section>
 
       <p class="openqa-announcer" data-openqa-announcer role="status" aria-live="polite"></p>
-
-      <div class="helper-note">
-        <span aria-hidden="true">💬</span>
-        <div>说一两句就行，不用长。<br>Cukup satu atau dua kalimat.</div>
-      </div>
-
-      <p class="activity-status" data-activity-status>当前状态：待作答</p>
-      <p class="activity-meta" data-activity-meta></p>
     </main>
-  </div>
-
-  <p class="openqa-placeholder-tag">🧩 占位演示</p>
-
-  <div class="modal-overlay hidden" data-openqa-complete>
-    <section class="completion-modal" role="dialog" aria-modal="true" aria-labelledby="openqa-complete-title">
-      <div class="modal-badge" data-openqa-modal-badge>✅</div>
-      <h3 id="openqa-complete-title" data-openqa-modal-title>本题已完成</h3>
-      <p class="id-copy" lang="id" data-openqa-modal-id>Aktivitas ini sudah selesai.</p>
-      <p class="modal-description" data-openqa-modal-copy>作答已完成，可以换一个题型再练一练，或者回到课堂。</p>
-      <div class="openqa-modal-actions">
-        <a class="primary-button" href="classroom.html?activities=1" data-openqa-change>换一个题型</a>
-        <a class="secondary-button" href="classroom.html" data-openqa-return>返回课堂</a>
-      </div>
-    </section>
   </div>
 
   <script type="module" src="shared/activity-types.js"></script>
@@ -115,6 +78,8 @@
   <script type="module" src="shared/activity-bridge.js"></script>
   <script type="module" src="app.js"></script>
   <script type="module" src="shared/activity-page.js"></script>
+  <script type="module" src="shared/feedback-copy.js"></script>
+  <script type="module" src="shared/feedback-modal.js"></script>
   <script type="module" src="interaction-open-qa.js"></script>
 </body>
 </html>

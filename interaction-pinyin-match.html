@@ -17,7 +17,7 @@
     </div>
 
     <header class="page-header">
-      <a class="icon-button" href="index.html" data-activity-back aria-label="返回首页">
+      <a class="icon-button" href="index.html" data-activity-back aria-label="返回课堂">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
       </a>
       <h1><span data-activity-title>拼音—汉字—含义匹配</span><span class="header-subtitle" data-activity-subtitle>Cocokkan pinyin, hanzi, arti</span></h1>
@@ -25,80 +25,33 @@
     </header>
 
     <main class="page page-content">
-      <div class="game-intro">
-        <div>
-          <h2 data-activity-task>看拼音选汉字，再选它的意思，一组一组配起来。</h2>
-          <p>先看拼音，选出对应的汉字，再选它的意思；配错了可以再试。<br>Lihat pinyin, pilih hanzi-nya, lalu pilih artinya.</p>
-        </div>
-        <span class="progress-pill" data-activity-step>题型体验</span>
-      </div>
-
       <section class="py-card" aria-label="拼音、汉字和意思配对作答区">
-        <div class="py-card-head">
-          <span class="py-type-badge">
-            <span aria-hidden="true" data-py-badge-icon>🔤</span>
-            <strong data-py-badge-name>拼音—汉字—含义匹配</strong>
-          </span>
-          <span class="py-head-pills">
-            <span class="progress-pill" data-py-step>第 1 / 1 题</span>
-            <span class="progress-pill" data-py-progress>第 1 / 3 组</span>
-          </span>
-        </div>
-
-        <div class="py-pinyin-block">
-          <p class="py-pinyin-label">看拼音 · Lihat pinyin</p>
+        <div class="py-plate">
+          <p class="py-step is-current" id="py-word-label" data-py-step-word>① 看拼音选汉字 · Pilih hanzi</p>
           <p class="py-pinyin" data-py-pinyin>shū</p>
         </div>
 
-        <div class="py-stage">
-          <p class="py-stage-label" id="py-word-label">① 选汉字 · Pilih hanzi</p>
-          <div class="py-options py-options-word" role="group" aria-labelledby="py-word-label" data-py-words></div>
-        </div>
+        <div class="py-options py-options-word" role="group" aria-labelledby="py-word-label" data-py-words></div>
 
         <div class="py-stage hidden" data-py-meaning-stage>
-          <p class="py-stage-label" id="py-meaning-label">② 选意思 · Pilih arti</p>
+          <p class="py-step is-current" id="py-meaning-label" data-py-step-meaning>② 选意思 · Pilih arti</p>
           <div class="py-options py-options-meaning" role="group" aria-labelledby="py-meaning-label" data-py-meanings></div>
         </div>
 
-        <div class="py-feedback hidden" role="status" aria-live="polite" tabindex="-1" data-py-feedback>
-          <strong class="py-feedback-title">
-            <span aria-hidden="true" data-py-feedback-icon></span>
-            <span data-py-feedback-title></span>
-          </strong>
+        <div class="py-feedback hidden" role="status" aria-live="polite" data-py-feedback>
+          <strong class="py-feedback-title" data-py-feedback-title></strong>
           <p class="py-feedback-copy" data-py-feedback-copy></p>
         </div>
       </section>
 
-      <section class="py-done-card" aria-labelledby="py-done-title" data-py-done-card>
-        <h3 class="py-done-title" id="py-done-title">已完成 <span>Sudah selesai</span></h3>
-        <ul class="py-done-list" data-py-done-list></ul>
-      </section>
+      <ol class="py-slots" data-py-done-list aria-label="已配好的组合">
+        <li class="py-slot" data-py-slot="1" aria-hidden="true"></li>
+        <li class="py-slot" data-py-slot="2" aria-hidden="true"></li>
+        <li class="py-slot" data-py-slot="3" aria-hidden="true"></li>
+      </ol>
 
-      <p class="py-announcer" data-py-announcer role="status" aria-live="polite"></p>
-
-      <div class="helper-note">
-        <span aria-hidden="true">💡</span>
-        <div>先看拼音，选出对应的汉字，再选它的意思。<br>Lihat pinyin, pilih hanzi-nya, lalu pilih artinya.</div>
-      </div>
-
-      <p class="activity-status" data-activity-status>当前状态：待作答</p>
-      <p class="activity-meta" data-activity-meta></p>
+      <p class="py-sr" role="status" aria-live="polite" data-activity-status></p>
     </main>
-  </div>
-
-  <div class="modal-overlay hidden" data-py-complete>
-    <section class="completion-modal py-modal" role="dialog" aria-modal="true" aria-labelledby="py-complete-title">
-      <div class="modal-badge">🎉</div>
-      <h3 id="py-complete-title">三组全部配好！</h3>
-      <p class="id-copy">Semua pasangan sudah lengkap!</p>
-      <p class="modal-description">三组拼音、汉字和意思都配好了，来回顾一遍：</p>
-      <ul class="py-modal-pairs" data-py-modal-pairs></ul>
-      <p class="py-modal-note">shū 是第一声，读得又平又高；「本子」的「子」读轻声。<br>shū memakai nada pertama; "zi" pada běnzi dibaca ringan.</p>
-      <div class="py-modal-actions">
-        <a class="primary-button" href="classroom.html?activities=1" data-py-change>换一个题型</a>
-        <a class="secondary-button" href="classroom.html" data-py-return>返回课堂</a>
-      </div>
-    </section>
   </div>
 
   <script type="module" src="shared/activity-types.js"></script>
@@ -106,6 +59,8 @@
   <script type="module" src="shared/activity-bridge.js"></script>
   <script type="module" src="app.js"></script>
   <script type="module" src="shared/activity-page.js"></script>
+  <script type="module" src="shared/feedback-copy.js"></script>
+  <script type="module" src="shared/feedback-modal.js"></script>
   <script type="module" src="interaction-pinyin-match.js"></script>
 </body>
 </html>

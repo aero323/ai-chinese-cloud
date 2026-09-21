@@ -14,7 +14,6 @@ export default defineConfig({
         classroom: resolve(__dirname, "classroom.html"),
         match: resolve(__dirname, "match.html"),
         memory: resolve(__dirname, "memory.html"),
-        complete: resolve(__dirname, "complete.html"),
         interactionChoice: resolve(__dirname, "interaction-choice.html"),
         interactionOrder: resolve(__dirname, "interaction-order.html"),
         interactionFill: resolve(__dirname, "interaction-fill.html"),
