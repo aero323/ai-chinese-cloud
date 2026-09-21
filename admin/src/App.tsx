@@ -13,6 +13,7 @@ import { StudentSchedule } from "./pages/student/StudentSchedule";
 import { StudentLesson } from "./pages/student/StudentLesson";
 import { StudentResults } from "./pages/student/StudentResults";
 import { TeacherDashboard } from "./pages/teacher/TeacherDashboard";
+import { TeacherLiveClass } from "./pages/teacher/TeacherLiveClass";
 import { TeacherSchedule } from "./pages/teacher/TeacherSchedule";
 import { TeacherSessionDetail } from "./pages/teacher/TeacherSessionDetail";
 import { TeacherInteractions } from "./pages/teacher/TeacherInteractions";
@@ -60,6 +61,7 @@ export default function App() {
 
           <Route path="/teacher" element={<RoleGate role="teacher"><Outlet /></RoleGate>}>
             <Route index element={<TeacherDashboard />} />
+            <Route path="live/:sessionId" element={<TeacherLiveClass />} />
             <Route path="schedule" element={<TeacherSchedule />} />
             <Route path="session/:sessionId" element={<TeacherSessionDetail />} />
             <Route path="interactions" element={<TeacherInteractions />} />

@@ -6,6 +6,7 @@ import {
   Bell,
   BookOpenCheck,
   CalendarDays,
+  CalendarOff,
   ChevronLeft,
   ClipboardList,
   FolderTree,
@@ -14,6 +15,7 @@ import {
   LibraryBig,
   ListRestart,
   Menu,
+  Radio,
   ShieldCheck,
   SlidersHorizontal,
   Sparkles,
@@ -24,6 +26,7 @@ import { platform } from "../lib/platform";
 import { FEATURES } from "../config/features";
 import { roleHome, usePlatformStore } from "../store/usePlatformStore";
 import { currentUser } from "../lib/domain";
+import { setTeacherDemoMode, useTeacherDemoMode } from "../lib/teacherLiveDemo";
 import { timeZoneLabel } from "../lib/format";
 import type { Role } from "../domain/types";
 import { Avatar, Badge, Button, Select } from "./ui";
@@ -80,6 +83,7 @@ export function AppShell() {
   const location = useLocation();
   const { state, refresh, switchUser, reset } = usePlatformStore();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [teacherDemoMode] = useTeacherDemoMode();
   const user = currentUser(state);
   const role = user.role;
   const items = navItems(role, t);
@@ -184,6 +188,18 @@ export function AppShell() {
           </div>
 
           <div className="topbar-spacer" />
+
+          {role === "teacher" && (
+            <div className="teacher-demo-mode" role="group" aria-label="教师端演示数据">
+              <span className="teacher-demo-mode-label">演示数据</span>
+              <button className={teacherDemoMode === "live" ? "active live" : ""} onClick={() => setTeacherDemoMode("live")} type="button">
+                <Radio size={14} /> 有课
+              </button>
+              <button className={teacherDemoMode === "empty" ? "active empty" : ""} onClick={() => setTeacherDemoMode("empty")} type="button">
+                <CalendarOff size={14} /> 没课
+              </button>
+            </div>
+          )}
 
           <Select
             className="timezone-select"

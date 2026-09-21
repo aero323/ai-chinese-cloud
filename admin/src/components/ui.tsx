@@ -105,7 +105,8 @@ export function Modal({
   onClose,
   children,
   footer,
-  width = "560px"
+  width = "560px",
+  fullscreen = false
 }: {
   open: boolean;
   title: string;
@@ -113,11 +114,12 @@ export function Modal({
   children: ReactNode;
   footer?: ReactNode;
   width?: string;
+  fullscreen?: boolean;
 }) {
   if (!open) return null;
   return createPortal(
     <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <section className="modal-panel" role="dialog" aria-modal="true" aria-label={title} style={{ maxWidth: width }}>
+      <section className={`modal-panel ${fullscreen ? "modal-panel-fullscreen" : ""}`} role="dialog" aria-modal="true" aria-label={title} style={{ maxWidth: fullscreen ? undefined : width }}>
         <header className="modal-header">
           <h2>{title}</h2>
           <Button size="icon" variant="ghost" onClick={onClose} aria-label="关闭">
