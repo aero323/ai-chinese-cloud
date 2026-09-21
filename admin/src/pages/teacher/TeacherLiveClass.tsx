@@ -414,15 +414,6 @@ export function TeacherLiveClass() {
               ))}
             </div>
           </Card>
-
-          <Card className="live-quick-card">
-            <span className="live-quick-icon"><Radio size={20} /></span>
-            <div>
-              <strong>当前投影</strong>
-              <p>{activeInteraction?.title ?? "等待选择互动"}</p>
-            </div>
-            <ArrowRight size={17} />
-          </Card>
         </aside>
       </div>
 

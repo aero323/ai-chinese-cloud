@@ -6846,37 +6846,6 @@ strong {
   font-size: 8px;
 }
 
-.live-quick-card {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 11px;
-  align-items: center;
-  color: #fff;
-  border-color: transparent;
-  background: linear-gradient(135deg, #6653f4, #4f39d7);
-}
-
-.live-quick-icon {
-  display: grid;
-  width: 40px;
-  height: 40px;
-  place-items: center;
-  border-radius: 13px;
-  background: rgba(255, 255, 255, 0.14);
-}
-
-.live-quick-card strong {
-  display: block;
-  font-size: 9px;
-  opacity: 0.72;
-}
-
-.live-quick-card p {
-  margin: 3px 0 0;
-  font-size: 11px;
-  font-weight: 850;
-}
-
 .live-class-empty {
   display: flex;
   align-items: center;
@@ -7170,9 +7139,6 @@ strong {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .live-quick-card {
-    grid-column: 1 / -1;
-  }
 }
 
 @media (max-width: 760px) {
