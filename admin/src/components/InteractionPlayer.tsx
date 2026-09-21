@@ -35,8 +35,8 @@ interface InteractionPlayerProps {
   onComplete?: (result: PlayerResult) => void;
   onClose?: () => void;
   preview?: boolean;
-  /** 投影原题时只演示当前这一题，不显示“下一题/完成”。 */
-  hideAdvance?: boolean;
+  /** 投影原题场景：只演示当前这一题，底部不显示“关闭”和“下一题/完成”。 */
+  projection?: boolean;
 }
 
 const LETTERS = ["A", "B", "C", "D", "E", "F"];
@@ -50,7 +50,7 @@ function shuffle<T>(items: T[]) {
   return next;
 }
 
-export function InteractionPlayer({ items, onComplete, onClose, preview = false, hideAdvance = false }: InteractionPlayerProps) {
+export function InteractionPlayer({ items, onComplete, onClose, preview = false, projection = false }: InteractionPlayerProps) {
   const { t } = useTranslation();
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
@@ -270,9 +270,11 @@ export function InteractionPlayer({ items, onComplete, onClose, preview = false,
       )}
 
       <footer className="player-footer">
-        <Button variant="ghost" onClick={onClose}>
-          {t("common.close")}
-        </Button>
+        {!projection && (
+          <Button variant="ghost" onClick={onClose}>
+            {t("common.close")}
+          </Button>
+        )}
         <div className="player-actions">
           {preview && (
             <Button
@@ -288,7 +290,7 @@ export function InteractionPlayer({ items, onComplete, onClose, preview = false,
               <RotateCcw size={16} /> 重置预览
             </Button>
           )}
-          {!hideAdvance && (
+          {!projection && (
             <Button onClick={next} disabled={!isResolved}>
               {index === items.length - 1 ? t("student.finish") : t("student.nextItem")}
             </Button>
