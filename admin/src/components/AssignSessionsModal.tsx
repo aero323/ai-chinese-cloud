@@ -51,7 +51,6 @@ export function AssignSessionsModal({
       <div className="assign-session-toolbar">
         <Button size="sm" variant="ghost" onClick={() => setSelected(ordered.map((session) => session.id))}>全选本课节课次</Button>
         <Button size="sm" variant="ghost" onClick={() => setSelected([])}>清空（全部课次）</Button>
-        <Badge tone="purple">{ordered.length} 节课次</Badge>
       </div>
 
       <div className="assign-session-list">

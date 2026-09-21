@@ -4832,10 +4832,6 @@ strong {
   margin: 14px 0 12px;
 }
 
-.assign-session-toolbar .badge {
-  margin-left: auto;
-}
-
 .assign-session-list {
   display: flex;
   flex-direction: column;
