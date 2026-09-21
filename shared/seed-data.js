@@ -1340,38 +1340,110 @@
         updatedAt: iso(addDays(now, -2))
       },
       {
-        id: "set-food-preview",
+        id: "set-food-picture",
         lessonId: "lesson-food",
-        title: "点餐词汇热身",
-        description: "看图选词、图片配对和填空，先熟悉面条、米饭和饮料。",
+        title: "看图选词",
+        description: "看图片选出正确的食物名称。",
         phase: "preview",
         status: "published",
-        currentVersionId: "ver-food-preview-1",
+        currentVersionId: "ver-food-picture-1",
         order: 1,
         updatedAt: iso(addDays(now, -2)),
         sessionIds: ["series-session-2"]
       },
       {
-        id: "set-food-live",
+        id: "set-food-match",
         lessonId: "lesson-food",
-        title: "点餐情景演练",
-        description: "情景选择、对话补全和单选，模拟一次完整点餐。",
+        title: "图词连线",
+        description: "把食物图片和对应词语连起来。",
+        phase: "preview",
+        status: "published",
+        currentVersionId: "ver-food-match-1",
+        order: 2,
+        updatedAt: iso(addDays(now, -2)),
+        sessionIds: ["series-session-2"]
+      },
+      {
+        id: "set-food-fill",
+        lessonId: "lesson-food",
+        title: "补全句子",
+        description: "补全「我想吃……」点餐句。",
+        phase: "preview",
+        status: "published",
+        currentVersionId: "ver-food-fill-1",
+        order: 3,
+        updatedAt: iso(addDays(now, -2)),
+        sessionIds: ["series-session-2"]
+      },
+      {
+        id: "set-food-situation",
+        lessonId: "lesson-food",
+        title: "点餐情景",
+        description: "在餐厅里选择合适的点餐表达。",
         phase: "live",
         status: "published",
-        currentVersionId: "ver-food-live-1",
+        currentVersionId: "ver-food-situation-1",
         order: 1,
         updatedAt: iso(addDays(now, -2)),
         sessionIds: ["series-session-2"]
       },
       {
-        id: "set-food-review",
+        id: "set-food-dialogue",
         lessonId: "lesson-food",
-        title: "口味复习挑战",
-        description: "句子排序、吃的喝的分类和课堂投票，巩固点餐表达。",
+        title: "对话补全",
+        description: "接住服务员的问句，选出下一句。",
+        phase: "live",
+        status: "published",
+        currentVersionId: "ver-food-dialogue-1",
+        order: 2,
+        updatedAt: iso(addDays(now, -2)),
+        sessionIds: ["series-session-2"]
+      },
+      {
+        id: "set-food-choice",
+        lessonId: "lesson-food",
+        title: "饮料选择",
+        description: "回答「要喝什么？」，选出正确的句子。",
+        phase: "live",
+        status: "published",
+        currentVersionId: "ver-food-choice-1",
+        order: 3,
+        updatedAt: iso(addDays(now, -2)),
+        sessionIds: ["series-session-2"]
+      },
+      {
+        id: "set-food-order",
+        lessonId: "lesson-food",
+        title: "句子排序",
+        description: "把词语排成自然的点餐句子。",
         phase: "review",
         status: "published",
-        currentVersionId: "ver-food-review-1",
+        currentVersionId: "ver-food-order-1",
         order: 1,
+        updatedAt: iso(addDays(now, -2)),
+        sessionIds: ["series-session-2"]
+      },
+      {
+        id: "set-food-category",
+        lessonId: "lesson-food",
+        title: "吃的与喝的",
+        description: "把食物和饮料分到「吃的」「喝的」。",
+        phase: "review",
+        status: "published",
+        currentVersionId: "ver-food-category-1",
+        order: 2,
+        updatedAt: iso(addDays(now, -2)),
+        sessionIds: ["series-session-2"]
+      },
+      {
+        id: "set-food-poll",
+        lessonId: "lesson-food",
+        title: "课堂投票",
+        description: "选出今天最想用的点餐表达。",
+        phase: "review",
+        status: "published",
+        currentVersionId: "ver-food-poll-1",
+        order: 3,
         updatedAt: iso(addDays(now, -2)),
         sessionIds: ["series-session-2"]
       },
@@ -1716,16 +1788,16 @@
         ]
       },
       {
-        id: "ver-food-preview-1",
-        setId: "set-food-preview",
+        id: "ver-food-picture-1",
+        setId: "set-food-picture",
         version: 1,
         status: "published",
         publishedAt: iso(addDays(now, -2)),
         publishedBy: "teacher-lina",
-        publishNote: "餐厅中文系列第 2 课预习互动。",
+        publishNote: "餐厅中文系列第 2 课：看图选词。",
         items: [
           {
-            id: "item-food-preview-picture",
+            id: "item-food-picture",
             type: "picture",
             prompt: "看图，这是什么？",
             promptPinyin: "Kàn tú, zhè shì shénme?",
@@ -1736,9 +1808,20 @@
               { id: "food-pic-juice", text: "果汁", hint: "guǒzhī", isCorrect: false }
             ],
             explanation: "面条 miàntiáo 是餐厅里很常见的食物。"
-          },
+          }
+        ]
+      },
+      {
+        id: "ver-food-match-1",
+        setId: "set-food-match",
+        version: 1,
+        status: "published",
+        publishedAt: iso(addDays(now, -2)),
+        publishedBy: "teacher-lina",
+        publishNote: "餐厅中文系列第 2 课：图词连线。",
+        items: [
           {
-            id: "item-food-preview-match",
+            id: "item-food-match",
             type: "picture-match",
             prompt: "把图片和词语配成对。",
             explanation: "米饭 mǐfàn、面条 miàntiáo、果汁 guǒzhī、茶 chá。",
@@ -1748,9 +1831,20 @@
               { id: "food-pm-juice", left: "果汁", right: "果汁", rightPinyin: "guǒzhī", media: { icon: "🥤", image: "", alt: "一杯果汁" } },
               { id: "food-pm-tea", left: "茶", right: "茶", rightPinyin: "chá", media: { icon: "🍵", image: "", alt: "一杯茶" } }
             ]
-          },
+          }
+        ]
+      },
+      {
+        id: "ver-food-fill-1",
+        setId: "set-food-fill",
+        version: 1,
+        status: "published",
+        publishedAt: iso(addDays(now, -2)),
+        publishedBy: "teacher-lina",
+        publishNote: "餐厅中文系列第 2 课：补全点餐句。",
+        items: [
           {
-            id: "item-food-preview-fill",
+            id: "item-food-fill",
             type: "fill",
             prompt: "补全点餐句子。",
             sentence: "我想吃____。",
@@ -1760,16 +1854,16 @@
         ]
       },
       {
-        id: "ver-food-live-1",
-        setId: "set-food-live",
+        id: "ver-food-situation-1",
+        setId: "set-food-situation",
         version: 1,
         status: "published",
         publishedAt: iso(addDays(now, -2)),
         publishedBy: "teacher-lina",
-        publishNote: "餐厅中文系列第 2 课课中互动。",
+        publishNote: "餐厅中文系列第 2 课：点餐情景选择。",
         items: [
           {
-            id: "item-food-live-situation",
+            id: "item-food-situation",
             type: "situation",
             prompt: "在餐厅想点一碗面条，应该怎么说？",
             scene: "你坐在餐厅里，服务员正在等你点餐。",
@@ -1781,9 +1875,20 @@
               { id: "food-sit-bye", text: "再见，面条。", hint: "场景不合适", isCorrect: false }
             ],
             explanation: "先问候，再用「我想吃……」表达点餐需求。"
-          },
+          }
+        ]
+      },
+      {
+        id: "ver-food-dialogue-1",
+        setId: "set-food-dialogue",
+        version: 1,
+        status: "published",
+        publishedAt: iso(addDays(now, -2)),
+        publishedBy: "teacher-lina",
+        publishNote: "餐厅中文系列第 2 课：对话补全。",
+        items: [
           {
-            id: "item-food-live-dialogue",
+            id: "item-food-dialogue",
             type: "dialogue",
             prompt: "选出合适的下一句。",
             dialogueThem: "你好，请问你想吃什么？",
@@ -1794,9 +1899,20 @@
               { id: "food-dlg-weather", text: "今天很热。", isCorrect: false }
             ],
             explanation: "对方问想吃什么，直接回答「我想吃 ＋ 食物」。"
-          },
+          }
+        ]
+      },
+      {
+        id: "ver-food-choice-1",
+        setId: "set-food-choice",
+        version: 1,
+        status: "published",
+        publishedAt: iso(addDays(now, -2)),
+        publishedBy: "teacher-lina",
+        publishNote: "餐厅中文系列第 2 课：饮料点单选择。",
+        items: [
           {
-            id: "item-food-live-choice",
+            id: "item-food-choice",
             type: "choice",
             prompt: "服务员问：“要喝什么？”你想喝果汁，怎么说？",
             choices: [
@@ -1809,16 +1925,16 @@
         ]
       },
       {
-        id: "ver-food-review-1",
-        setId: "set-food-review",
+        id: "ver-food-order-1",
+        setId: "set-food-order",
         version: 1,
         status: "published",
         publishedAt: iso(addDays(now, -2)),
         publishedBy: "teacher-lina",
-        publishNote: "餐厅中文系列第 2 课复习互动。",
+        publishNote: "餐厅中文系列第 2 课：句子排序。",
         items: [
           {
-            id: "item-food-review-order",
+            id: "item-food-order",
             type: "order",
             prompt: "把句子排成自然的点餐表达。",
             orderItems: [
@@ -1828,9 +1944,20 @@
             ],
             correctOrder: ["food-order-hello", "food-order-want", "food-order-noodles"],
             explanation: "自然顺序是：你好，我想吃一碗面条。"
-          },
+          }
+        ]
+      },
+      {
+        id: "ver-food-category-1",
+        setId: "set-food-category",
+        version: 1,
+        status: "published",
+        publishedAt: iso(addDays(now, -2)),
+        publishedBy: "teacher-lina",
+        publishNote: "餐厅中文系列第 2 课：吃的喝的分类。",
+        items: [
           {
-            id: "item-food-review-category",
+            id: "item-food-category",
             type: "category",
             prompt: "把词语放进「吃的」或「喝的」。",
             groups: [
@@ -1844,9 +1971,20 @@
               { id: "food-cat-tea", text: "茶", pinyin: "chá", group: "food-cat-drink" }
             ],
             explanation: "米饭和面条是吃的，果汁和茶是喝的。"
-          },
+          }
+        ]
+      },
+      {
+        id: "ver-food-poll-1",
+        setId: "set-food-poll",
+        version: 1,
+        status: "published",
+        publishedAt: iso(addDays(now, -2)),
+        publishedBy: "teacher-lina",
+        publishNote: "餐厅中文系列第 2 课：课堂投票。",
+        items: [
           {
-            id: "item-food-review-poll",
+            id: "item-food-poll",
             type: "poll",
             prompt: "今天你最想用哪一句来点餐？",
             pollOptions: [

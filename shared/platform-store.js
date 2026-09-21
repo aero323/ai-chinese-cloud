@@ -90,7 +90,23 @@
         merged.interactionTemplates.push(clone(template));
       }
     });
-    const demoInteractionSetIds = ["set-greetings-scenario", "set-greetings-batch-three", "set-food-preview", "set-food-live", "set-food-review"];
+    // 旧版把一道题拆成多题一组，这里按“一个互动一道题”替换成单题互动。
+    const retiredInteractionSetIds = ["set-food-preview", "set-food-live", "set-food-review"];
+    merged.interactionSets = merged.interactionSets.filter((set) => !retiredInteractionSetIds.includes(set.id));
+    merged.interactionVersions = merged.interactionVersions.filter((version) => !retiredInteractionSetIds.includes(version.setId));
+    const demoInteractionSetIds = [
+      "set-greetings-scenario",
+      "set-greetings-batch-three",
+      "set-food-picture",
+      "set-food-match",
+      "set-food-fill",
+      "set-food-situation",
+      "set-food-dialogue",
+      "set-food-choice",
+      "set-food-order",
+      "set-food-category",
+      "set-food-poll"
+    ];
     demoInteractionSetIds.forEach((setId) => {
       const demoSet = (seeded.interactionSets || []).find((set) => set.id === setId);
       if (!demoSet) return;

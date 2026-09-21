@@ -3,11 +3,12 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, CalendarClock, Eye, FileText, Layers3, Lock, MapPin, Plus, Send, UsersRound } from "lucide-react";
 import { usePlatformStore } from "../../store/usePlatformStore";
-import { getBookedCount, getLesson, getSession, getStudent, getUser, setsForSession } from "../../lib/domain";
+import { getBookedCount, getCurrentInteractionVersion, getLesson, getSession, getStudent, getUser, setsForSession } from "../../lib/domain";
 import { formatDate, formatRange, timeZoneLabel } from "../../lib/format";
 import { Avatar, Badge, Button, Card, EmptyState, Field, Modal, PageHeader, ProgressBar, Select, SourceBadge, TextInput } from "../../components/ui";
 import { platform } from "../../lib/platform";
-import type { ChangeRequestKind } from "../../domain/types";
+import { interactionTypeShortLabel } from "../../lib/interactionTypes";
+import type { ChangeRequestKind, InteractionType, Phase } from "../../domain/types";
 
 export function TeacherSessionDetail() {
   const { sessionId = "" } = useParams();
@@ -26,7 +27,10 @@ export function TeacherSessionDetail() {
     .filter((booking) => booking.sessionId === session.id && booking.status === "booked")
     .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   const sets = state.interactionSets.filter((set) => set.lessonId === lesson.id);
-  const sessionSets = setsForSession(state, activeSession).filter((set) => set.status === "published");
+  const phaseRank: Record<Phase, number> = { preview: 0, live: 1, review: 2 };
+  const sessionSets = setsForSession(state, activeSession)
+    .filter((set) => set.status === "published")
+    .sort((a, b) => phaseRank[a.phase] - phaseRank[b.phase] || a.order - b.order);
   const linkableSets = sets.filter(
     (set) => set.status === "published" && set.sessionIds && set.sessionIds.length > 0 && !set.sessionIds.includes(activeSession.id)
   );
@@ -124,7 +128,8 @@ export function TeacherSessionDetail() {
             </div>
             <div className="session-interaction-list">
               {sessionSets.map((set) => {
-                const scope = set.sessionIds && set.sessionIds.length > 0 ? "仅此课节" : "全部课次";
+                const version = getCurrentInteractionVersion(state, set);
+                const types = [...new Set((version?.items ?? []).map((item) => item.type))] as InteractionType[];
                 return (
                   <article key={set.id}>
                     <span className={`phase-badge phase-${set.phase}`}>
@@ -132,9 +137,12 @@ export function TeacherSessionDetail() {
                     </span>
                     <div>
                       <strong>{set.title}</strong>
-                      <small>{set.description}</small>
+                      <div className="interaction-type-chips session-interaction-types">
+                        {types.map((type) => (
+                          <span key={type}>{interactionTypeShortLabel(type)}</span>
+                        ))}
+                      </div>
                     </div>
-                    <Badge tone={scope === "仅此课节" ? "purple" : "neutral"}>{scope}</Badge>
                     <Button size="sm" variant="ghost" onClick={() => navigate(`/teacher/interactions?editSetId=${set.id}`)}>编辑</Button>
                   </article>
                 );
