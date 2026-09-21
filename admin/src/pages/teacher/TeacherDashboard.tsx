@@ -39,7 +39,7 @@ export function TeacherDashboard() {
     : today;
   const healthItems = liveDemo
     ? [
-        { id: "live-interaction", phase: "live", badge: "课中", label: "互动正在实时进行", ready: true },
+        { id: "live-interaction", phase: "live", badge: "课中", label: activeInteraction?.title ?? "实时互动", ready: true },
         { id: "live-courseware", phase: "live", badge: "课中", label: "课堂课件已投影", ready: true },
         { id: "live-review", phase: "review", badge: "课后", label: "回顾数据待归档", ready: false }
       ]
@@ -145,7 +145,12 @@ export function TeacherDashboard() {
               <span className="eyebrow">Content health</span>
               <h2>内容准备度</h2>
             </div>
-            <ClipboardList size={20} />
+            <div className="card-heading-trailing">
+              <Button variant="ghost" size="sm" onClick={() => navigate("/teacher/interactions")}>
+                查看互动设计 <ArrowRight size={15} />
+              </Button>
+              <ClipboardList size={20} />
+            </div>
           </div>
           <div className="content-health-list">
             {healthItems.map((item) => (
