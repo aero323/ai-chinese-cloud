@@ -6428,10 +6428,6 @@ strong {
   font-size: 11px;
 }
 
-.live-interaction-section {
-  margin-top: 0;
-}
-
 .live-interaction-section .section-heading-row {
   align-items: center;
 }
@@ -6442,7 +6438,7 @@ strong {
 
 .live-interaction-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
   margin-top: 16px;
 }
@@ -7116,7 +7112,7 @@ strong {
   }
 
   .live-interaction-grid {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -7137,6 +7133,10 @@ strong {
   .live-class-side-column {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .live-interaction-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 
 }

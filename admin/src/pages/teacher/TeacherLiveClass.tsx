@@ -371,29 +371,6 @@ export function TeacherLiveClass() {
               <div className="live-courseware-empty"><Presentation size={20} /> 暂无已关联的课中课件</div>
             )}
           </Card>
-
-          <section className="section-block live-interaction-section">
-            <div className="section-heading-row">
-              <div>
-                <span className="eyebrow">Live interaction board</span>
-                <h2>实时互动进度</h2>
-              </div>
-            </div>
-            <div className="live-interaction-grid">
-              {snapshot.interactions.map((interaction) => (
-                <InteractionCard
-                  key={interaction.id}
-                  interaction={interaction}
-                  projected={activeInteraction?.id === interaction.id}
-                  onProject={() => {
-                    setProjectedSetId(interaction.id);
-                    setProjectionSetId(interaction.id);
-                  }}
-                  onOpen={() => setDetailSetId(interaction.id)}
-                />
-              ))}
-            </div>
-          </section>
         </div>
 
         <aside className="live-class-side-column">
@@ -416,6 +393,29 @@ export function TeacherLiveClass() {
           </Card>
         </aside>
       </div>
+
+      <section className="section-block live-interaction-section">
+        <div className="section-heading-row">
+          <div>
+            <span className="eyebrow">Live interaction board</span>
+            <h2>实时互动进度</h2>
+          </div>
+        </div>
+        <div className="live-interaction-grid">
+          {snapshot.interactions.map((interaction) => (
+            <InteractionCard
+              key={interaction.id}
+              interaction={interaction}
+              projected={activeInteraction?.id === interaction.id}
+              onProject={() => {
+                setProjectedSetId(interaction.id);
+                setProjectionSetId(interaction.id);
+              }}
+              onOpen={() => setDetailSetId(interaction.id)}
+            />
+          ))}
+        </div>
+      </section>
 
       <Modal
         open={Boolean(detailInteraction)}
