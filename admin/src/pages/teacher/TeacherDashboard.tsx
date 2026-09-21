@@ -51,6 +51,7 @@ export function TeacherDashboard() {
           phase,
           kind: "material" as const,
           title: material!.title,
+          targetId: material!.id,
           at: material!.createdAt
         }));
       const sets = state.interactionSets
@@ -65,6 +66,7 @@ export function TeacherDashboard() {
           phase,
           kind: "interaction" as const,
           title: set.title,
+          targetId: set.id,
           at: set.updatedAt
         }));
       return [...materials, ...sets].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())[0] ?? null;
@@ -169,11 +171,21 @@ export function TeacherDashboard() {
           </div>
           <div className="recent-content-list">
             {recentContent.map((item) => (
-              <div className="recent-content-row" key={item.id}>
+              <button
+                className="recent-content-row"
+                key={item.id}
+                onClick={() =>
+                  navigate(
+                    item.kind === "interaction"
+                      ? `/teacher/interactions?previewSetId=${item.targetId}`
+                      : `/teacher/materials?materialId=${item.targetId}`
+                  )
+                }
+              >
                 <span className={`phase-badge phase-${item.phase}`}>{phaseLabels[item.phase]}</span>
                 <strong title={item.title}>{item.title}</strong>
                 <span className={`recent-content-kind kind-${item.kind}`}>{item.kind === "material" ? "课件" : "互动"}</span>
-              </div>
+              </button>
             ))}
             {recentContent.length === 0 && <p className="muted-copy">这节课还没有添加课件或互动。</p>}
           </div>

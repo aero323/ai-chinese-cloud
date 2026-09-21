@@ -85,9 +85,10 @@ export function TeacherInteractions() {
   // 从课表进入：/teacher/interactions?sessionId=..&lessonId=..&phase=.. 或 ?editSetId=..
   useEffect(() => {
     const editSetId = searchParams.get("editSetId");
+    const previewSetId = searchParams.get("previewSetId");
     const sessionId = searchParams.get("sessionId");
     const templateId = searchParams.get("templateId");
-    if (!editSetId && !sessionId && !templateId) return;
+    if (!editSetId && !previewSetId && !sessionId && !templateId) return;
     if (templateId) {
       const template = state.interactionTemplates.find((item) => item.id === templateId);
       if (template) {
@@ -95,6 +96,9 @@ export function TeacherInteractions() {
         setForm((value) => ({ ...value, title: template.title, description: template.summary }));
         setItems([templateToItem(template)]);
       }
+    } else if (previewSetId) {
+      const target = state.interactionSets.find((item) => item.id === previewSetId);
+      if (target) setPreviewItems(getCurrentInteractionVersion(state, target)?.items ?? []);
     } else if (editSetId) {
       const target = state.interactionSets.find((item) => item.id === editSetId);
       if (target) openEdit(target);
@@ -110,6 +114,7 @@ export function TeacherInteractions() {
     }
     const next = new URLSearchParams(searchParams);
     next.delete("editSetId");
+    next.delete("previewSetId");
     next.delete("sessionId");
     next.delete("lessonId");
     next.delete("phase");

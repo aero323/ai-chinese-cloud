@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Filter, Layers3, Plus, Search, Sparkles, UploadCloud } from "lucide-react";
+import { FileText, Filter, Layers3, Plus, Search, Sparkles, UploadCloud } from "lucide-react";
 import { platform } from "../../lib/platform";
 import { usePlatformStore } from "../../store/usePlatformStore";
 import { currentUser, getTeacherSessions } from "../../lib/domain";
@@ -28,6 +28,33 @@ export function TeacherMaterials() {
   const [templateType, setTemplateType] = useState<InteractionType | "all">("all");
   const [templateVisible, setTemplateVisible] = useState(12);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [previewMaterialId, setPreviewMaterialId] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const previewMaterial = state.materials.find((material) => material.id === previewMaterialId);
+  const previewVersion = previewMaterial
+    ? previewMaterial.versions.find((version) => version.version === previewMaterial.currentVersion) ?? previewMaterial.versions.at(-1)
+    : undefined;
+  const previewUrl = previewVersion?.url ?? previewMaterial?.externalUrl ?? "";
+  const previewKind = previewMaterial
+    ? previewMaterial.fileType === "png" || previewMaterial.fileType === "image"
+      ? "image"
+      : previewMaterial.fileType === "wav" || previewMaterial.fileType === "mp3"
+        ? "audio"
+        : previewUrl.endsWith(".html") || previewUrl.endsWith(".pdf")
+          ? "frame"
+          : "external"
+    : "external";
+
+  // 从首页“最近添加”跳进来时，直接打开这条材料的预览。
+  useEffect(() => {
+    const materialId = searchParams.get("materialId");
+    if (!materialId) return;
+    if (state.materials.some((material) => material.id === materialId)) setPreviewMaterialId(materialId);
+    const next = new URLSearchParams(searchParams);
+    next.delete("materialId");
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -191,6 +218,42 @@ export function TeacherMaterials() {
         {templates.length === 0 && <EmptyState title="没有匹配的模板" description="换个关键词或题型再试。" />}
       </>
       )}
+
+      <Modal
+        open={Boolean(previewMaterial)}
+        title={previewMaterial?.title ?? "材料预览"}
+        onClose={() => setPreviewMaterialId(null)}
+        width="980px"
+        footer={
+          <div className="modal-footer-split">
+            <span>{previewVersion?.sizeLabel ?? "外链"} · {previewMaterial?.downloadCount ?? 0} 次下载</span>
+            <div>
+              <Button variant="ghost" onClick={() => setPreviewMaterialId(null)}>关闭</Button>
+              {previewUrl && (
+                <Button onClick={() => window.open(previewUrl, "_blank", "noopener,noreferrer")}>在新窗口打开</Button>
+              )}
+            </div>
+          </div>
+        }
+      >
+        <p className="muted-copy">{previewMaterial?.description}</p>
+        {previewUrl && previewKind === "frame" && (
+          <iframe className="material-preview-frame" src={previewUrl} title={previewMaterial?.title} />
+        )}
+        {previewUrl && previewKind === "image" && (
+          <img className="material-preview-image" src={previewUrl} alt={previewMaterial?.title} />
+        )}
+        {previewUrl && previewKind === "audio" && (
+          <audio className="material-preview-audio" src={previewUrl} controls />
+        )}
+        {previewKind === "external" && (
+          <div className="material-preview-placeholder">
+            <FileText size={26} />
+            <strong>{(previewMaterial?.fileType ?? "file").toUpperCase()} 材料</strong>
+            <small>该类型无法内嵌预览，可在新窗口打开查看。</small>
+          </div>
+        )}
+      </Modal>
 
       <Modal
         open={uploadOpen}

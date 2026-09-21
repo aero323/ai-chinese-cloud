@@ -2870,10 +2870,20 @@ strong {
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
+  width: 100%;
   padding: 9px 11px;
+  text-align: left;
+  font: inherit;
   border: 1px solid var(--line);
   border-radius: 12px;
   background: #fff;
+  cursor: pointer;
+  transition: border-color 140ms ease, background 140ms ease;
+}
+
+.recent-content-row:hover {
+  border-color: #d9d2ff;
+  background: #fbfaff;
 }
 
 .recent-content-row strong {
@@ -3207,6 +3217,49 @@ strong {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.material-preview-frame {
+  width: 100%;
+  height: 58vh;
+  margin-top: 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.material-preview-image {
+  display: block;
+  max-width: 100%;
+  margin: 12px auto 0;
+  border-radius: 14px;
+}
+
+.material-preview-audio {
+  width: 100%;
+  margin-top: 12px;
+}
+
+.material-preview-placeholder {
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 42px 20px;
+  color: var(--muted);
+  border: 1px dashed var(--line);
+  border-radius: 14px;
+  background: #fafafd;
+  text-align: center;
+}
+
+.material-preview-placeholder strong {
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.material-preview-placeholder small {
+  font-size: 11px;
 }
 
 .mock-upload-zone {
