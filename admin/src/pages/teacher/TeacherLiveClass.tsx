@@ -19,7 +19,6 @@ import {
   PauseCircle,
   PlayCircle,
   Radio,
-  RotateCcw,
   Sparkles,
   Trophy,
   UsersRound
@@ -211,8 +210,6 @@ export function TeacherLiveClass() {
   const [coursewareOpen, setCoursewareOpen] = useState(false);
   const [coursewareSlideIndex, setCoursewareSlideIndex] = useState(0);
   const [coursewareFullscreen, setCoursewareFullscreen] = useState(false);
-  const [endOpen, setEndOpen] = useState(false);
-  const [ended, setEnded] = useState(false);
 
   const snapshot = useMemo(
     () => buildTeacherLiveDemo(state, user.id, sessionId),
@@ -252,31 +249,6 @@ export function TeacherLiveClass() {
   }).format(new Date(snapshot.session.startAt));
   const scheduleLabel = `${scheduleDate} ${formatRange(snapshot.session.startAt, snapshot.session.endAt, state.ui.timeZone, state.ui.language)}`;
 
-  if (ended) {
-    return (
-      <>
-        <PageHeader
-          eyebrow="Live classroom · wrapped"
-          title="课堂已结束"
-          description={`${snapshot.session.title} · ${formatDateTime(snapshot.session.startAt, state.ui.timeZone, state.ui.language)}`}
-          actions={<Button onClick={() => navigate("/teacher")}><ArrowLeft size={16} /> 返回教师首页</Button>}
-        />
-        <Card className="live-ended-card">
-          <span className="live-ended-icon"><Check size={28} /></span>
-          <div>
-            <Badge tone="mint">演示已结束</Badge>
-            <h2>本节课的实时数据已经归档</h2>
-            <p>课件、互动设计和学生作答记录已同步到“学习结果”，可以继续查看课堂回放数据。</p>
-          </div>
-          <div className="live-ended-actions">
-            <Button variant="secondary" onClick={() => navigate("/teacher/results")}><BarChart3 size={16} /> 查看学习结果</Button>
-            <Button variant="ghost" onClick={() => { setEnded(false); setTeacherDemoMode("live"); }}><RotateCcw size={16} /> 重新演示</Button>
-          </div>
-        </Card>
-      </>
-    );
-  }
-
   if (demoMode === "empty") {
     return (
       <>
@@ -305,10 +277,7 @@ export function TeacherLiveClass() {
         title={snapshot.session.title}
         description={`${snapshot.lessonTitle} · ${snapshot.lessonSubtitle} · ${snapshot.session.roomLabel}`}
         actions={
-          <>
-            <Button variant="secondary" onClick={() => navigate("/teacher")}><ArrowLeft size={16} /> 返回教师首页</Button>
-            <Button variant="danger" onClick={() => setEndOpen(true)}><PauseCircle size={16} /> 结束课堂</Button>
-          </>
+          <Button variant="secondary" onClick={() => navigate("/teacher")}><ArrowLeft size={16} /> 返回教师首页</Button>
         }
       />
 
@@ -527,25 +496,6 @@ export function TeacherLiveClass() {
         </div>
       </Modal>
 
-      <Modal
-        open={endOpen}
-        title="结束这节课？"
-        onClose={() => setEndOpen(false)}
-        footer={
-          <div className="modal-footer-split">
-            <span>结束后会把当前课堂标记为已完成，演示数据仍可重新开启。</span>
-            <div>
-              <Button variant="ghost" onClick={() => setEndOpen(false)}>取消</Button>
-              <Button variant="danger" onClick={() => { setEndOpen(false); setEnded(true); setTeacherDemoMode("empty"); }}>确认结束</Button>
-            </div>
-          </div>
-        }
-      >
-        <div className="live-end-confirmation">
-          <span><PauseCircle size={24} /></span>
-          <div><strong>{snapshot.session.title}</strong><p>已进行 {snapshot.elapsedMinutes} 分钟，{snapshot.presentCount} 位学生在课堂中。</p></div>
-        </div>
-      </Modal>
     </>
   );
 }
