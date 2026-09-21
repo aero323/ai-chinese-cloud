@@ -63,12 +63,6 @@
 
 .header-subtitle { color: var(--text-subtle); }
 
-.icon-button {
-  border: 2px solid var(--line-soft);
-  border-radius: 16px;
-  box-shadow: 0 3px 0 #e2dfee;
-}
-
 /* ---------- 题面卡片 ---------- */
 .fill-card {
   padding: 18px 16px 16px;

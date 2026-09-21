@@ -4,16 +4,21 @@
 
 .cls-page { padding: 14px 16px 40px; }
 
-/* ---- 一行状态条 ---- */
+/* ---- 两行状态条：上行 熊猫 + 课节名 + 星星，下行 实时名次 ---- */
 .cls-strip {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 16px 10px 10px;
+  display: grid;
+  gap: 5px;
+  padding: 9px 16px 11px 10px;
   border-radius: 20px;
   color: #ffffff;
   background: linear-gradient(150deg, #9c86ff 0%, #856cfb 60%, #765af0 100%);
   box-shadow: 0 5px 0 #5d43c5, 0 14px 26px rgba(76, 53, 232, 0.20);
+}
+
+.cls-strip-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .cls-strip[data-phase="before"] {
@@ -29,6 +34,84 @@
 .cls-strip[data-phase="expired"] {
   background: linear-gradient(150deg, #a5a3b2 0%, #7f7c8b 100%);
   box-shadow: 0 5px 0 #5f5c69, 0 14px 26px rgba(71, 57, 142, 0.16);
+}
+
+/* ---- 实时名次行（比分数、不比时间；同分并列） ---- */
+.cls-rank {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 16px;
+  padding-left: 40px;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+}
+
+.cls-rank-trophy {
+  display: inline-flex;
+  width: 15px;
+  height: 15px;
+  flex: none;
+}
+
+.cls-rank-trophy .cls-trophy {
+  display: block;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 1.5px 2px rgba(105, 60, 0, 0.22));
+}
+
+.cls-rank-num,
+.cls-rank-score,
+.cls-rank-sep {
+  display: inline-block;
+  color: rgba(255, 255, 255, 0.88);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 翻牌槽：固定高度 + 裁切；新数字从上落下，旧数字向下滚出 */
+.cls-rank-num,
+.cls-rank-score {
+  position: relative;
+  height: 16px;
+  overflow: hidden;
+  line-height: 16px;
+  text-align: center;
+}
+
+.cls-roll {
+  display: block;
+  height: 16px;
+  line-height: 16px;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.cls-rank-num {
+  min-width: 2ch;
+}
+
+.cls-rank-sep {
+  margin: 0 1px;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 16px;
+}
+
+.cls-rank-sep[hidden],
+.cls-rank-score[hidden] {
+  display: none;
+}
+
+.cls-rank.is-waiting {
+  animation: rankBreathe 2.8s ease-in-out infinite;
+}
+
+@keyframes rankBreathe {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 0.96; }
 }
 
 .cls-guide {

@@ -56,12 +56,6 @@
 
 .header-subtitle { color: var(--text-subtle); }
 
-.icon-button {
-  border: 2px solid var(--line-soft);
-  border-radius: 16px;
-  box-shadow: 0 3px 0 #e2dfee;
-}
-
 /* ---------- 进度：不上屏，只报给读屏软件（同"图片—词语连线"的播报区做法） ---------- */
 .match-announcer {
   position: absolute;
