@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, CheckCircle2, Clock3, Download, LockKeyhole, Play, Sparkles } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Clock3, Download, LockKeyhole, MapPin, Play, Sparkles } from "lucide-react";
 import { platform } from "../../lib/platform";
 import { usePlatformStore } from "../../store/usePlatformStore";
 import {
@@ -9,13 +9,14 @@ import {
   getCurrentInteractionVersion,
   getLesson,
   getSession,
+  getUser,
   isSessionBooked,
   lessonContent,
   phaseAvailabilityLabel,
   sessionPhase
 } from "../../lib/domain";
 import type { Phase } from "../../domain/types";
-import { Badge, Button, Card, EmptyState, Modal, PageHeader, ProgressBar, Tabs } from "../../components/ui";
+import { Avatar, Badge, Button, Card, EmptyState, Modal, PageHeader, ProgressBar, Tabs } from "../../components/ui";
 import { InteractionPlayer, type PlayerResult } from "../../components/InteractionPlayer";
 import { MaterialCard } from "../../components/MaterialCard";
 import { useMaterialAudio } from "../../lib/useMaterialAudio";
@@ -45,6 +46,7 @@ export function StudentLesson() {
   const { playingId, toggle: toggleAudio } = useMaterialAudio();
 
   const content = lessonContent(state, lessonId, phase, sessionId || undefined);
+  const teacher = session ? getUser(state, session.teacherId) : undefined;
   const activeSet = content.sets.find((set) => set.id === activeSetId);
   const activeVersion = activeSet ? getCurrentInteractionVersion(state, activeSet) : undefined;
   const activeCourseware = content.materials.find((material) => material?.id === activeCoursewareId);
@@ -89,7 +91,12 @@ export function StudentLesson() {
           <div className="lesson-overview-meta">
             <span><Clock3 size={16} /> {lesson.durationMinutes} 分钟</span>
             {session && <span>{formatDateTime(session.startAt, state.ui.timeZone, state.ui.language)}</span>}
-            <span>{state.ui.timeZone}</span>
+            <span><MapPin size={16} /> {session?.roomLabel ?? "在线课堂"}</span>
+            {teacher && (
+              <span className="lesson-overview-teacher">
+                <Avatar label={teacher.avatar} size="sm" tone="orange" /> {teacher.name}
+              </span>
+            )}
           </div>
           <div className="overview-progress">
             <div>
