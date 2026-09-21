@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Filter, Layers3, Plus, Search, Sparkles, UploadCloud } from "lucide-react";
 import { platform } from "../../lib/platform";
 import { usePlatformStore } from "../../store/usePlatformStore";
-import { currentUser, getLesson, getTeacherSessions } from "../../lib/domain";
+import { currentUser, getTeacherSessions } from "../../lib/domain";
 import type { InteractionType, Phase } from "../../domain/types";
 import { Badge, Button, Card, EmptyState, Field, Modal, PageHeader, Select, Tabs, TextInput } from "../../components/ui";
 import { MaterialCard } from "../../components/MaterialCard";
@@ -130,22 +130,11 @@ export function TeacherMaterials() {
       </Card>
 
       <div className="material-grid">
-        {materials.map((material) => {
-          const refs = state.materialRefs.filter((ref) => ref.materialId === material.id);
-          return (
-            <div className="material-card-wrap" key={material.id}>
-              <MaterialCard material={material} />
-              <div className="material-refs">
-                {refs.length === 0 && <Badge tone="neutral">未关联课节</Badge>}
-                {refs.map((ref) => (
-                  <Badge key={ref.id} tone={ref.phase === "preview" ? "blue" : ref.phase === "live" ? "purple" : "mint"}>
-                    {getLesson(state, ref.lessonId)?.title} · {ref.phase === "preview" ? "预习" : ref.phase === "live" ? "课中" : "复习"}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          );
-        })}
+        {materials.map((material) => (
+          <div className="material-card-wrap" key={material.id}>
+            <MaterialCard material={material} />
+          </div>
+        ))}
         {materials.length === 0 && <EmptyState title="暂无材料" description="上传第一批课程材料并关联课节。" action={<Button onClick={() => setUploadOpen(true)}>上传材料</Button>} />}
       </div>
       </>

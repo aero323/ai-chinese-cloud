@@ -3124,12 +3124,6 @@ strong {
   gap: 8px;
 }
 
-.material-refs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-
 .mock-upload-zone {
   display: grid;
   min-height: 140px;
