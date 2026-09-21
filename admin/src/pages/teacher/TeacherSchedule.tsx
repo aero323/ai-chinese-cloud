@@ -29,7 +29,7 @@ export function TeacherSchedule() {
       <PageHeader
         eyebrow="Teaching schedule"
         title={t("nav.schedule")}
-        description="查看课堂时间、预约人数和课程内容准备情况。排课归运营维护。"
+        description="查看课堂时间、预约人数和课程内容准备情况。排课归教学管理维护。"
       />
 
       <Card className="schedule-summary-strip teacher-strip">
@@ -71,7 +71,7 @@ export function TeacherSchedule() {
             }
           />
         ))}
-        {filtered.length === 0 && <EmptyState title="暂无课程" description="运营排课后会出现在这里。" />}
+        {filtered.length === 0 && <EmptyState title="暂无课程" description="教学管理排课后会出现在这里。" />}
       </div>
 
       <CalendarModal

@@ -38,7 +38,7 @@ export function OperatorGovernance() {
             { value: "materials", label: "课程材料", count: state.materials.length }
           ]}
         />
-        <Badge tone="blue"><ShieldCheck size={13} /> 运营可下架与回滚</Badge>
+        <Badge tone="blue"><ShieldCheck size={13} /> 教学管理可下架与回滚</Badge>
       </Card>
 
       {tab === "interactions" && (

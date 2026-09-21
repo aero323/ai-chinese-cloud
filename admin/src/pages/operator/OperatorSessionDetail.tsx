@@ -70,7 +70,7 @@ export function OperatorSessionDetail() {
             cancelCloseAt: new Date(start.getTime() - 2 * 60 * 60_000).toISOString()
           },
           actorId: user.id,
-          reason: "运营调整班次"
+          reason: "教学管理调整班次"
         }),
       "班次信息已更新"
     );
@@ -120,7 +120,7 @@ export function OperatorSessionDetail() {
             <div>
               <span className="eyebrow">Bookings</span>
               <h2>预约名单</h2>
-              <p>运营可以代学生预约、改约或取消，并留下操作原因。</p>
+              <p>教学管理可以代学生预约、改约或取消，并留下操作原因。</p>
             </div>
             <Button onClick={() => setProxyOpen(true)}><Plus size={16} /> {t("operator.forceBook")}</Button>
           </div>

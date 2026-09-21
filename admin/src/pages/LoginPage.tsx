@@ -47,7 +47,7 @@ export function LoginPage() {
         <p>{t("login.subtitle")}</p>
         <div className="login-highlight">
           <UsersRound size={20} />
-          <span>学生预约 · 教师设计 · 运营排课</span>
+          <span>学生预约 · 教师设计 · 教学管理排课</span>
         </div>
       </section>
 

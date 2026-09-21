@@ -99,7 +99,7 @@ export function OperatorScheduling() {
             <div>
               <span className="eyebrow">Teacher requests</span>
               <h2>教师申请（{pendingRequests.length}）</h2>
-              <p>排课、容量与名单由运营维护；老师只能提交申请，处理结果会通知对方。</p>
+              <p>排课、容量与名单由教学管理维护；老师只能提交申请，处理结果会通知对方。</p>
             </div>
             <Inbox size={20} />
           </div>
@@ -122,13 +122,13 @@ export function OperatorScheduling() {
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => run(() => platform.resolveChangeRequest({ requestId: request.id, status: "rejected", resolutionNote: "运营已沟通，暂不调整排课。", actorId: user.id }), "已驳回申请")}
+                      onClick={() => run(() => platform.resolveChangeRequest({ requestId: request.id, status: "rejected", resolutionNote: "教学管理已沟通，暂不调整排课。", actorId: user.id }), "已驳回申请")}
                     >
                       驳回
                     </Button>
                     <Button
                       size="sm"
-                      onClick={() => run(() => platform.resolveChangeRequest({ requestId: request.id, status: "handled", resolutionNote: "运营已调整排课，请查看最新课表。", actorId: user.id }), "已处理申请")}
+                      onClick={() => run(() => platform.resolveChangeRequest({ requestId: request.id, status: "handled", resolutionNote: "教学管理已调整排课，请查看最新课表。", actorId: user.id }), "已处理申请")}
                     >
                       标记已处理
                     </Button>
@@ -143,7 +143,7 @@ export function OperatorScheduling() {
       <PageHeader
         eyebrow="Scheduling"
         title={t("operator.sessionTitle")}
-        description="运营统一维护班次时间、教师、容量、预约与取消截止时间。"
+        description="教学管理统一维护班次时间、教师、容量、预约与取消截止时间。"
         actions={
           <>
             <Button variant="secondary" onClick={() => setCreateMode("series")}><Layers3 size={17} /> {t("operator.newSeries")}</Button>

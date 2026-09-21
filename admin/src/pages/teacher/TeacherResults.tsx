@@ -40,7 +40,7 @@ export function TeacherResults() {
     return (
       <>
         <PageHeader eyebrow="Class analytics" title="学习结果" />
-        <EmptyState title="暂无课次" description="运营排课后，这里会按课节和课次显示学习结果。" />
+        <EmptyState title="暂无课次" description="教学管理排课后，这里会按课节和课次显示学习结果。" />
       </>
     );
   }

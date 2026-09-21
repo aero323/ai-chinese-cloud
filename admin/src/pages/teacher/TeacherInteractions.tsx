@@ -154,7 +154,7 @@ export function TeacherInteractions() {
       <PageHeader
         eyebrow="Interaction builder"
         title={t("teacher.interactionSets")}
-        description="课节由运营在课程目录创建、课次由运营排课；这里只负责为你的课节准备互动，并把设计配置到具体课次。"
+        description="课节由教学管理在课程目录创建、课次由教学管理排课；这里只负责为你的课节准备互动，并把设计配置到具体课次。"
         actions={<Button onClick={() => openCreate()}><Plus size={17} /> {t("teacher.createInteraction")}</Button>}
       />
 

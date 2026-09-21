@@ -84,6 +84,19 @@
       if (!Array.isArray(merged[key])) merged[key] = seeded[key];
     });
 
+    // 角色显示名由「运营」调整为「教学管理」：老快照里的用户名、职务与历史文案一并迁移。
+    function renameLegacyRoleCopy(value) {
+      if (typeof value === "string") return value.replace(/运营/g, "教学管理");
+      if (Array.isArray(value)) return value.map(renameLegacyRoleCopy);
+      if (value && typeof value === "object") {
+        Object.keys(value).forEach((key) => {
+          value[key] = renameLegacyRoleCopy(value[key]);
+        });
+      }
+      return value;
+    }
+    renameLegacyRoleCopy(merged);
+
     // 新增题型上线后按 id 补齐模板与示例互动，老快照不必重置演示数据也能看到新题型。
     (seeded.interactionTemplates || []).forEach((template) => {
       if (!merged.interactionTemplates.some((item) => item.id === template.id)) {
@@ -498,7 +511,7 @@
       const session = getSession(draft, booking.sessionId);
       if (!session) return result(false, null, "班次不存在", "NOT_FOUND");
       if (!force && new Date(session.cancelCloseAt).getTime() < Date.now()) {
-        return result(false, null, "已超过学生自主取消截止时间，请联系运营", "CANCEL_CLOSED");
+        return result(false, null, "已超过学生自主取消截止时间，请联系教学管理", "CANCEL_CLOSED");
       }
       const affected = booking.enrollmentId
         ? draft.bookings.filter((item) => item.enrollmentId === booking.enrollmentId && item.status === "booked")
@@ -868,7 +881,7 @@
       const session = getSession(draft, sessionId);
       if (!session) return result(false, null, "课次不存在", "NOT_FOUND");
       if (!reason || reason.trim().length < 6) {
-        return result(false, null, "请填写至少 6 个字的申请原因，方便运营判断", "REASON_REQUIRED");
+        return result(false, null, "请填写至少 6 个字的申请原因，方便教学管理判断", "REASON_REQUIRED");
       }
       const request = {
         id: makeId("request"),
@@ -926,7 +939,7 @@
         userId: request.teacherId,
         type: "change_request_result",
         title: status === "handled" ? "你的申请已处理" : "你的申请未通过",
-        body: resolutionNote || "运营已更新排课，请查看最新课表。",
+        body: resolutionNote || "教学管理已更新排课，请查看最新课表。",
         read: false,
         createdAt: nowIso(),
         link: "/teacher/schedule"

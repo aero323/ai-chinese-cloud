@@ -101,12 +101,12 @@
       {
         id: "operator-ray",
         role: "operator",
-        name: "Ray 运营",
+        name: "Ray 教学管理",
         avatar: "Ra",
         timeZone: "Asia/Shanghai",
         locale: "zh-CN",
         status: "active",
-        title: "课程运营负责人"
+        title: "课程教学管理负责人"
       }
     ];
 

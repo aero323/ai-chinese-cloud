@@ -32,7 +32,7 @@ export function OperatorDashboard() {
 
       <section className="operator-hero">
         <div>
-          <Badge tone="blue">运营态势总览</Badge>
+          <Badge tone="blue">教学管理态势总览</Badge>
           <h2>今天的课程供给和预约都在健康范围内</h2>
           <p>{metrics.today.length} 节课程正在进行或即将开始，{metrics.waitlist.length} 位学生正在候补。</p>
         </div>

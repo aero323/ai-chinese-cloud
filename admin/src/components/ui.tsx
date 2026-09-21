@@ -211,6 +211,6 @@ export function Avatar({ label, size = "md", tone = "purple" }: { label: string;
 
 export function SourceBadge({ source }: { source: string }) {
   const tone: Tone = source === "operator" ? "orange" : source === "waitlist" ? "blue" : "mint";
-  const label = source === "operator" ? "运营代约" : source === "waitlist" ? "候补转正" : "学生预约";
+  const label = source === "operator" ? "教学管理代约" : source === "waitlist" ? "候补转正" : "学生预约";
   return <Badge tone={tone}>{label}</Badge>;
 }

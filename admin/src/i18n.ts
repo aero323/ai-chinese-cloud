@@ -24,7 +24,7 @@ const zh = {
     noData: "暂无数据",
     download: "下载",
     preview: "预览",
-    operator: "运营",
+    operator: "教学管理",
     teacher: "教师",
     student: "学生",
     capacity: "容量",
@@ -66,8 +66,8 @@ const zh = {
     audit: "操作日志"
   },
   login: {
-    eyebrow: "三角色课堂运营原型",
-    title: "一套后台，连接学生、教师与运营",
+    eyebrow: "三角色课堂教学管理原型",
+    title: "一套后台，连接学生、教师与教学管理",
     subtitle: "预约大班课、设计课堂互动、管理课程材料，并查看真实可交互的学习结果。",
     studentDesc: "预约课堂、查看预习复习、完成互动并下载材料。",
     teacherDesc: "查看预约名单，设计互动与材料，浏览班级结果。",
@@ -143,7 +143,7 @@ const zh = {
     averageScore: "互动平均分",
     completion: "互动完成率",
     sessionRoster: "预约名单",
-    rosterHint: "名单由运营和学生预约产生，教师端只读。",
+    rosterHint: "名单由教学管理和学生预约产生，教师端只读。",
     noContact: "教师端不展示学生联系方式。",
     student: "学生",
     level: "等级",
@@ -164,7 +164,7 @@ const zh = {
     commonWrong: "高频错题"
   },
   operator: {
-    hello: "全局课堂运营",
+    hello: "全局课堂教学管理",
     subtitle: "管理课程供给、班次容量、学生预约和内容发布。",
     fillRate: "整体满班率",
     activeWaitlist: "候补学生",
@@ -221,7 +221,7 @@ const id = {
     noData: "Belum ada data",
     download: "Unduh",
     preview: "Pratinjau",
-    operator: "Operasional",
+    operator: "Manajemen Pengajaran",
     teacher: "Guru",
     student: "Siswa",
     capacity: "Kapasitas",
@@ -361,7 +361,7 @@ const id = {
     commonWrong: "Soal sering salah"
   },
   operator: {
-    hello: "Operasional kelas menyeluruh",
+    hello: "Manajemen pengajaran kelas menyeluruh",
     subtitle: "Kelola kursus, kapasitas, pemesanan siswa, dan penerbitan konten.",
     fillRate: "Tingkat keterisian",
     activeWaitlist: "Daftar tunggu aktif",

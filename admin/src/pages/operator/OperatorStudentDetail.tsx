@@ -39,7 +39,7 @@ export function OperatorStudentDetail() {
           studentId,
           patch: form as Partial<PlatformUser & StudentProfile>,
           actorId: operator.id,
-          reason: "运营更新学生档案"
+          reason: "教学管理更新学生档案"
         }),
       "学生档案已更新"
     );
@@ -104,7 +104,7 @@ export function OperatorStudentDetail() {
                 <div className="data-table-row" key={booking.id}>
                   <span><strong>{lesson?.title}</strong><small>{session?.title}</small></span>
                   <span>{session ? formatDateTime(session.startAt, state.ui.timeZone, state.ui.language) : "-"}</span>
-                  <span><Badge tone={booking.source === "operator" ? "orange" : "mint"}>{booking.source === "operator" ? "运营代约" : "学生预约"}</Badge></span>
+                  <span><Badge tone={booking.source === "operator" ? "orange" : "mint"}>{booking.source === "operator" ? "教学管理代约" : "学生预约"}</Badge></span>
                   <span><Badge tone="mint">已预约</Badge></span>
                 </div>
               );
@@ -138,7 +138,7 @@ export function OperatorStudentDetail() {
               <Field label="等级"><TextInput value={form.level} onChange={(event) => setForm((value) => ({ ...value, level: event.target.value }))} /></Field>
               <Field label="课程项目" className="field-span-2"><TextInput value={form.program} onChange={(event) => setForm((value) => ({ ...value, program: event.target.value }))} /></Field>
               <Field label="学习目标" className="field-span-2"><TextInput value={form.learningGoal} onChange={(event) => setForm((value) => ({ ...value, learningGoal: event.target.value }))} /></Field>
-              <Field label="运营备注" className="field-span-2"><textarea className="input textarea" value={form.notes} onChange={(event) => setForm((value) => ({ ...value, notes: event.target.value }))} /></Field>
+              <Field label="教学管理备注" className="field-span-2"><textarea className="input textarea" value={form.notes} onChange={(event) => setForm((value) => ({ ...value, notes: event.target.value }))} /></Field>
             </div>
           ) : (
             <div className="profile-detail-grid">
@@ -147,7 +147,7 @@ export function OperatorStudentDetail() {
               <div><small>等级</small><strong>{profile.level}</strong></div>
               <div><small>课程项目</small><strong>{profile.program}</strong></div>
               <div className="span-2"><small>学习目标</small><strong>{profile.learningGoal}</strong></div>
-              <div className="span-2"><small>运营备注</small><strong>{profile.notes}</strong></div>
+              <div className="span-2"><small>教学管理备注</small><strong>{profile.notes}</strong></div>
             </div>
           )}
         </Card>

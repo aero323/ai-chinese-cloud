@@ -63,7 +63,7 @@ export function TeacherSessionDetail() {
         actions={
           <>
             <Button variant="secondary" onClick={() => navigate("/teacher/schedule")}><ArrowLeft size={17} /> 返回课表</Button>
-            <Button onClick={() => setRequestOpen(true)}><Send size={16} /> 向运营申请调整</Button>
+            <Button onClick={() => setRequestOpen(true)}><Send size={16} /> 向教学管理申请调整</Button>
           </>
         }
       />
@@ -233,11 +233,11 @@ export function TeacherSessionDetail() {
 
       <Modal
         open={requestOpen}
-        title="向运营申请调整"
+        title="向教学管理申请调整"
         onClose={() => setRequestOpen(false)}
         footer={
           <div className="modal-footer-split">
-            <span>排课、容量和名单由运营维护，提交后运营会在消息中心处理。</span>
+            <span>排课、容量和名单由教学管理维护，提交后教学管理会在消息中心处理。</span>
             <div>
               <Button variant="ghost" onClick={() => setRequestOpen(false)}>取消</Button>
               <Button
@@ -251,7 +251,7 @@ export function TeacherSessionDetail() {
                         reason: requestForm.reason,
                         actorId: activeSession.teacherId
                       }),
-                    "申请已提交给运营"
+                    "申请已提交给教学管理"
                   );
                   if (result.ok) {
                     setRequestOpen(false);
@@ -290,7 +290,7 @@ export function TeacherSessionDetail() {
             />
           </Field>
         </div>
-        <p className="muted-copy">老师不会直接改时间、容量或学生名单；提交后运营会收到站内通知并处理，处理结果会回到你的消息中心。</p>
+        <p className="muted-copy">老师不会直接改时间、容量或学生名单；提交后教学管理会收到站内通知并处理，处理结果会回到你的消息中心。</p>
       </Modal>
     </>
   );
