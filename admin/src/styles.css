@@ -854,6 +854,11 @@ strong {
   animation: fadeIn 140ms ease;
 }
 
+.modal-backdrop-dark {
+  background: rgba(12, 10, 26, 0.74);
+  backdrop-filter: blur(10px);
+}
+
 .modal-panel {
   display: flex;
   flex-direction: column;
@@ -6458,6 +6463,21 @@ strong {
 }
 
 .live-interaction-card {
+  cursor: pointer;
+  transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+}
+
+.live-interaction-card:hover {
+  border-color: #d9d2ff;
+  box-shadow: var(--shadow-sm, 0 10px 28px rgba(41, 31, 92, 0.1));
+}
+
+.live-interaction-card:focus-visible {
+  outline: 2px solid #8a7aff;
+  outline-offset: 2px;
+}
+
+.live-interaction-card {
   display: flex;
   min-width: 0;
   flex-direction: column;
@@ -6942,6 +6962,11 @@ strong {
   margin-top: 3px;
   color: var(--muted);
   font-size: 8px;
+}
+
+/* 互动数据浮层：撑满可视高度，配合深色遮罩形成全屏浮层感。 */
+.modal-content:has(.live-detail-content) {
+  min-height: min(62vh, 620px);
 }
 
 .live-detail-title {

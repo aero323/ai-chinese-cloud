@@ -142,7 +142,18 @@ function InteractionCard({
 }) {
   const completion = interaction.participantCount ? Math.round((interaction.answered / interaction.participantCount) * 100) : 0;
   return (
-    <article className={`live-interaction-card is-${interaction.status} ${projected ? "is-projected" : ""}`}>
+    <article
+      className={`live-interaction-card is-${interaction.status} ${projected ? "is-projected" : ""}`}
+      role="button"
+      tabIndex={0}
+      onClick={onOpen}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onOpen();
+        }
+      }}
+    >
       <header className="live-interaction-head">
         <div className="live-interaction-title">
           <span className={`live-interaction-status status-${interactionLabelTone[interaction.status]}`}>
@@ -186,11 +197,26 @@ function InteractionCard({
       )}
 
       <footer className="live-interaction-actions">
-        <Button size="sm" variant={projected ? "soft" : "secondary"} onClick={onProject} disabled={interaction.status === "upcoming"}>
+        <Button
+          size="sm"
+          variant={projected ? "soft" : "secondary"}
+          onClick={(event) => {
+            event.stopPropagation();
+            onProject();
+          }}
+          disabled={interaction.status === "upcoming"}
+        >
           {projected ? <Radio size={15} /> : <PlayCircle size={15} />}
           {projected ? "正在投影" : "投影这道题"}
         </Button>
-        <Button size="sm" variant="ghost" onClick={onOpen}>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={(event) => {
+            event.stopPropagation();
+            onOpen();
+          }}
+        >
           <Eye size={15} /> 查看完整数据
         </Button>
       </footer>
@@ -390,7 +416,8 @@ export function TeacherLiveClass() {
         open={Boolean(detailInteraction)}
         title={detailInteraction ? `互动数据 · ${detailInteraction.title}` : "互动数据"}
         onClose={() => setDetailSetId("")}
-        width="760px"
+        width="1080px"
+        backdropTone="dark"
         footer={<Button variant="secondary" onClick={() => setDetailSetId("")}>关闭</Button>}
       >
         {detailInteraction && (

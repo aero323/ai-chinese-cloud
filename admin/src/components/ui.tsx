@@ -106,7 +106,8 @@ export function Modal({
   children,
   footer,
   width = "560px",
-  fullscreen = false
+  fullscreen = false,
+  backdropTone = "default"
 }: {
   open: boolean;
   title: string;
@@ -115,10 +116,16 @@ export function Modal({
   footer?: ReactNode;
   width?: string;
   fullscreen?: boolean;
+  /** 深色遮罩用于把内容压暗，突出浮层。 */
+  backdropTone?: "default" | "dark";
 }) {
   if (!open) return null;
   return createPortal(
-    <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+    <div
+      className={`modal-backdrop ${backdropTone === "dark" ? "modal-backdrop-dark" : ""}`}
+      role="presentation"
+      onMouseDown={(event) => event.target === event.currentTarget && onClose()}
+    >
       <section className={`modal-panel ${fullscreen ? "modal-panel-fullscreen" : ""}`} role="dialog" aria-modal="true" aria-label={title} style={{ maxWidth: fullscreen ? undefined : width }}>
         <header className="modal-header">
           <h2>{title}</h2>
