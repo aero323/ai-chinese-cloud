@@ -35,6 +35,8 @@ interface InteractionPlayerProps {
   onComplete?: (result: PlayerResult) => void;
   onClose?: () => void;
   preview?: boolean;
+  /** 投影原题时只演示当前这一题，不显示“下一题/完成”。 */
+  hideAdvance?: boolean;
 }
 
 const LETTERS = ["A", "B", "C", "D", "E", "F"];
@@ -48,7 +50,7 @@ function shuffle<T>(items: T[]) {
   return next;
 }
 
-export function InteractionPlayer({ items, onComplete, onClose, preview = false }: InteractionPlayerProps) {
+export function InteractionPlayer({ items, onComplete, onClose, preview = false, hideAdvance = false }: InteractionPlayerProps) {
   const { t } = useTranslation();
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
@@ -286,9 +288,11 @@ export function InteractionPlayer({ items, onComplete, onClose, preview = false 
               <RotateCcw size={16} /> 重置预览
             </Button>
           )}
-          <Button onClick={next} disabled={!isResolved}>
-            {index === items.length - 1 ? t("student.finish") : t("student.nextItem")}
-          </Button>
+          {!hideAdvance && (
+            <Button onClick={next} disabled={!isResolved}>
+              {index === items.length - 1 ? t("student.finish") : t("student.nextItem")}
+            </Button>
+          )}
         </div>
       </footer>
     </section>

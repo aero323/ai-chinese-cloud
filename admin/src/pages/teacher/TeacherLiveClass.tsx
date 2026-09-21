@@ -415,7 +415,7 @@ export function TeacherLiveClass() {
       >
         <div className="projection-modal">
           <div className="projection-player-shell">
-            <InteractionPlayer items={projectionItems} preview onClose={() => setProjectionSetId("")} />
+            <InteractionPlayer items={projectionItems} preview hideAdvance onClose={() => setProjectionSetId("")} />
           </div>
         </div>
       </Modal>
