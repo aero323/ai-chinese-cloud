@@ -1,10 +1,10 @@
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowRight, CalendarCheck2, CheckCircle2, ClipboardList, Sparkles, TrendingUp, UsersRound } from "lucide-react";
+import { ArrowRight, CalendarCheck2, CheckCircle2, ClipboardList, TrendingUp, UsersRound } from "lucide-react";
 import { usePlatformStore } from "../../store/usePlatformStore";
 import { currentUser, getBookedCount, getLesson, teacherMetrics } from "../../lib/domain";
 import { formatDateTime, relativeTime } from "../../lib/format";
-import { Avatar, Badge, Button, Card, PageHeader, ProgressBar, StatCard } from "../../components/ui";
+import { Badge, Button, Card, PageHeader, ProgressBar, StatCard } from "../../components/ui";
 import { ClassSessionCard } from "../../components/ClassSessionCard";
 
 export function TeacherDashboard() {
@@ -22,22 +22,16 @@ export function TeacherDashboard() {
         eyebrow={`Teacher workspace · ${user.name}`}
         title={t("teacher.hello")}
         description={t("teacher.subtitle")}
-        actions={
-          <Button onClick={() => navigate("/teacher/interactions")}>
-            <Sparkles size={17} /> {t("teacher.createInteraction")}
-          </Button>
-        }
       />
 
       <section className="teacher-welcome">
         <div>
-          <Badge tone="orange">今日 {today.length} 节课</Badge>
           <h2>{next ? `下一节：${next.title}` : "今天暂无排课"}</h2>
-          <p>{next ? `${formatDateTime(next.startAt, state.ui.timeZone, state.ui.language)} · ${getBookedCount(state, next.id)} 位学生已预约` : "可以趁现在优化互动内容与材料。"}</p>
-        </div>
-        <div className="teacher-avatar-stack">
-          <Avatar label={user.avatar} size="lg" tone="orange" />
-          <span className="online-dot" />
+          <p>
+            {next
+              ? `${formatDateTime(next.startAt, state.ui.timeZone, state.ui.language)} · ${getBookedCount(state, next.id)} 位学生已预约 · ${next.roomLabel}`
+              : "可以趁现在优化互动内容与材料。"}
+          </p>
         </div>
       </section>
 
@@ -53,7 +47,7 @@ export function TeacherDashboard() {
           <div className="card-heading">
             <div>
               <span className="eyebrow">Today</span>
-              <h2>今天的课堂</h2>
+              <h2>课堂内容</h2>
             </div>
             <Button variant="ghost" size="sm" onClick={() => navigate("/teacher/schedule")}>
               全部排课 <ArrowRight size={15} />
@@ -89,14 +83,21 @@ export function TeacherDashboard() {
             <ClipboardList size={20} />
           </div>
           <div className="content-health-list">
-            {next && [1, 2, 3].map((step) => (
-              <div key={step}>
-                <span className={`health-dot ${step < 3 ? "done" : ""}`} />
+            {next && [
+              { phase: "preview", badge: "课前", label: "预习互动已发布", ready: true },
+              { phase: "live", badge: "课中", label: "课堂材料已关联", ready: true },
+              { phase: "review", badge: "课后", label: "复习内容待确认", ready: false }
+            ].map((item) => (
+              <div key={item.phase}>
+                <span className={`health-dot ${item.ready ? "done" : ""}`} />
                 <div>
-                  <strong>{step === 1 ? "预习互动已发布" : step === 2 ? "课堂材料已关联" : "复习内容待确认"}</strong>
-                  <small>{step < 3 ? "已准备好" : "建议课前完成检查"}</small>
+                  <span className="content-health-title">
+                    <span className={`phase-badge phase-${item.phase} content-health-badge`}>{item.badge}</span>
+                    <strong>{item.label}</strong>
+                  </span>
+                  <small>{item.ready ? "已准备好" : "建议课前完成检查"}</small>
                 </div>
-                <ProgressBar value={step < 3 ? 100 : 45} tone={step < 3 ? "mint" : "orange"} />
+                <ProgressBar value={item.ready ? 100 : 45} tone={item.ready ? "mint" : "orange"} />
               </div>
             ))}
           </div>
@@ -120,6 +121,7 @@ export function TeacherDashboard() {
               </Button>
             }
             showTeacher={false}
+            showSeats={false}
           />
         </section>
       )}

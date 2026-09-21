@@ -1,9 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowRight, CalendarClock, ChevronRight, Clock3, Sparkles, Star, Target } from "lucide-react";
-import { Badge, Button, Card, PageHeader, ProgressBar, StatCard } from "../../components/ui";
+import { ArrowRight, BookOpenCheck, CalendarClock, ChevronRight, Clock3, Sparkles, Star } from "lucide-react";
+import { Badge, Button, Card, PageHeader, StatCard } from "../../components/ui";
 import { ClassSessionCard } from "../../components/ClassSessionCard";
-import { currentUser, getLesson, lessonContent, studentMetrics } from "../../lib/domain";
+import { currentUser, getLesson, getStudent, lessonContent, studentMetrics } from "../../lib/domain";
 import { formatDateTime } from "../../lib/format";
 import { usePlatformStore } from "../../store/usePlatformStore";
 
@@ -13,10 +13,38 @@ export function StudentDashboard() {
   const state = usePlatformStore((store) => store.state);
   const user = currentUser(state);
   const metrics = studentMetrics(state, user.id);
+  const profile = getStudent(state, user.id);
   const nextSession = metrics.upcoming[0];
   const lesson = nextSession ? getLesson(state, nextSession.lessonId) : undefined;
-  const content = lesson ? lessonContent(state, lesson.id) : { sets: [], materials: [] };
-  const completedSets = content.sets.filter((set) => metrics.completedSetIds.has(set.id)).length;
+  const content = lesson ? lessonContent(state, lesson.id, undefined, nextSession?.id) : { sets: [], materials: [] };
+  const learningDays = profile
+    ? Math.max(1, Math.ceil((Date.now() - new Date(profile.joinedAt).getTime()) / 86_400_000))
+    : 0;
+  // 今日任务：优先列出刚上完课的复习任务，再补上下一节课的预习/课中任务。
+  const reviewWindowMs = 7 * 86_400_000;
+  const reviewTasks = metrics.past
+    .filter((session) => Date.now() - new Date(session.endAt).getTime() <= reviewWindowMs)
+    .flatMap((session) =>
+      lessonContent(state, session.lessonId, "review", session.id).sets.map((set) => ({ set, sessionId: session.id }))
+    )
+    .filter((item) => !metrics.completedSetIds.has(item.set.id));
+  const upcomingTasks = content.sets.map((set) => ({ set, sessionId: nextSession?.id ?? "" }));
+  const seenSetIds = new Set<string>();
+  const todayTasks = [...reviewTasks, ...upcomingTasks]
+    .filter((item) => {
+      if (seenSetIds.has(item.set.id)) return false;
+      seenSetIds.add(item.set.id);
+      return true;
+    })
+    .slice(0, 4);
+  const joinedDateLabel = profile
+    ? new Intl.DateTimeFormat(state.ui.language, {
+        timeZone: state.ui.timeZone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(new Date(profile.joinedAt))
+    : "--";
 
   return (
     <>
@@ -42,14 +70,8 @@ export function StudentDashboard() {
               <p>
                 {formatDateTime(nextSession.startAt, state.ui.timeZone, state.ui.language)} · {nextSession.roomLabel}
               </p>
-              <div className="hero-progress">
-                <span>
-                  {completedSets}/{content.sets.length} {t("student.interactionDone")}
-                </span>
-                <ProgressBar value={content.sets.length ? (completedSets / content.sets.length) * 100 : 0} />
-              </div>
               <Button variant="soft" onClick={() => navigate(`/student/lesson/${nextSession.lessonId}?sessionId=${nextSession.id}&phase=preview`)}>
-                {t("student.openLesson")} <ArrowRight size={17} />
+                {t("student.viewCourseware")} <ArrowRight size={17} />
               </Button>
             </>
           ) : (
@@ -73,45 +95,45 @@ export function StudentDashboard() {
 
       <section className="stat-grid stat-grid-3">
         <StatCard
-          label={t("student.interactionDone")}
-          value={`${metrics.completedSetIds.size}`}
-          detail={`${metrics.attempts.length} 次练习记录`}
-          icon={<Target size={20} />}
+          label={t("student.lessonsTaken")}
+          value={`${metrics.past.length}`}
+          detail={t("student.lessonsTakenDetail")}
+          icon={<BookOpenCheck size={20} />}
           tone="purple"
         />
         <StatCard
-          label={t("student.averageScore")}
-          value={metrics.attempts.length ? `${Math.round(metrics.averageScore)}` : "--"}
-          detail="自动评分，投票不计分"
+          label={t("student.learningDays")}
+          value={t("student.daysValue", { days: learningDays })}
+          detail={t("student.sinceJoined", { date: joinedDateLabel })}
           icon={<Star size={20} />}
           tone="orange"
         />
         <StatCard
-          label={t("student.studyMinutes")}
-          value={`${metrics.totalStudyMinutes}`}
-          detail="来自互动用时记录"
+          label={t("student.upcomingLessons")}
+          value={`${metrics.upcoming.length}`}
+          detail={t("student.upcomingLessonsDetail")}
           icon={<Clock3 size={20} />}
           tone="mint"
         />
       </section>
 
-      <div className="dashboard-columns">
+      <div className="dashboard-columns dashboard-single">
         <Card className="next-actions-card">
           <div className="card-heading">
             <div>
               <span className="eyebrow">{t("student.todayTask")}</span>
-              <h2>{lesson?.title ?? "今日学习任务"}</h2>
+              <h2>{reviewTasks.length ? "今日学习任务" : lesson?.title ?? "今日学习任务"}</h2>
             </div>
             <Button variant="ghost" size="sm" onClick={() => navigate("/student/schedule")}>
               查看全部 <ChevronRight size={16} />
             </Button>
           </div>
           <div className="learning-task-list">
-            {content.sets.slice(0, 3).map((set) => (
+            {todayTasks.map(({ set, sessionId }) => (
               <button
                 key={set.id}
                 className="learning-task"
-                onClick={() => navigate(`/student/lesson/${set.lessonId}?sessionId=${nextSession?.id ?? ""}&phase=${set.phase}`)}
+                onClick={() => navigate(`/student/lesson/${set.lessonId}?sessionId=${sessionId}&phase=${set.phase}`)}
               >
                 <span className={`task-phase phase-${set.phase}`}>
                   {set.phase === "preview" ? t("common.phasePreview") : set.phase === "live" ? t("common.phaseLive") : t("common.phaseReview")}
@@ -125,35 +147,7 @@ export function StudentDashboard() {
                 </span>
               </button>
             ))}
-            {content.sets.length === 0 && <p className="muted-copy">预约课堂后，老师发布的预习内容会显示在这里。</p>}
-          </div>
-        </Card>
-
-        <Card className="mini-calendar-card">
-          <div className="card-heading">
-            <div>
-              <span className="eyebrow">Upcoming</span>
-              <h2>接下来</h2>
-            </div>
-            <CalendarClock size={20} />
-          </div>
-          <div className="upcoming-mini-list">
-            {metrics.upcoming.slice(0, 3).map((session) => {
-              const itemLesson = getLesson(state, session.lessonId);
-              return (
-                <button key={session.id} onClick={() => navigate(`/student/lesson/${session.lessonId}?sessionId=${session.id}&phase=preview`)}>
-                  <span className="mini-date">
-                    <strong>{new Intl.DateTimeFormat(state.ui.language, { timeZone: state.ui.timeZone, day: "2-digit" }).format(new Date(session.startAt))}</strong>
-                    <small>{new Intl.DateTimeFormat(state.ui.language, { timeZone: state.ui.timeZone, month: "short" }).format(new Date(session.startAt))}</small>
-                  </span>
-                  <span>
-                    <strong>{itemLesson?.title}</strong>
-                    <small>{new Intl.DateTimeFormat(state.ui.language, { timeZone: state.ui.timeZone, hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(session.startAt))}</small>
-                  </span>
-                  <ChevronRight size={16} />
-                </button>
-              );
-            })}
+            {todayTasks.length === 0 && <p className="muted-copy">{t("student.noPrepYet")}</p>}
           </div>
         </Card>
       </div>
@@ -169,6 +163,8 @@ export function StudentDashboard() {
           <ClassSessionCard
             state={state}
             session={nextSession}
+            showSeats={false}
+            showSpecialty={false}
             actions={
               <Button onClick={() => navigate(`/student/lesson/${nextSession.lessonId}?sessionId=${nextSession.id}&phase=preview`)}>
                 {t("student.openLesson")} <ArrowRight size={16} />

@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { CalendarClock, MapPin, UsersRound } from "lucide-react";
 import type { ClassSession, PlatformState } from "../domain/types";
 import { fillRate, getBookedCount, getLesson, getTeacherSessions, getUser, getWaitlist } from "../lib/domain";
-import { formatDateTime, formatRange, timeZoneLabel } from "../lib/format";
+import { formatDateTime, formatRange } from "../lib/format";
 import { Avatar, Badge, ProgressBar } from "./ui";
 
 export function ClassSessionCard({
@@ -10,13 +10,17 @@ export function ClassSessionCard({
   session,
   actions,
   compact = false,
-  showTeacher = true
+  showTeacher = true,
+  showSeats = true,
+  showSpecialty = true
 }: {
   state: PlatformState;
   session: ClassSession;
   actions?: ReactNode;
   compact?: boolean;
   showTeacher?: boolean;
+  showSeats?: boolean;
+  showSpecialty?: boolean;
 }) {
   const lesson = getLesson(state, session.lessonId);
   const teacher = getUser(state, session.teacherId);
@@ -30,11 +34,14 @@ export function ClassSessionCard({
       <span className="session-color" style={{ background: lesson?.color ?? "#6552ff" }} />
       <div className="session-main">
         <div className="session-topline">
-          <Badge tone={session.status === "cancelled" ? "danger" : remaining === 0 ? "orange" : "mint"}>
-            {session.status === "cancelled" ? "已取消" : remaining === 0 ? "已满" : `${remaining} 个余位`}
-          </Badge>
+          {showSeats ? (
+            <Badge tone={session.status === "cancelled" ? "danger" : remaining === 0 ? "orange" : "mint"}>
+              {session.status === "cancelled" ? "已取消" : remaining === 0 ? "已满" : `${remaining} 个余位`}
+            </Badge>
+          ) : (
+            session.status === "cancelled" && <Badge tone="danger">已取消</Badge>
+          )}
           {session.source === "series" && <Badge tone="blue">系列班</Badge>}
-          <span className="session-local-time">{timeZoneLabel(state.ui.timeZone)}</span>
         </div>
         <h3>{session.title}</h3>
         <p className="session-subtitle">
@@ -56,7 +63,7 @@ export function ClassSessionCard({
             <Avatar label={teacher.avatar} size="sm" tone="orange" />
             <span>
               <strong>{teacher.name}</strong>
-              <small>{teacher.specialties?.slice(0, 2).join(" · ")}</small>
+              {showSpecialty && <small>{teacher.specialties?.slice(0, 2).join(" · ")}</small>}
             </span>
           </div>
         )}

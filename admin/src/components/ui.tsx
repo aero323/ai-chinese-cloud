@@ -156,6 +156,16 @@ export function TextInput({ className = "", ...props }: InputHTMLAttributes<HTML
   return <input className={`input ${className}`} {...props} />;
 }
 
+/** 编辑表格里的密集输入框：在标题行里显示小标签，而不是外层 Field。 */
+export function LabeledInput({ label, className = "", ...props }: InputHTMLAttributes<HTMLInputElement> & { label: string }) {
+  return (
+    <label className="labeled-input">
+      <span>{label}</span>
+      <input className={`input ${className}`} {...props} />
+    </label>
+  );
+}
+
 export function Select({ className = "", children, ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
   return (
     <select className={`input select ${className}`} {...props}>

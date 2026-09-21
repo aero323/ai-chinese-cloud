@@ -98,9 +98,22 @@ export function getCurrentInteractionVersion(state: PlatformState, set: Interact
       .sort((a, b) => b.version - a.version)[0];
 }
 
-export function lessonContent(state: PlatformState, lessonId: string, phase?: Phase) {
+/** 互动集是否作用于某个课次：未指定课次 = 该课节全部课次。 */
+export function setAppliesToSession(set: InteractionSet, sessionId?: string | null) {
+  if (!sessionId) return true;
+  if (!set.sessionIds || set.sessionIds.length === 0) return true;
+  return set.sessionIds.includes(sessionId);
+}
+
+export function setsForSession(state: PlatformState, session: ClassSession) {
+  return state.interactionSets
+    .filter((set) => set.lessonId === session.lessonId && setAppliesToSession(set, session.id))
+    .sort((a, b) => a.order - b.order);
+}
+
+export function lessonContent(state: PlatformState, lessonId: string, phase?: Phase, sessionId?: string | null) {
   const sets = state.interactionSets
-    .filter((set) => set.lessonId === lessonId && (!phase || set.phase === phase))
+    .filter((set) => set.lessonId === lessonId && (!phase || set.phase === phase) && setAppliesToSession(set, sessionId))
     .sort((a, b) => a.order - b.order);
   const refs = state.materialRefs
     .filter((ref) => ref.lessonId === lessonId && ref.published && (!phase || ref.phase === phase))

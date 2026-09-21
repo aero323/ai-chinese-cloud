@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import "../admin/src/lib/platform";
 import { platform } from "../admin/src/lib/platform";
 import { formatDateTime } from "../admin/src/lib/format";
+import { lessonContent } from "../admin/src/lib/domain";
 
 describe("AI Chinese Cloud platform store", () => {
   beforeEach(() => {
@@ -90,6 +91,124 @@ describe("AI Chinese Cloud platform store", () => {
     const result = platform.rollbackInteractionVersion({ setId: set.id, versionId: versionOne.id, actorId: "operator-ray" });
     expect(result.ok).toBe(true);
     expect(platform.getState().interactionSets.find((item) => item.id === set.id)?.currentVersionId).toBe(versionOne.id);
+  });
+
+  it("ships the four new interaction types in templates and the demo set", () => {
+    const state = platform.getState();
+    const templateTypes = new Set(state.interactionTemplates.map((template) => template.type));
+    ["picture", "picture-match", "situation", "dialogue"].forEach((type) => {
+      expect(templateTypes.has(type as never)).toBe(true);
+    });
+
+    const scenarioSet = state.interactionSets.find((set) => set.id === "set-greetings-scenario");
+    expect(scenarioSet?.lessonId).toBe("lesson-greetings");
+    const scenarioVersion = state.interactionVersions.find((version) => version.id === scenarioSet?.currentVersionId);
+    expect(scenarioVersion?.items.map((item) => item.type)).toEqual(["picture", "picture-match", "situation", "dialogue"]);
+  });
+
+  it("ships the batch-three interaction types in templates and the demo set", () => {
+    const state = platform.getState();
+    const templateTypes = new Set(state.interactionTemplates.map((template) => template.type));
+    ["pinyin-match", "category", "word-build", "correction", "listening", "read-aloud", "picture-talk", "open-qa"].forEach((type) => {
+      expect(templateTypes.has(type as never)).toBe(true);
+    });
+    // 每个新题型至少有两套模板可挑。
+    const batchThreeTypes = ["pinyin-match", "category", "word-build", "correction", "listening", "read-aloud", "picture-talk", "open-qa"];
+    batchThreeTypes.forEach((type) => {
+      const count = state.interactionTemplates.filter((template) => template.type === type).length;
+      expect(count).toBeGreaterThanOrEqual(2);
+    });
+
+    const demoSet = state.interactionSets.find((set) => set.id === "set-greetings-batch-three");
+    expect(demoSet?.lessonId).toBe("lesson-greetings");
+    const demoVersion = state.interactionVersions.find((version) => version.id === demoSet?.currentVersionId);
+    expect([...(demoVersion?.items.map((item) => item.type) ?? [])].sort()).toEqual([...batchThreeTypes].sort());
+  });
+
+  it("round-trips a category question through save and publish", () => {
+    const result = platform.saveInteractionSet({
+      lessonId: "lesson-greetings",
+      title: "新题型保存测试",
+      description: "分类归组",
+      phase: "live",
+      actorId: "teacher-lina",
+      items: [
+        {
+          id: "item-test-category",
+          type: "category",
+          prompt: "把下面的词放到对应的类别里。",
+          explanation: "见面和道别要分开。",
+          groups: [
+            { id: "group-hello", name: "见面时" },
+            { id: "group-bye", name: "离开时" }
+          ],
+          words: [
+            { id: "word-hello", text: "你好", pinyin: "nǐ hǎo", group: "group-hello" },
+            { id: "word-bye", text: "再见", pinyin: "zàijiàn", group: "group-bye" }
+          ]
+        }
+      ]
+    });
+    expect(result.ok).toBe(true);
+    const savedSetId = result.data!.set.id;
+    const saved = platform.getState();
+    const version = saved.interactionVersions.find((item) => item.id === saved.interactionSets.find((set) => set.id === savedSetId)?.currentVersionId);
+    expect(version?.items[0].groups?.[0].name).toBe("见面时");
+    expect(version?.items[0].words?.[1].group).toBe("group-bye");
+  });
+
+  it("round-trips a picture question through save and publish", () => {
+    const result = platform.saveInteractionSet({
+      lessonId: "lesson-greetings",
+      title: "新题型保存测试",
+      description: "看图单选",
+      phase: "live",
+      actorId: "teacher-lina",
+      items: [
+        {
+          id: "item-test-picture",
+          type: "picture",
+          prompt: "这是哪个时间？",
+          explanation: "月亮代表晚上。",
+          media: { icon: "🌙", image: "", alt: "夜晚的月亮" },
+          promptPinyin: "Zhè shì nǎge shíjiān?",
+          choices: [
+            { id: "test-night", text: "晚上", hint: "wǎnshang", isCorrect: true },
+            { id: "test-noon", text: "中午", hint: "zhōngwǔ", isCorrect: false }
+          ]
+        }
+      ]
+    });
+    expect(result.ok).toBe(true);
+    const savedSetId = result.data!.set.id;
+    const saved = platform.getState();
+    const version = saved.interactionVersions.find((item) => item.id === saved.interactionSets.find((set) => set.id === savedSetId)?.currentVersionId);
+    expect(version?.items[0].media?.icon).toBe("🌙");
+    expect(version?.items[0].choices?.[0].hint).toBe("wǎnshang");
+  });
+
+  it("attaches the time lesson courseware and review materials per phase", () => {
+    const state = platform.getState();
+
+    const preview = lessonContent(state, "lesson-time", "preview", "session-waitlist-full");
+    const courseware = preview.materials.find((material) => material?.id === "material-time-courseware");
+    expect(courseware?.kind).toBe("courseware");
+    expect(courseware?.versions.find((entry) => entry.version === courseware.currentVersion)?.url).toBe(
+      "/shared/demo-materials/time-courseware.html"
+    );
+
+    const review = lessonContent(state, "lesson-time", "review", "session-waitlist-full");
+    const reviewIds = review.materials.map((material) => material?.id);
+    expect(reviewIds).toEqual(["material-time-review-sheet", "material-time-review-audio"]);
+    const sheet = review.materials[0];
+    const audio = review.materials[1];
+    expect(sheet?.kind).toBe("file");
+    expect(sheet?.versions.at(-1)?.url).toBe("/shared/demo-materials/time-review-sheet.pdf");
+    expect(audio?.fileType).toBe("wav");
+    expect(audio?.versions.at(-1)?.url).toBe("/shared/demo-materials/time-review-audio.wav");
+
+    // 课中阶段仍然不显示预习和复习材料。
+    expect(lessonContent(state, "lesson-time", "live", "session-waitlist-full").materials).toHaveLength(0);
   });
 
   it("records attempts and keeps the best score", () => {

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { CalendarPlus, Layers3, Plus, Search, UsersRound, WandSparkles } from "lucide-react";
+import { CalendarPlus, Inbox, Layers3, Plus, Search, UsersRound, WandSparkles } from "lucide-react";
 import { platform } from "../../lib/platform";
 import { usePlatformStore } from "../../store/usePlatformStore";
 import { currentUser, fillRate, getBookedCount, getLesson, getSession, getWaitlist } from "../../lib/domain";
@@ -34,6 +34,15 @@ export function OperatorScheduling() {
     roomLabel: "大班教室 A",
     description: ""
   });
+
+  const requestKindLabels: Record<string, string> = {
+    reschedule: "申请改期",
+    add_session: "申请加课",
+    new_lesson_plan: "申请新增课节",
+    teacher_swap: "申请更换授课老师",
+    cancel: "申请取消课次"
+  };
+  const pendingRequests = state.changeRequests.filter((request) => request.status === "pending");
 
   const sessions = state.sessions
     .filter((session) => !query || session.title.toLowerCase().includes(query.toLowerCase()) || getLesson(state, session.lessonId)?.title.toLowerCase().includes(query.toLowerCase()))
@@ -84,6 +93,53 @@ export function OperatorScheduling() {
 
   return (
     <>
+      {pendingRequests.length > 0 && (
+        <Card className="teacher-request-panel">
+          <div className="card-heading">
+            <div>
+              <span className="eyebrow">Teacher requests</span>
+              <h2>教师申请（{pendingRequests.length}）</h2>
+              <p>排课、容量与名单由运营维护；老师只能提交申请，处理结果会通知对方。</p>
+            </div>
+            <Inbox size={20} />
+          </div>
+          <div className="teacher-request-list">
+            {pendingRequests.map((request) => {
+              const session = getSession(state, request.sessionId);
+              const teacher = state.users.find((item) => item.id === request.teacherId);
+              return (
+                <article key={request.id}>
+                  <div>
+                    <strong>{session?.title ?? "课次已删除"}</strong>
+                    <small>
+                      {teacher?.name} · {requestKindLabels[request.kind]} · {formatDateTime(request.createdAt, state.ui.timeZone, state.ui.language)}
+                      {session ? ` · 原时间 ${formatDateTime(session.startAt, state.ui.timeZone, state.ui.language)}` : ""}
+                    </small>
+                    <p>{request.reason}</p>
+                  </div>
+                  <div className="teacher-request-actions">
+                    <Button size="sm" variant="secondary" onClick={() => session && navigate(`/operator/sessions/${session.id}`)}>查看课次</Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => run(() => platform.resolveChangeRequest({ requestId: request.id, status: "rejected", resolutionNote: "运营已沟通，暂不调整排课。", actorId: user.id }), "已驳回申请")}
+                    >
+                      驳回
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => run(() => platform.resolveChangeRequest({ requestId: request.id, status: "handled", resolutionNote: "运营已调整排课，请查看最新课表。", actorId: user.id }), "已处理申请")}
+                    >
+                      标记已处理
+                    </Button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </Card>
+      )}
+
       <PageHeader
         eyebrow="Scheduling"
         title={t("operator.sessionTitle")}

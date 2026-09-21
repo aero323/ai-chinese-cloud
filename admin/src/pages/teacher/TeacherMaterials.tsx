@@ -1,23 +1,32 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { FilePlus2, Filter, Layers3, Plus, Search, UploadCloud } from "lucide-react";
+import { FilePlus2, Filter, Layers3, Plus, Search, Sparkles, UploadCloud } from "lucide-react";
 import { platform } from "../../lib/platform";
 import { usePlatformStore } from "../../store/usePlatformStore";
 import { currentUser, getLesson, getTeacherSessions } from "../../lib/domain";
-import type { Phase } from "../../domain/types";
+import type { InteractionType, Phase } from "../../domain/types";
 import { Badge, Button, Card, EmptyState, Field, Modal, PageHeader, Select, Tabs, TextInput } from "../../components/ui";
 import { MaterialCard } from "../../components/MaterialCard";
+import { INTERACTION_TYPE_SHORT_LABELS } from "../../lib/interactionTypes";
 
 type PhaseTab = "all" | Phase;
+
+const templateTypeLabels: Record<InteractionType, string> = INTERACTION_TYPE_SHORT_LABELS;
 
 export function TeacherMaterials() {
   const { t } = useTranslation();
   const { state, run } = usePlatformStore();
+  const navigate = useNavigate();
   const user = currentUser(state);
   const teacherSessions = getTeacherSessions(state, user.id);
   const lessonIds = [...new Set(teacherSessions.map((session) => session.lessonId))];
   const [tab, setTab] = useState<PhaseTab>("all");
   const [query, setQuery] = useState("");
+  const [libraryTab, setLibraryTab] = useState<"materials" | "templates">("materials");
+  const [templateQuery, setTemplateQuery] = useState("");
+  const [templateType, setTemplateType] = useState<InteractionType | "all">("all");
+  const [templateVisible, setTemplateVisible] = useState(12);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [form, setForm] = useState({
     title: "",
@@ -35,6 +44,19 @@ export function TeacherMaterials() {
     const queryMatch = !query || material.title.toLowerCase().includes(query.toLowerCase()) || material.description.toLowerCase().includes(query.toLowerCase());
     return (material.ownerId === user.id || refs.length > 0) && phaseMatch && queryMatch;
   });
+
+  const templates = useMemo(() => {
+    const keyword = templateQuery.trim().toLowerCase();
+    return state.interactionTemplates.filter((template) => {
+      const typeMatch = templateType === "all" || template.type === templateType;
+      const queryMatch =
+        !keyword ||
+        template.title.toLowerCase().includes(keyword) ||
+        template.topic.toLowerCase().includes(keyword) ||
+        template.tags.join(" ").toLowerCase().includes(keyword);
+      return typeMatch && queryMatch;
+    });
+  }, [state.interactionTemplates, templateQuery, templateType]);
 
   function saveUpload() {
     if (!form.title.trim()) return;
@@ -64,10 +86,32 @@ export function TeacherMaterials() {
       <PageHeader
         eyebrow="Material library"
         title={t("teacher.materialLibrary")}
-        description={t("teacher.materialHint")}
-        actions={<Button onClick={() => setUploadOpen(true)}><UploadCloud size={17} /> 模拟上传材料</Button>}
+        description={`${t("teacher.materialHint")}课节与排课由运营创建，你只需为自己课次准备材料；互动题目可以直接引用模板库。`}
+        actions={
+          libraryTab === "materials" ? (
+            <Button onClick={() => setUploadOpen(true)}><UploadCloud size={17} /> 模拟上传材料</Button>
+          ) : undefined
+        }
       />
 
+      <Card className="content-filter-bar library-tab-bar">
+        <Tabs
+          value={libraryTab}
+          onChange={(value) => setLibraryTab(value)}
+          items={[
+            { value: "materials", label: "课程材料", count: materials.length },
+            { value: "templates", label: "预制互动模板库", count: state.interactionTemplates.length }
+          ]}
+        />
+        <span className="library-tab-hint">
+          {libraryTab === "materials"
+            ? "文件与外链材料，按预习 / 课中 / 复习关联到课节。"
+            : "题型 × 主题 × 难度生成的预制模板，可直接用于互动设计。"}
+        </span>
+      </Card>
+
+      {libraryTab === "materials" && (
+      <>
       <Card className="content-filter-bar">
         <Tabs
           value={tab}
@@ -122,6 +166,61 @@ export function TeacherMaterials() {
         })}
         {materials.length === 0 && <EmptyState title="暂无材料" description="上传第一批课程材料并关联课节。" action={<Button onClick={() => setUploadOpen(true)}>上传材料</Button>} />}
       </div>
+      </>
+      )}
+
+      {libraryTab === "templates" && (
+      <>
+        <Card className="content-filter-bar">
+          <div className="template-chip-row">
+            <button className={templateType === "all" ? "active" : ""} onClick={() => { setTemplateType("all"); setTemplateVisible(12); }}>全部题型</button>
+            {(Object.keys(templateTypeLabels) as InteractionType[]).map((key) => (
+              <button key={key} className={templateType === key ? "active" : ""} onClick={() => { setTemplateType(key); setTemplateVisible(12); }}>
+                {templateTypeLabels[key]}
+              </button>
+            ))}
+          </div>
+          <div className="search-box">
+            <Search size={17} />
+            <TextInput
+              value={templateQuery}
+              onChange={(event) => { setTemplateQuery(event.target.value); setTemplateVisible(12); }}
+              placeholder="搜索模板主题，例如“餐厅”“天气”"
+            />
+          </div>
+        </Card>
+
+        <p className="muted-copy">匹配 {templates.length} 套模板</p>
+
+        <div className="template-grid">
+          {templates.slice(0, templateVisible).map((template) => (
+            <article key={template.id} className="template-card">
+              <div className="template-card-head">
+                <span className="phase-badge phase-live">{templateTypeLabels[template.type]}</span>
+                <Badge tone="neutral">{template.level === "beginner" ? "初级" : template.level === "intermediate" ? "中级" : "高级"}</Badge>
+              </div>
+              <strong>{template.title}</strong>
+              <small>{template.summary}</small>
+              <div className="template-tags">
+                {template.tags.slice(1, 3).map((tag) => <span key={tag}>{tag}</span>)}
+              </div>
+              <Button size="sm" variant="secondary" onClick={() => navigate(`/teacher/interactions?templateId=${template.id}`)}>
+                <Sparkles size={14} /> 用这个模板新建
+              </Button>
+            </article>
+          ))}
+        </div>
+
+        {templates.length > templateVisible && (
+          <div className="template-more">
+            <Button variant="ghost" onClick={() => setTemplateVisible((value) => value + 12)}>
+              显示更多（还有 {templates.length - templateVisible} 套）
+            </Button>
+          </div>
+        )}
+        {templates.length === 0 && <EmptyState title="没有匹配的模板" description="换个关键词或题型再试。" />}
+      </>
+      )}
 
       <Modal
         open={uploadOpen}

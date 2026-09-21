@@ -120,9 +120,11 @@ export function AppShell() {
             <strong>{t("common.appName")}</strong>
             <small>{t("common.adminName")}</small>
           </div>
-          <Button className="mobile-close" size="icon" variant="ghost" onClick={() => setMobileOpen(false)}>
-            <X size={18} />
-          </Button>
+          {mobileOpen && (
+            <Button className="mobile-close" size="icon" variant="ghost" aria-label="关闭导航" onClick={() => setMobileOpen(false)}>
+              <X size={18} />
+            </Button>
+          )}
         </div>
 
         <div className="role-summary">

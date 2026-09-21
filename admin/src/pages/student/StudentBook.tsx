@@ -218,6 +218,7 @@ export function StudentBook() {
                       <UsersRound size={16} /> {series.capacity} 人 · {Math.round(fillRate(state, sessions[0]!))}% 已满
                     </span>
                   </div>
+                  <p className="series-dates-note">{t("student.seriesDatesNote")}</p>
                   <div className="series-session-dots">
                     {sessions.map((session) => (
                       <button key={session!.id} onClick={() => setSelectedSessionId(session!.id)}>

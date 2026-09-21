@@ -1,13 +1,16 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { CalendarCheck, Clock3, Download, History, Hourglass, PlayCircle } from "lucide-react";
+import { CalendarCheck, CalendarDays, History, Hourglass, PlayCircle } from "lucide-react";
 import { platform } from "../../lib/platform";
 import { usePlatformStore } from "../../store/usePlatformStore";
-import { currentUser, getLesson, getSession, getStudentWaitlist, studentMetrics } from "../../lib/domain";
+import { currentUser, getLesson, getSession, getStudentWaitlist, lessonContent, studentMetrics } from "../../lib/domain";
+import type { ClassSession } from "../../domain/types";
 import { relativeTime } from "../../lib/format";
 import { Badge, Button, Card, EmptyState, PageHeader, Tabs } from "../../components/ui";
 import { ClassSessionCard } from "../../components/ClassSessionCard";
+import { CoursewareModal } from "../../components/CoursewareModal";
+import { StudentCalendarModal } from "../../components/StudentCalendarModal";
 
 type ScheduleTab = "upcoming" | "history" | "waitlist";
 
@@ -19,6 +22,59 @@ export function StudentSchedule() {
   const metrics = studentMetrics(state, user.id);
   const waitlist = getStudentWaitlist(state, user.id);
   const [tab, setTab] = useState<ScheduleTab>("upcoming");
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [courseware, setCourseware] = useState<{
+    title: string;
+    url: string;
+    badgeLabel: string;
+    note: string;
+    lessonId: string;
+    sessionId: string;
+  } | null>(null);
+
+  function openCourseware(session: ClassSession) {
+    const lesson = getLesson(state, session.lessonId);
+    const materials = lesson ? lessonContent(state, lesson.id).materials.filter(Boolean) : [];
+    const currentUrl = (material: (typeof materials)[number]) =>
+      material!.versions.find((item) => item.version === material!.currentVersion)?.url ?? material!.versions.at(-1)?.url;
+
+    const coursewareMaterial = materials.find((material) => material!.kind === "courseware" && material!.versions.length > 0);
+    const coursewareUrl = coursewareMaterial ? currentUrl(coursewareMaterial) : undefined;
+    if (lesson && coursewareMaterial && coursewareUrl) {
+      setCourseware({
+        title: `${lesson.title} · 互动课件`,
+        url: coursewareUrl,
+        badgeLabel: "互动 HTML 课件",
+        note: "支持词汇点读、选择题和句子排序，可直接在后台内播放。",
+        lessonId: lesson.id,
+        sessionId: session.id
+      });
+      return;
+    }
+
+    const pdfMaterial = materials.find((material) => material!.fileType === "pdf" && material!.versions.length > 0);
+    const pdfUrl = pdfMaterial ? currentUrl(pdfMaterial) : undefined;
+    if (lesson && pdfMaterial && pdfUrl) {
+      setCourseware({
+        title: `${lesson.title} · 课件预览`,
+        url: pdfUrl,
+        badgeLabel: "PDF 课件",
+        note: "这节课的互动课件还没上传，先展示老师上传的 PDF 课件；如果下方没有显示，可点「新窗口打开」。",
+        lessonId: lesson.id,
+        sessionId: session.id
+      });
+      return;
+    }
+
+    setCourseware({
+      title: `${lesson?.title ?? session.title} · 示例互动课件`,
+      url: "/shared/demo-materials/friends-courseware.html",
+      badgeLabel: "示例互动课件",
+      note: "这节课暂未上传课件，先演示一份示例互动课件：支持词汇点读、选择题和句子排序。",
+      lessonId: session.lessonId,
+      sessionId: session.id
+    });
+  }
 
   function cancel(sessionId: string) {
     const booking = state.bookings.find((item) => item.studentId === user.id && item.sessionId === sessionId && item.status === "booked");
@@ -33,7 +89,6 @@ export function StudentSchedule() {
       <PageHeader
         eyebrow="My learning calendar"
         title={t("student.scheduleTitle")}
-        description={t("student.scheduleSubtitle", { timeZone: state.ui.timeZone })}
         actions={
           <Button onClick={() => navigate("/student/book")}>
             <CalendarCheck size={17} /> {t("student.quickBook")}
@@ -57,11 +112,11 @@ export function StudentSchedule() {
           <strong>{waitlist.length}</strong>
           <small>候补中的课程</small>
         </div>
-        <div>
-          <span className="quick-ring blue-ring"><Clock3 size={19} /></span>
-          <strong>{metrics.totalStudyMinutes}</strong>
-          <small>练习分钟</small>
-        </div>
+        <button className="calendar-tile" onClick={() => setCalendarOpen(true)}>
+          <span className="quick-ring blue-ring"><CalendarDays size={19} /></span>
+          <strong>课程日历</strong>
+          <small>看过去与未来哪天有课</small>
+        </button>
       </Card>
 
       <div className="section-heading-row">
@@ -78,33 +133,25 @@ export function StudentSchedule() {
 
       {tab === "upcoming" && (
         <div className="session-list">
-          {metrics.upcoming.map((session) => {
-            const lesson = getLesson(state, session.lessonId);
-            const isLive = Date.now() >= new Date(session.startAt).getTime() - 10 * 60_000 && Date.now() <= new Date(session.endAt).getTime() + 10 * 60_000;
-            return (
-              <ClassSessionCard
-                key={session.id}
-                state={state}
-                session={session}
-                actions={
-                  <>
-                    <Button
-                      onClick={() => navigate(`/student/lesson/${session.lessonId}?sessionId=${session.id}&phase=${isLive ? "live" : "preview"}`)}
-                    >
-                      <PlayCircle size={17} /> {isLive ? "进入课堂" : t("student.openLesson")}
-                    </Button>
-                    <Button variant="ghost" onClick={() => navigate(`/student/lesson/${session.lessonId}?sessionId=${session.id}&phase=preview`)}>
-                      预习
-                    </Button>
-                    <Button variant="ghost" onClick={() => cancel(session.id)}>
-                      {t("common.cancel")}
-                    </Button>
-                    {lesson && <small>课节 ID：{lesson.id}</small>}
-                  </>
-                }
-              />
-            );
-          })}
+          {metrics.upcoming.map((session) => (
+            <ClassSessionCard
+              key={session.id}
+              state={state}
+              session={session}
+              showSeats={false}
+              showSpecialty={false}
+              actions={
+                <>
+                  <Button onClick={() => openCourseware(session)}>
+                    <PlayCircle size={17} /> {t("student.viewCourseware")}
+                  </Button>
+                  <Button variant="ghost" onClick={() => cancel(session.id)}>
+                    {t("common.cancel")}
+                  </Button>
+                </>
+              }
+            />
+          ))}
           {metrics.upcoming.length === 0 && <EmptyState title="暂无即将开始的课程" description="去约课中心看看新的大班课时间。" action={<Button onClick={() => navigate("/student/book")}>去约课</Button>} />}
         </div>
       )}
@@ -116,6 +163,8 @@ export function StudentSchedule() {
               key={session.id}
               state={state}
               session={session}
+              showSeats={false}
+              showSpecialty={false}
               actions={
                 <>
                   <Button variant="soft" onClick={() => navigate(`/student/lesson/${session.lessonId}?sessionId=${session.id}&phase=review`)}>
@@ -163,13 +212,30 @@ export function StudentSchedule() {
         </div>
       )}
 
-      <Card className="schedule-note-card">
-        <Download size={19} />
-        <div>
-          <strong>关于材料下载</strong>
-          <p>材料下载会记录在课程数据里，方便教师和运营了解使用情况。</p>
-        </div>
-      </Card>
+      <StudentCalendarModal
+        open={calendarOpen}
+        onClose={() => setCalendarOpen(false)}
+        state={state}
+        sessions={metrics.sessions}
+        onOpenCourseware={(session) => {
+          setCalendarOpen(false);
+          openCourseware(session);
+        }}
+      />
+
+      <CoursewareModal
+        open={Boolean(courseware)}
+        title={courseware?.title ?? "互动课件"}
+        url={courseware?.url}
+        badgeLabel={courseware?.badgeLabel}
+        note={courseware?.note}
+        onClose={() => setCourseware(null)}
+        onOpenLesson={
+          courseware
+            ? () => navigate(`/student/lesson/${courseware.lessonId}?sessionId=${courseware.sessionId}&phase=preview`)
+            : undefined
+        }
+      />
     </>
   );
 }

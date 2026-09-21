@@ -72,14 +72,32 @@
       "waitlist",
       "interactionSets",
       "interactionVersions",
+      "interactionTemplates",
       "interactionAttempts",
       "materials",
       "materialRefs",
       "notifications",
+      "changeRequests",
       "auditEvents"
     ];
     collectionKeys.forEach((key) => {
       if (!Array.isArray(merged[key])) merged[key] = seeded[key];
+    });
+
+    // 新增题型上线后按 id 补齐模板与示例互动，老快照不必重置演示数据也能看到新题型。
+    (seeded.interactionTemplates || []).forEach((template) => {
+      if (!merged.interactionTemplates.some((item) => item.id === template.id)) {
+        merged.interactionTemplates.push(clone(template));
+      }
+    });
+    const demoInteractionSetIds = ["set-greetings-scenario", "set-greetings-batch-three"];
+    demoInteractionSetIds.forEach((setId) => {
+      const demoSet = (seeded.interactionSets || []).find((set) => set.id === setId);
+      if (!demoSet || merged.interactionSets.some((set) => set.id === demoSet.id)) return;
+      merged.interactionSets.push(clone(demoSet));
+      (seeded.interactionVersions || [])
+        .filter((version) => version.setId === demoSet.id)
+        .forEach((version) => merged.interactionVersions.push(clone(version)));
     });
 
     // Repair core demo scenarios for users who already have an older v2 snapshot.
@@ -95,29 +113,33 @@
         enrollmentId: null
       });
     }
-    const friendsPreview = seeded.materials.find((material) => material.id === "material-friends-preview");
-    if (friendsPreview) {
-      const existingFriendsPreview = merged.materials.find((material) => material.id === friendsPreview.id);
-      if (!existingFriendsPreview) {
-        merged.materials.push(clone(friendsPreview));
-      } else if (existingFriendsPreview.kind !== "courseware") {
-        existingFriendsPreview.title = friendsPreview.title;
-        existingFriendsPreview.description = friendsPreview.description;
-        existingFriendsPreview.kind = friendsPreview.kind;
-        existingFriendsPreview.fileType = friendsPreview.fileType;
-        existingFriendsPreview.versions = clone(friendsPreview.versions);
+    /* 新增材料与课件上线后按 id 补齐：老快照不必重置也能在学习页看到它们。 */
+    const backfillRefIds = [
+      "ref-friends-preview",
+      "ref-time-courseware",
+      "ref-time-review-sheet",
+      "ref-time-review-audio"
+    ];
+    backfillRefIds.forEach((refId) => {
+      const ref = (seeded.materialRefs || []).find((item) => item.id === refId);
+      if (!ref) return;
+      const material = (seeded.materials || []).find((item) => item.id === ref.materialId);
+      if (material) {
+        const existing = merged.materials.find((item) => item.id === material.id);
+        if (!existing) {
+          merged.materials.push(clone(material));
+        } else if (material.kind === "courseware" && existing.kind !== "courseware") {
+          existing.title = material.title;
+          existing.description = material.description;
+          existing.kind = material.kind;
+          existing.fileType = material.fileType;
+          existing.versions = clone(material.versions);
+        }
       }
-    }
-    if (!merged.materialRefs.some((ref) => ref.id === "ref-friends-preview")) {
-      merged.materialRefs.push({
-        id: "ref-friends-preview",
-        materialId: "material-friends-preview",
-        lessonId: "lesson-friends",
-        phase: "preview",
-        order: 1,
-        published: true
-      });
-    }
+      if (!merged.materialRefs.some((item) => item.id === ref.id)) {
+        merged.materialRefs.push(clone(ref));
+      }
+    });
     return merged;
   }
 
@@ -766,6 +788,29 @@
     }, "interaction");
   }
 
+  function assignInteractionSessions({ setId, sessionIds = [], actorId }) {
+    return save((draft) => {
+      const set = draft.interactionSets.find((item) => item.id === setId);
+      if (!set) return result(false, null, "互动不存在", "NOT_FOUND");
+      const ids = [...new Set(sessionIds)];
+      const invalid = ids.filter((id) => !draft.sessions.some((session) => session.id === id));
+      if (invalid.length) return result(false, null, "课次不存在", "NOT_FOUND");
+      set.sessionIds = ids;
+      set.updatedAt = nowIso();
+      const scope = ids.length
+        ? draft.sessions.filter((session) => ids.includes(session.id)).map((session) => session.title).join("、")
+        : "该课节的全部课次";
+      addAudit(draft, {
+        actorId: actorId || draft.currentUserId,
+        action: "assign_interaction",
+        targetType: "interaction_set",
+        targetId: setId,
+        summary: `把“${set.title}”配置到：${scope}`
+      });
+      return result(true, set);
+    }, "interaction");
+  }
+
   function rollbackInteractionVersion({ setId, versionId, actorId }) {
     return save((draft) => {
       const set = draft.interactionSets.find((item) => item.id === setId);
@@ -786,6 +831,86 @@
       });
       return result(true, { set, version });
     }, "interaction");
+  }
+
+  const changeRequestLabels = {
+    reschedule: "申请改期",
+    add_session: "申请加课",
+    new_lesson_plan: "申请新增课节",
+    teacher_swap: "申请更换授课老师",
+    cancel: "申请取消课次"
+  };
+
+  function requestSessionChange({ sessionId, kind, reason, actorId }) {
+    return save((draft) => {
+      const session = getSession(draft, sessionId);
+      if (!session) return result(false, null, "课次不存在", "NOT_FOUND");
+      if (!reason || reason.trim().length < 6) {
+        return result(false, null, "请填写至少 6 个字的申请原因，方便运营判断", "REASON_REQUIRED");
+      }
+      const request = {
+        id: makeId("request"),
+        sessionId,
+        teacherId: session.teacherId,
+        kind,
+        reason: reason.trim(),
+        status: "pending",
+        createdAt: nowIso()
+      };
+      draft.changeRequests.unshift(request);
+      addAudit(draft, {
+        actorId: actorId || draft.currentUserId,
+        action: "teacher_request",
+        targetType: "session",
+        targetId: sessionId,
+        summary: `${changeRequestLabels[kind] || "申请调整"}：${session.title}`,
+        reason: request.reason
+      });
+      const operators = draft.users.filter((user) => user.role === "operator");
+      operators.forEach((operator) => {
+        draft.notifications.unshift({
+          id: makeId("notice"),
+          userId: operator.id,
+          type: "change_request",
+          title: `${changeRequestLabels[kind] || "教师申请"}待处理`,
+          body: `${session.title}：${request.reason}`,
+          read: false,
+          createdAt: nowIso(),
+          link: "/operator/scheduling"
+        });
+      });
+      return result(true, request);
+    }, "session");
+  }
+
+  function resolveChangeRequest({ requestId, status = "handled", resolutionNote = "", actorId }) {
+    return save((draft) => {
+      const request = draft.changeRequests.find((item) => item.id === requestId);
+      if (!request) return result(false, null, "申请不存在", "NOT_FOUND");
+      request.status = status;
+      request.handledAt = nowIso();
+      request.handledBy = actorId || draft.currentUserId;
+      request.resolutionNote = resolutionNote;
+      addAudit(draft, {
+        actorId: actorId || draft.currentUserId,
+        action: status === "handled" ? "resolve_change_request" : "reject_change_request",
+        targetType: "session",
+        targetId: request.sessionId,
+        summary: `${status === "handled" ? "已处理" : "已驳回"}教师申请：${changeRequestLabels[request.kind] || request.kind}`,
+        reason: resolutionNote
+      });
+      draft.notifications.unshift({
+        id: makeId("notice"),
+        userId: request.teacherId,
+        type: "change_request_result",
+        title: status === "handled" ? "你的申请已处理" : "你的申请未通过",
+        body: resolutionNote || "运营已更新排课，请查看最新课表。",
+        read: false,
+        createdAt: nowIso(),
+        link: "/teacher/schedule"
+      });
+      return result(true, request);
+    }, "session");
   }
 
   function createFolder({ parentId = "folder-root", name, description = "", color = "#6552ff", actorId }) {
@@ -1112,8 +1237,11 @@
     createSeries,
     updateSession,
     cancelSession,
+    requestSessionChange,
+    resolveChangeRequest,
     saveInteractionSet,
     rollbackInteractionVersion,
+    assignInteractionSessions,
     createFolder,
     createLesson,
     createStudent,

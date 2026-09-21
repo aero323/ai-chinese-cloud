@@ -3,8 +3,32 @@ export type Phase = "preview" | "live" | "review";
 export type SessionStatus = "published" | "cancelled" | "draft";
 export type BookingStatus = "booked" | "cancelled";
 export type WaitlistStatus = "waiting" | "promoted" | "cancelled";
-export type InteractionType = "match" | "memory" | "choice" | "order" | "fill" | "poll";
+export type InteractionType =
+  | "match"
+  | "memory"
+  | "choice"
+  | "order"
+  | "fill"
+  | "poll"
+  | "picture"
+  | "picture-match"
+  | "situation"
+  | "dialogue"
+  | "pinyin-match"
+  | "category"
+  | "word-build"
+  | "correction"
+  | "listening"
+  | "read-aloud"
+  | "picture-talk"
+  | "open-qa";
 
+/** 语音题型（跟读 / 看图说话 / 开放问答）共用的评分项。 */
+export interface InteractionScoreItem {
+  id: string;
+  label: string;
+  stars: number;
+}
 export interface PlatformUser {
   id: string;
   role: Role;
@@ -114,16 +138,60 @@ export interface WaitlistEntry {
   cancelledAt?: string;
 }
 
+/** 图槽：image 有值时显示真图，为空时显示 emoji；alt 同时作为无障碍文案。 */
+export interface InteractionMedia {
+  icon: string;
+  image: string;
+  alt: string;
+}
+
 export interface InteractionPair {
   id: string;
   left: string;
   right: string;
+  /** 图片—词语连线：左列的图槽；有值时左列显示图片，left 作为图片说明。 */
+  media?: InteractionMedia;
+  /** 图片—词语连线：右列词语的拼音。 */
+  rightPinyin?: string;
 }
 
 export interface InteractionChoice {
   id: string;
   text: string;
   isCorrect?: boolean;
+  /** 看图单选：选项拼音；情景选择：这个说法的点评。 */
+  hint?: string;
+}
+
+export interface InteractionCategoryGroup {
+  id: string;
+  name: string;
+  hint?: string;
+}
+
+export interface InteractionCategoryWord {
+  id: string;
+  text: string;
+  pinyin?: string;
+  /** 这个词正确归属的类别 id。 */
+  group: string;
+}
+
+export interface InteractionBadWord {
+  id: string;
+  text: string;
+  pinyin?: string;
+  /** 用错的词，学生要把它点出来。 */
+  wrong?: boolean;
+}
+
+export interface InteractionPinyinGroup {
+  id: string;
+  pinyin: string;
+  word: string;
+  meaning: string;
+  wordOptions: string[];
+  meaningOptions: string[];
 }
 
 export interface InteractionItem {
@@ -139,6 +207,70 @@ export interface InteractionItem {
   sentence?: string;
   blanks?: Array<{ id: string; answers: string[] }>;
   pollOptions?: Array<{ id: string; text: string }>;
+  /** 看图单选 / 情景选择：题干图槽。 */
+  media?: InteractionMedia;
+  /** 看图单选：题干拼音。 */
+  promptPinyin?: string;
+  /** 情景选择：场景中文描述。 */
+  scene?: string;
+  /** 情景选择：场景印尼语翻译。 */
+  sceneTranslation?: string;
+  /** 对话补全：对方说的上一句。 */
+  dialogueThem?: string;
+  /** 对话补全：我的气泡在作答前的提示文字。 */
+  dialoguePlaceholder?: string;
+
+  /* ---- 第三批新题型（与学生学习端同名页面字段保持一致） ---- */
+
+  /** 分类归组：类别。 */
+  groups?: InteractionCategoryGroup[];
+  /** 分类归组：待归类的词，group 指向 groups[].id。 */
+  words?: InteractionCategoryWord[];
+
+  /** 拼字 / 组词：正确答案（按字拆分，支持重复字）。 */
+  answer?: string[];
+  /** 拼字 / 组词：答案词语。 */
+  answerWord?: string;
+  /** 拼字 / 组词：答案拼音。 */
+  answerPinyin?: string;
+  /** 拼字 / 组词：字块池；留空时按答案自动生成。 */
+  tileBank?: string[];
+  /** 拼字 / 组词：提示词（词语意思，通常是印尼语）。 */
+  meaning?: string;
+
+  /** 找错误 / 改错：句子切分后的词块，wrong 标出用错的词。 */
+  badWords?: InteractionBadWord[];
+  /** 找错误 / 改错：正确的词。 */
+  fixText?: string;
+  /** 找错误 / 改错：改好的整句。 */
+  fixedSentence?: string;
+  /** 找错误 / 改错：整句拼音。 */
+  fixedPinyin?: string;
+
+  /** 听音选图 / 选词：音频地址，留空时按占位播放。 */
+  audioSrc?: string;
+  /** 听音选图 / 选词：会读出来的内容，也是答案文本。 */
+  audioText?: string;
+  /** 听音选图 / 选词：答案拼音。 */
+  audioPinyin?: string;
+
+  /** 拼音—汉字—含义匹配：一组一轮，逐组作答。 */
+  pinyinGroups?: InteractionPinyinGroup[];
+
+  /** 看图说话：图片说明（印尼语含义）。 */
+  mediaTranslation?: string;
+  /** 语音题型：参考回答 / 范文，答题后展示。 */
+  sampleAnswer?: string;
+  /** 语音题型：参考回答拼音。 */
+  sampleAnswerPinyin?: string;
+  /** 语音题型：回答模板，用 ______ 表示要替换的部分。 */
+  samplePattern?: string;
+  /** 语音题型：思考提示（例：谁 ＋ 在做什么）。 */
+  speakingHint?: string;
+  /** 语音题型：提示词，学生可以选着用。 */
+  speakingWords?: Array<{ id: string; text: string; pinyin?: string }>;
+  /** 语音题型：占位评分项。 */
+  scores?: InteractionScoreItem[];
 }
 
 export interface InteractionSet {
@@ -151,6 +283,29 @@ export interface InteractionSet {
   currentVersionId: string;
   order: number;
   updatedAt: string;
+  /** 为空 = 作用于该课节的所有课次；否则只在列出的课次出现。 */
+  sessionIds?: string[];
+}
+
+export type InteractionTemplateLevel = "beginner" | "intermediate" | "advanced";
+
+export interface InteractionTemplate {
+  id: string;
+  type: InteractionType;
+  title: string;
+  summary: string;
+  topic: string;
+  topicId: string;
+  level: InteractionTemplateLevel;
+  language: string;
+  tags: string[];
+  item: InteractionItem;
+}
+
+export interface InteractionTemplateSummary {
+  total: number;
+  byType: Record<string, number>;
+  byTopic: Record<string, number>;
 }
 
 export interface InteractionVersion {
@@ -214,6 +369,21 @@ export interface LessonMaterialRef {
   published: boolean;
 }
 
+export type ChangeRequestKind = "reschedule" | "add_session" | "new_lesson_plan" | "teacher_swap" | "cancel";
+
+export interface ChangeRequest {
+  id: string;
+  sessionId: string;
+  teacherId: string;
+  kind: ChangeRequestKind;
+  reason: string;
+  status: "pending" | "handled" | "rejected";
+  createdAt: string;
+  handledAt?: string;
+  handledBy?: string;
+  resolutionNote?: string;
+}
+
 export interface NotificationItem {
   id: string;
   userId: string;
@@ -255,10 +425,12 @@ export interface PlatformState {
   waitlist: WaitlistEntry[];
   interactionSets: InteractionSet[];
   interactionVersions: InteractionVersion[];
+  interactionTemplates: InteractionTemplate[];
   interactionAttempts: InteractionAttempt[];
   materials: Material[];
   materialRefs: LessonMaterialRef[];
   notifications: NotificationItem[];
+  changeRequests: ChangeRequest[];
   auditEvents: AuditEvent[];
 }
 
@@ -289,6 +461,7 @@ export interface PlatformStoreApi {
   cancelSession(input: { sessionId: string; actorId: string; reason: string }): StoreResult<ClassSession>;
   saveInteractionSet(input: Partial<InteractionSet> & { setId?: string; lessonId: string; title: string; description: string; phase: Phase; items: InteractionItem[]; actorId?: string; publishNote?: string }): StoreResult<{ set: InteractionSet; version: InteractionVersion }>;
   rollbackInteractionVersion(input: { setId: string; versionId: string; actorId?: string }): StoreResult<{ set: InteractionSet; version: InteractionVersion }>;
+  assignInteractionSessions(input: { setId: string; sessionIds: string[]; actorId?: string }): StoreResult<InteractionSet>;
   createFolder(input: { parentId?: string; name: string; description?: string; color?: string; actorId?: string }): StoreResult<CourseFolder>;
   createLesson(input: { folderId: string; title: string; subtitle?: string; description?: string; durationMinutes?: number; tags?: string[]; color?: string; coverEmoji?: string; actorId?: string }): StoreResult<Lesson>;
   createStudent(input: { name: string; phone?: string; timeZone?: string; locale?: string; program?: string; level?: string; learningGoal?: string; preferredTeacherId?: string; actorId?: string }): StoreResult<{ user: PlatformUser; profile: StudentProfile }>;
@@ -299,6 +472,8 @@ export interface PlatformStoreApi {
   trackDownload(materialId: string): StoreResult<Material>;
   recordAttempt(input: { setId: string; studentId: string; sessionId?: string | null; phase: Phase; answers: Record<string, unknown>; score: number; timeSpentSeconds: number; wrongItemIds?: string[]; pollAnswers?: Record<string, string> }): StoreResult<InteractionAttempt>;
   updateStudent(input: { studentId: string; patch: Partial<PlatformUser & StudentProfile>; actorId?: string; reason?: string }): StoreResult<{ user: PlatformUser; profile: StudentProfile }>;
+  requestSessionChange(input: { sessionId: string; kind: ChangeRequestKind; reason: string; actorId?: string }): StoreResult<ChangeRequest>;
+  resolveChangeRequest(input: { requestId: string; status?: "handled" | "rejected"; resolutionNote?: string; actorId?: string }): StoreResult<ChangeRequest>;
   markNotificationRead(notificationId: string): StoreResult<NotificationItem>;
   markAllNotificationsRead(userId: string): StoreResult<boolean>;
 }

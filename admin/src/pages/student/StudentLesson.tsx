@@ -42,7 +42,7 @@ export function StudentLesson() {
   const [activeCoursewareId, setActiveCoursewareId] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<PlayerResult | null>(null);
 
-  const content = lessonContent(state, lessonId, phase);
+  const content = lessonContent(state, lessonId, phase, sessionId || undefined);
   const activeSet = content.sets.find((set) => set.id === activeSetId);
   const activeVersion = activeSet ? getCurrentInteractionVersion(state, activeSet) : undefined;
   const activeCourseware = content.materials.find((material) => material?.id === activeCoursewareId);
@@ -144,7 +144,7 @@ export function StudentLesson() {
           <div className="section-heading-row">
             <div>
               <span className="eyebrow">Interactions</span>
-              <h2>{t("student.interaction")}</h2>
+              <h2>{t(phase === "preview" ? "student.interactionPreview" : phase === "review" ? "student.interactionReview" : "student.interactionLive")}</h2>
             </div>
             <Badge tone="purple">{content.sets.length} 项</Badge>
           </div>
