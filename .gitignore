@@ -13,3 +13,6 @@ tmp-*.txt
 _*-preview*.html
 _shot-frame.html
 mockup-*
+
+# playwright-cli 本地会话日志（只在本机调试用）
+.playwright-cli/
