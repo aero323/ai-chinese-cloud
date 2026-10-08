@@ -2,15 +2,11 @@ import { useMemo, useState } from "react";
 import { Search, Sparkles } from "lucide-react";
 import type { InteractionItem, InteractionTemplate, InteractionType } from "../domain/types";
 import { INTERACTION_TYPE_SHORT_LABELS } from "../lib/interactionTypes";
+import { orderTemplatesForBrowse, TEMPLATE_LEVEL_LABELS, templateLevelLabel } from "../lib/templateLibrary";
+import { TemplateTypeChips } from "./TemplateTypeChips";
 import { Badge, Button, Modal, TextInput } from "./ui";
 
 const typeLabels: Record<InteractionType, string> = INTERACTION_TYPE_SHORT_LABELS;
-
-const levelLabels: Record<string, string> = {
-  beginner: "初级",
-  intermediate: "中级",
-  advanced: "高级"
-};
 
 function makeId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
@@ -64,7 +60,7 @@ export function InteractionTemplatePicker({
 
   const filtered = useMemo(() => {
     const keyword = query.trim().toLowerCase();
-    return templates.filter((template) => {
+    const matched = templates.filter((template) => {
       const typeMatch = type === "all" || template.type === type;
       const levelMatch = level === "all" || template.level === level;
       const queryMatch =
@@ -75,6 +71,7 @@ export function InteractionTemplatePicker({
         template.tags.join(" ").toLowerCase().includes(keyword);
       return typeMatch && levelMatch && queryMatch;
     });
+    return orderTemplatesForBrowse(matched, type);
   }, [templates, query, type, level]);
 
   return (
@@ -103,19 +100,16 @@ export function InteractionTemplatePicker({
               placeholder="搜索主题、题型或关键词，例如“餐厅”“排序”"
             />
           </div>
-          <div className="template-chip-row">
-            <button className={type === "all" ? "active" : ""} onClick={() => { setType("all"); setVisible(12); }}>全部题型</button>
-            {(Object.keys(typeLabels) as InteractionType[]).map((key) => (
-              <button key={key} className={type === key ? "active" : ""} onClick={() => { setType(key); setVisible(12); }}>
-                {typeLabels[key]}
-              </button>
-            ))}
-          </div>
+          <TemplateTypeChips
+            templates={templates}
+            value={type}
+            onChange={(next) => { setType(next); setVisible(12); }}
+          />
           <div className="template-chip-row muted">
             <button className={level === "all" ? "active" : ""} onClick={() => { setLevel("all"); setVisible(12); }}>全部难度</button>
-            {Object.keys(levelLabels).map((key) => (
+            {Object.keys(TEMPLATE_LEVEL_LABELS).map((key) => (
               <button key={key} className={level === key ? "active" : ""} onClick={() => { setLevel(key); setVisible(12); }}>
-                {levelLabels[key]}
+                {TEMPLATE_LEVEL_LABELS[key as keyof typeof TEMPLATE_LEVEL_LABELS]}
               </button>
             ))}
           </div>
@@ -128,7 +122,7 @@ export function InteractionTemplatePicker({
             <article key={template.id} className="template-card">
               <div className="template-card-head">
                 <span className={`phase-badge phase-live`}>{typeLabels[template.type]}</span>
-                <Badge tone="neutral">{levelLabels[template.level]}</Badge>
+                <Badge tone="neutral">{templateLevelLabel(template.level)}</Badge>
               </div>
               <strong>{template.title}</strong>
               <small>{template.summary}</small>

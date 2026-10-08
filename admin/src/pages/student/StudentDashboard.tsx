@@ -1,11 +1,18 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowRight, BookOpenCheck, CalendarClock, ChevronRight, Clock3, Sparkles, Star } from "lucide-react";
+import { ArrowRight, BookOpenCheck, CalendarClock, ChevronRight, Clock3, Star } from "lucide-react";
 import { Badge, Button, Card, PageHeader, StatCard } from "../../components/ui";
-import { ClassSessionCard } from "../../components/ClassSessionCard";
-import { currentUser, getLesson, getStudent, lessonContent, studentMetrics } from "../../lib/domain";
+import { currentUser, getStudent, getUser, pickTodayTasks, studentMetrics, studentWebTasks } from "../../lib/domain";
 import { formatDateTime } from "../../lib/format";
 import { usePlatformStore } from "../../store/usePlatformStore";
+import { InteractionSetPlayerModal } from "../../components/InteractionSetPlayerModal";
+import { PmNote } from "../../components/PmNote";
+import type { ClassSession, InteractionSet } from "../../domain/types";
+
+/** 今日任务最多显示 4 条；三个推送窗口各先占 2 条，保证课前 / 课中 / 课后都露得出来。 */
+const MAX_TODAY_TASKS = 4;
+const PER_WINDOW_TASKS = 2;
 
 export function StudentDashboard() {
   const { t } = useTranslation();
@@ -15,28 +22,16 @@ export function StudentDashboard() {
   const metrics = studentMetrics(state, user.id);
   const profile = getStudent(state, user.id);
   const nextSession = metrics.upcoming[0];
-  const lesson = nextSession ? getLesson(state, nextSession.lessonId) : undefined;
-  const content = lesson ? lessonContent(state, lesson.id, undefined, nextSession?.id) : { sets: [], materials: [] };
+  // 任务点开直接弹互动，不再跳到课节页。
+  const [activeTask, setActiveTask] = useState<{ set: InteractionSet; session: ClassSession } | null>(null);
   const learningDays = profile
     ? Math.max(1, Math.ceil((Date.now() - new Date(profile.joinedAt).getTime()) / 86_400_000))
     : 0;
-  // 今日任务：优先列出刚上完课的复习任务，再补上下一节课的预习/课中任务。
-  const reviewWindowMs = 7 * 86_400_000;
-  const reviewTasks = metrics.past
-    .filter((session) => Date.now() - new Date(session.endAt).getTime() <= reviewWindowMs)
-    .flatMap((session) =>
-      lessonContent(state, session.lessonId, "review", session.id).sets.map((set) => ({ set, sessionId: session.id }))
-    )
-    .filter((item) => !metrics.completedSetIds.has(item.set.id));
-  const upcomingTasks = content.sets.map((set) => ({ set, sessionId: nextSession?.id ?? "" }));
-  const seenSetIds = new Set<string>();
-  const todayTasks = [...reviewTasks, ...upcomingTasks]
-    .filter((item) => {
-      if (seenSetIds.has(item.set.id)) return false;
-      seenSetIds.add(item.set.id);
-      return true;
-    })
-    .slice(0, 4);
+  // 今日任务按三个推送窗口来：课前提前 48 小时、课中上课当天、课后下课后 48 小时内。
+  // 课中互动由学生端 App 承载，网页面只推课前 / 课后（见 studentWebTasks）。
+  const tasksByWindow = studentWebTasks(state, user.id, Date.now(), state.ui.timeZone);
+  const todayTasks = pickTodayTasks(tasksByWindow.map(({ tasks }) => tasks), MAX_TODAY_TASKS, PER_WINDOW_TASKS);
+
   const joinedDateLabel = profile
     ? new Intl.DateTimeFormat(state.ui.language, {
         timeZone: state.ui.timeZone,
@@ -52,11 +47,6 @@ export function StudentDashboard() {
         eyebrow={t("student.journey")}
         title={t("student.greeting", { name: user.name })}
         description={`${t("common.timezone")}：${state.ui.timeZone}。今天也来练一点中文吧。`}
-        actions={
-          <Button onClick={() => navigate("/student/book")}>
-            <Sparkles size={17} /> {t("student.quickBook")}
-          </Button>
-        }
       />
 
       <section className="student-hero-card">
@@ -118,29 +108,35 @@ export function StudentDashboard() {
       </section>
 
       <div className="dashboard-columns dashboard-single">
-        <Card className="next-actions-card">
+        <PmNote block kind="规则" note="网页展示课前和课后：课前提前 48 小时，课后下课起 48 小时内。最多展示 4 条，同一条互动只保留一个阶段。">
+          <Card className="next-actions-card">
           <div className="card-heading">
             <div>
-              <span className="eyebrow">{t("student.todayTask")}</span>
-              <h2>{reviewTasks.length ? "今日学习任务" : lesson?.title ?? "今日学习任务"}</h2>
+              <span className="eyebrow">Learning tasks</span>
+              <h2>{t("student.todayTask")}</h2>
+              <p className="muted-copy task-window-hint">{t("student.todayTaskHint")}</p>
             </div>
             <Button variant="ghost" size="sm" onClick={() => navigate("/student/schedule")}>
               查看全部 <ChevronRight size={16} />
             </Button>
           </div>
-          <div className="learning-task-list">
-            {todayTasks.map(({ set, sessionId }) => (
+          <PmNote block kind="流程" note="点击任务直接进入互动；提交后记录答案、用时和错题，重练会保留历史并更新最佳分。">
+            <div className="learning-task-list">
+            {todayTasks.map(({ set, session }) => (
               <button
                 key={set.id}
                 className="learning-task"
-                onClick={() => navigate(`/student/lesson/${set.lessonId}?sessionId=${sessionId}&phase=${set.phase}`)}
+                onClick={() => setActiveTask({ set, session })}
               >
                 <span className={`task-phase phase-${set.phase}`}>
                   {set.phase === "preview" ? t("common.phasePreview") : set.phase === "live" ? t("common.phaseLive") : t("common.phaseReview")}
                 </span>
                 <span>
                   <strong>{set.title}</strong>
-                  <small>{set.description}</small>
+                  <small>
+                    {session.title} · {formatDateTime(session.startAt, state.ui.timeZone, state.ui.language)} ·{' '}
+                    {session.roomLabel} · {getUser(state, session.teacherId)?.name ?? ""}
+                  </small>
                 </span>
                 <span className={metrics.completedSetIds.has(set.id) ? "task-done" : "task-open"}>
                   {metrics.completedSetIds.has(set.id) ? "已完成" : "去完成"}
@@ -148,30 +144,19 @@ export function StudentDashboard() {
               </button>
             ))}
             {todayTasks.length === 0 && <p className="muted-copy">{t("student.noPrepYet")}</p>}
-          </div>
-        </Card>
+            </div>
+          </PmNote>
+          </Card>
+        </PmNote>
       </div>
 
-      {nextSession && (
-        <section className="section-block">
-          <div className="section-heading-row">
-            <div>
-              <span className="eyebrow">My series</span>
-              <h2>{t("student.currentSeries")}</h2>
-            </div>
-          </div>
-          <ClassSessionCard
-            state={state}
-            session={nextSession}
-            showSeats={false}
-            showSpecialty={false}
-            actions={
-              <Button onClick={() => navigate(`/student/lesson/${nextSession.lessonId}?sessionId=${nextSession.id}&phase=preview`)}>
-                {t("student.openLesson")} <ArrowRight size={16} />
-              </Button>
-            }
-          />
-        </section>
+      {activeTask && (
+        <InteractionSetPlayerModal
+          set={activeTask.set}
+          sessionId={activeTask.session.id}
+          phase={activeTask.set.phase}
+          onClose={() => setActiveTask(null)}
+        />
       )}
     </>
   );

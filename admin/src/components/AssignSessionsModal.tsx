@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { CalendarClock } from "lucide-react";
+import { CalendarClock, GraduationCap } from "lucide-react";
 import type { ClassSession, InteractionSet, PlatformState } from "../domain/types";
 import { formatDateTime } from "../lib/format";
 import { Badge, Button, Modal } from "./ui";
+import { PmNote } from "./PmNote";
 
 export function AssignSessionsModal({
   open,
@@ -39,7 +40,9 @@ export function AssignSessionsModal({
           <span>{selected.length > 0 ? `已选 ${selected.length} 节课次` : ""}</span>
           <div>
             <Button variant="ghost" onClick={onClose}>取消</Button>
-            <Button onClick={() => onSave(selected)}>保存配置</Button>
+            <PmNote kind="流程" note="点击后立即更新作用范围；一个课次都不选时覆盖全部课次。">
+              <Button onClick={() => onSave(selected)}>保存配置</Button>
+            </PmNote>
           </div>
         </div>
       }
@@ -68,6 +71,9 @@ export function AssignSessionsModal({
               />
               <span className="assign-session-copy">
                 <strong>{session.title}</strong>
+                <small>
+                  <GraduationCap size={13} /> {session.className}
+                </small>
                 <small>
                   <CalendarClock size={13} /> {formatDateTime(session.startAt, state.ui.timeZone, state.ui.language)} · {session.roomLabel}
                 </small>

@@ -68,7 +68,7 @@ export function PageHeader({
   actions
 }: {
   eyebrow?: string;
-  title: string;
+  title: ReactNode;
   description?: string;
   actions?: ReactNode;
 }) {
@@ -105,30 +105,37 @@ export function Modal({
   onClose,
   children,
   footer,
+  headerExtra,
   width = "560px",
   fullscreen = false,
-  backdropTone = "default"
+  backdropTone = "default",
+  panelClassName = ""
 }: {
   open: boolean;
   title: string;
   onClose: () => void;
   children: ReactNode;
   footer?: ReactNode;
+  /** 标题栏右侧的补充信息：跟随标题栏常驻，不随内容滚动。 */
+  headerExtra?: ReactNode;
   width?: string;
   fullscreen?: boolean;
   /** 深色遮罩用于把内容压暗，突出浮层。 */
   backdropTone?: "default" | "dark";
+  /** 个别弹窗需要自己控制最大高度等样式。 */
+  panelClassName?: string;
 }) {
   if (!open) return null;
   return createPortal(
     <div
-      className={`modal-backdrop ${backdropTone === "dark" ? "modal-backdrop-dark" : ""}`}
+      className={`modal-backdrop ${fullscreen ? "modal-backdrop-fullscreen" : ""} ${backdropTone === "dark" ? "modal-backdrop-dark" : ""}`}
       role="presentation"
       onMouseDown={(event) => event.target === event.currentTarget && onClose()}
     >
-      <section className={`modal-panel ${fullscreen ? "modal-panel-fullscreen" : ""}`} role="dialog" aria-modal="true" aria-label={title} style={{ maxWidth: fullscreen ? undefined : width }}>
+      <section className={`modal-panel ${fullscreen ? "modal-panel-fullscreen" : ""} ${panelClassName}`} role="dialog" aria-modal="true" aria-label={title} style={{ maxWidth: fullscreen ? undefined : width }}>
         <header className="modal-header">
           <h2>{title}</h2>
+          {headerExtra && <div className="modal-header-extra">{headerExtra}</div>}
           <Button size="icon" variant="ghost" onClick={onClose} aria-label="关闭">
             <X size={18} />
           </Button>
@@ -217,7 +224,7 @@ export function Avatar({ label, size = "md", tone = "purple" }: { label: string;
 }
 
 export function SourceBadge({ source }: { source: string }) {
-  const tone: Tone = source === "operator" ? "orange" : source === "waitlist" ? "blue" : "mint";
-  const label = source === "operator" ? "教学管理代约" : source === "waitlist" ? "候补转正" : "学生预约";
+  const tone: Tone = source === "operator" || source === "academic" ? "orange" : source === "waitlist" ? "blue" : "mint";
+  const label = source === "operator" ? "教学管理代约" : source === "academic" ? "学校教务代约" : source === "waitlist" ? "候补转正" : "学生预约";
   return <Badge tone={tone}>{label}</Badge>;
 }

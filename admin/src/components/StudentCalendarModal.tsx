@@ -3,7 +3,7 @@ import type { ClassSession, PlatformState } from "../domain/types";
 import { Button } from "./ui";
 import { CalendarModal } from "./CalendarModal";
 
-/** 学生端课表用的课程日历：共享日历组件 + 「查看课件」入口。 */
+/** 学生端课表用的课程日历：共享日历组件 + 「课前预习」入口。 */
 export function StudentCalendarModal({
   open,
   onClose,
@@ -26,7 +26,7 @@ export function StudentCalendarModal({
       detailSubtitle={(session) => state.users.find((user) => user.id === session.teacherId)?.name ?? ""}
       renderAction={(session) => (
         <Button size="sm" variant="soft" onClick={() => onOpenCourseware(session)}>
-          <PlayCircle size={15} /> 查看课件
+          <PlayCircle size={15} /> 课前预习
         </Button>
       )}
     />

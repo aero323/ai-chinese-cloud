@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, CheckCircle2, Clock3, Download, LockKeyhole, MapPin, Play, Sparkles } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Clock3, Download, GraduationCap, LockKeyhole, MapPin, Play, PlayCircle, Sparkles } from "lucide-react";
 import { platform } from "../../lib/platform";
 import { usePlatformStore } from "../../store/usePlatformStore";
 import {
@@ -15,18 +15,27 @@ import {
   phaseAvailabilityLabel,
   sessionPhase
 } from "../../lib/domain";
-import type { Phase } from "../../domain/types";
+import type { Material, Phase } from "../../domain/types";
 import { Avatar, Badge, Button, Card, EmptyState, Modal, PageHeader, ProgressBar, Tabs } from "../../components/ui";
-import { InteractionPlayer, type PlayerResult } from "../../components/InteractionPlayer";
+import { InteractionSetPlayerModal } from "../../components/InteractionSetPlayerModal";
 import { MaterialCard } from "../../components/MaterialCard";
+import { PmNote } from "../../components/PmNote";
 import { useMaterialAudio } from "../../lib/useMaterialAudio";
 import { formatDateTime } from "../../lib/format";
 
+/** 课中互动改由学生端 App（移动端）承载，网页端不再展示这一档；恢复时把开关改成 true。 */
+const SHOW_LIVE_PHASE = false;
+
 const phaseMeta: Array<{ phase: Phase; label: string; icon: typeof Play }> = [
   { phase: "preview", label: "课前预习", icon: Sparkles },
-  { phase: "live", label: "课中互动", icon: Play },
+  // 课中互动这一档先隐藏（去掉下面两行的注释、并把 SHOW_LIVE_PHASE 改成 true 即可恢复）。
+  // ...(SHOW_LIVE_PHASE ? [{ phase: "live" as Phase, label: "课中互动", icon: Play }] : []),
   { phase: "review", label: "课后复习", icon: CheckCircle2 }
 ];
+
+function currentMaterialUrl(material: Material) {
+  return material.versions.find((version) => version.version === material.currentVersion)?.url ?? material.versions.at(-1)?.url;
+}
 
 export function StudentLesson() {
   const { lessonId = "" } = useParams();
@@ -38,19 +47,32 @@ export function StudentLesson() {
   const lesson = getLesson(state, lessonId);
   const sessionId = searchParams.get("sessionId") ?? "";
   const session = sessionId ? getSession(state, sessionId) : undefined;
-  const initialPhase = (searchParams.get("phase") as Phase) || "preview";
+  const requestedPhase = (searchParams.get("phase") as Phase) || "preview";
+  // 带 phase=live 的旧链接（或 App 里跳过来的）在网页端回落到课前预习。
+  const initialPhase = requestedPhase === "live" && !SHOW_LIVE_PHASE ? "preview" : requestedPhase;
   const [phase, setPhase] = useState<Phase>(initialPhase);
   const [activeSetId, setActiveSetId] = useState<string | null>(null);
   const [activeCoursewareId, setActiveCoursewareId] = useState<string | null>(null);
-  const [lastResult, setLastResult] = useState<PlayerResult | null>(null);
   const { playingId, toggle: toggleAudio } = useMaterialAudio();
 
   const content = lessonContent(state, lessonId, phase, sessionId || undefined);
+  const allMaterials = lessonContent(state, lessonId).materials.filter((material): material is Material => Boolean(material));
   const teacher = session ? getUser(state, session.teacherId) : undefined;
   const activeSet = content.sets.find((set) => set.id === activeSetId);
-  const activeVersion = activeSet ? getCurrentInteractionVersion(state, activeSet) : undefined;
-  const activeCourseware = content.materials.find((material) => material?.id === activeCoursewareId);
-  const activeCoursewareUrl = activeCourseware?.versions.find((version) => version.version === activeCourseware.currentVersion)?.url ?? activeCourseware?.versions.at(-1)?.url;
+  const activeCourseware = allMaterials.find((material) => material.id === activeCoursewareId);
+  const activeCoursewareUrl = activeCourseware ? currentMaterialUrl(activeCourseware) : undefined;
+  const activeCoursewareLabel = activeCourseware?.kind === "courseware"
+    ? "互动 HTML 课件"
+    : activeCourseware?.fileType === "pdf"
+      ? "PDF 课件"
+      : "课程课件";
+  const activeCoursewareDescription = activeCourseware?.kind === "courseware"
+    ? "支持词汇点读、选择题和句子排序，可直接在后台内播放。"
+    : activeCourseware?.fileType === "pdf"
+      ? "在后台内全屏预览该 PDF；内容加载后可直接翻页查看。"
+      : "当前课件会在后台内全屏展示；内容加载后可直接查看。";
+  const defaultCourseware = allMaterials.find((material) => material.kind === "courseware" && currentMaterialUrl(material)) ??
+    allMaterials.find((material) => material.fileType === "pdf" && currentMaterialUrl(material));
   const isBooked = session ? isSessionBooked(state, user.id, session.id) : true;
   const phaseOpen = session ? sessionPhase(session, phase) : true;
   const completed = new Set(state.interactionAttempts.filter((attempt) => attempt.studentId === user.id).map((attempt) => attempt.setId));
@@ -63,9 +85,19 @@ export function StudentLesson() {
     setSearchParams(params);
   }
 
+  function openCourseware() {
+    if (defaultCourseware) setActiveCoursewareId(defaultCourseware.id);
+  }
+
   if (!lesson) {
     return <EmptyState title="课节不存在" description="请返回课表重新选择。" action={<Button onClick={() => navigate("/student/schedule")}>返回课表</Button>} />;
   }
+
+  const activeCoursewareTitle = activeCourseware?.kind === "courseware"
+    ? activeCourseware.title
+    : lesson.id === "lesson-greetings"
+      ? "第 1 课 · 你好，新朋友"
+      : `${lesson.title} · 课堂课件`;
 
   return (
     <>
@@ -89,6 +121,7 @@ export function StudentLesson() {
           <h2>{lesson.subtitle}</h2>
           <p>{lesson.description}</p>
           <div className="lesson-overview-meta">
+            {session && <span><GraduationCap size={16} /> {session.className}</span>}
             <span><Clock3 size={16} /> {lesson.durationMinutes} 分钟</span>
             {session && <span>{formatDateTime(session.startAt, state.ui.timeZone, state.ui.language)}</span>}
             <span><MapPin size={16} /> {session?.roomLabel ?? "在线课堂"}</span>
@@ -98,27 +131,36 @@ export function StudentLesson() {
               </span>
             )}
           </div>
-          <div className="overview-progress">
+          <div className="lesson-overview-actions">
+            <Button variant="secondary" size="sm" disabled={!defaultCourseware} onClick={openCourseware}>
+              <PlayCircle size={16} /> 查看课件
+            </Button>
+          </div>
+          <PmNote block kind="口径" note="只统计当前学习阶段中已提交作答的互动。">
+            <div className="overview-progress">
             <div>
               <span>本课互动完成</span>
               <strong>{content.sets.filter((set) => completed.has(set.id)).length}/{content.sets.length}</strong>
             </div>
             <ProgressBar value={content.sets.length ? (content.sets.filter((set) => completed.has(set.id)).length / content.sets.length) * 100 : 0} />
-          </div>
+            </div>
+          </PmNote>
         </div>
       </Card>
 
-      <div className="phase-tabs-wrap">
-        <Tabs
-          value={phase}
-          onChange={changePhase}
-          items={phaseMeta.map((item) => ({
-            value: item.phase,
-            label: item.label,
-            count: lessonContent(state, lessonId, item.phase).sets.length
-          }))}
-        />
-      </div>
+      <PmNote kind="规则" note="课前默认提前 48 小时开放，课后默认在下课结束后开放 48 小时；未预约学生不能进入互动和材料。">
+        <div className="phase-tabs-wrap">
+          <Tabs
+            value={phase}
+            onChange={changePhase}
+            items={phaseMeta.map((item) => ({
+              value: item.phase,
+              label: item.label,
+              count: lessonContent(state, lessonId, item.phase).sets.length
+            }))}
+          />
+        </div>
+      </PmNote>
 
       {!isBooked && (
         <Card className="locked-stage-card">
@@ -127,7 +169,9 @@ export function StudentLesson() {
             <strong>预约后解锁该课节</strong>
             <p>预习和复习材料只对已预约学生开放。</p>
           </div>
-          <Button onClick={() => navigate("/student/book")}>去约课</Button>
+          <PmNote kind="流程" note="点击进入约课中心；预约成功后当前课节立即解锁。">
+            <Button onClick={() => navigate("/student/book")}>去约课</Button>
+          </PmNote>
         </Card>
       )}
 
@@ -138,7 +182,7 @@ export function StudentLesson() {
             <strong>{t("student.phaseLocked")}</strong>
             <p>
               {phase === "live"
-                ? "课中互动会在课堂开始前 10 分钟开放。"
+                ? "课中互动会在课堂开始前 10 分钟开放。" // 课中档隐藏后走不到这里，恢复开关后生效
                 : phase === "review"
                   ? "课堂结束后，复习内容和结果会在这里出现。"
                   : "该阶段已经结束。"}
@@ -157,9 +201,9 @@ export function StudentLesson() {
             </div>
             <Badge tone="purple">{content.sets.length} 项</Badge>
           </div>
-          <div className="interaction-set-list">
+          <PmNote block kind="流程" note="开始互动会创建作答记录；再练不会覆盖历史，只更新最佳分。这些互动的结果可以在老师端的课程结果处看到。">
+            <div className="interaction-set-list">
             {content.sets.map((set, index) => {
-              const version = getCurrentInteractionVersion(state, set);
               const done = completed.has(set.id);
               return (
                 <Card className={`interaction-set-card ${done ? "completed" : ""}`} key={set.id} interactive>
@@ -169,19 +213,10 @@ export function StudentLesson() {
                       <h3>{set.title}</h3>
                       {done ? <Badge tone="mint">已完成</Badge> : <Badge tone="orange">待完成</Badge>}
                     </div>
-                    <p>{set.description}</p>
-                    <div className="set-meta">
-                      <span>{version?.items.length ?? 0} 题</span>
-                      <span>v{version?.version ?? 1}</span>
-                      <span>自动评分</span>
-                    </div>
                   </div>
                   <Button
                     disabled={!isBooked || !phaseOpen}
-                    onClick={() => {
-                      setActiveSetId(set.id);
-                      setLastResult(null);
-                    }}
+                    onClick={() => setActiveSetId(set.id)}
                   >
                     {done ? t("student.retry") : "开始互动"}
                   </Button>
@@ -189,7 +224,8 @@ export function StudentLesson() {
               );
             })}
             {content.sets.length === 0 && <EmptyState title="本阶段暂无互动" description="教师发布后会立即出现在这里。" />}
-          </div>
+            </div>
+          </PmNote>
         </section>
 
         <section className="section-block">
@@ -200,7 +236,8 @@ export function StudentLesson() {
             </div>
             <Badge tone="blue">{content.materials.length} 个文件</Badge>
           </div>
-          <div className="material-list">
+          <PmNote block kind="口径" note="播放、查看和下载会记录为触达；下载只对已预约且阶段开放的学生生效。">
+            <div className="material-list">
             {content.materials.map((material) => (
               <MaterialCard
                 key={material!.id}
@@ -212,32 +249,28 @@ export function StudentLesson() {
               />
             ))}
             {content.materials.length === 0 && <EmptyState title={t("student.noMaterials")} />}
-          </div>
+            </div>
+          </PmNote>
           {materialsDone && <p className="muted-copy">已预约学生可下载当前阶段材料；新上传文件在原型中只保留元数据。</p>}
         </section>
       </div>
 
       <Modal
         open={Boolean(activeCourseware)}
-        title={activeCourseware?.title ?? "互动课件"}
+        title={activeCoursewareTitle}
         onClose={() => setActiveCoursewareId(null)}
-        width="1180px"
+        fullscreen
       >
         {activeCourseware && activeCoursewareUrl && (
           <div className="courseware-player-shell">
-            <div className="courseware-player-toolbar">
+            <PmNote block kind="流程" note="全屏只改变课件展示方式，不改变课节进度和作答记录。">
+              <div className="courseware-player-toolbar">
               <div>
-                <Badge tone="purple">互动 HTML 课件</Badge>
-                <span>支持词汇点读、选择题和句子排序，可直接在后台内播放。</span>
+                <Badge tone="purple">{activeCoursewareLabel}</Badge>
+                <span>{activeCoursewareDescription}</span>
               </div>
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => window.open(activeCoursewareUrl, "_blank", "noopener,noreferrer")}
-              >
-                新窗口打开
-              </Button>
-            </div>
+              </div>
+            </PmNote>
             <iframe
               className="courseware-frame"
               src={activeCoursewareUrl}
@@ -247,68 +280,15 @@ export function StudentLesson() {
         )}
       </Modal>
 
-      <Modal
-        open={Boolean(activeSet)}
-        title={activeSet?.title ?? "互动"}
-        onClose={() => setActiveSetId(null)}
-        width="900px"
-        footer={
-          lastResult ? (
-            <div className="result-modal-footer">
-              <span>本次得分</span>
-              <strong>{lastResult.score}</strong>
-              {lastResult.score < 100 && <Badge tone="orange">可再次练习提升最佳分</Badge>}
-            </div>
-          ) : undefined
-        }
-      >
-        {activeSet && activeVersion && !lastResult && (
-          <InteractionPlayer
-            items={activeVersion.items}
-            onClose={() => setActiveSetId(null)}
-            onComplete={(result) => {
-              setLastResult(result);
-              run(
-                () =>
-                  platform.recordAttempt({
-                    setId: activeSet.id,
-                    studentId: user.id,
-                    sessionId: session?.id,
-                    phase,
-                    answers: result.answers,
-                    score: result.score,
-                    timeSpentSeconds: result.elapsedSeconds,
-                    wrongItemIds: result.wrongItemIds,
-                    pollAnswers: result.pollAnswers
-                  }),
-                `练习完成，本次得分 ${result.score}`
-              );
-            }}
-          />
-        )}
-        {lastResult && (
-          <div className="player-result-summary">
-            <div className="result-score-ring">
-              <strong>{lastResult.score}</strong>
-              <span>分</span>
-            </div>
-            <div>
-              <h3>{lastResult.score === 100 ? "全部掌握，太棒了！" : "已经完成，再练一次会更好。"}</h3>
-              <p>本次用时 {lastResult.elapsedSeconds} 秒，错题 {lastResult.wrongItemIds.length} 道。</p>
-            </div>
-            <Button
-              onClick={() => {
-                setLastResult(null);
-              }}
-            >
-              再练一次
-            </Button>
-            <Button variant="secondary" onClick={() => setActiveSetId(null)}>
-              返回课节
-            </Button>
-          </div>
-        )}
-      </Modal>
+      {activeSet && (
+        <InteractionSetPlayerModal
+          set={activeSet}
+          sessionId={session?.id}
+          phase={phase}
+          closeLabel="返回课节"
+          onClose={() => setActiveSetId(null)}
+        />
+      )}
     </>
   );
 }

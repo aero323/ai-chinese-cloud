@@ -1,4 +1,4 @@
-import { BookOpen, ExternalLink } from "lucide-react";
+import { BookOpen } from "lucide-react";
 import { Badge, Button, Modal } from "./ui";
 
 export function CoursewareModal({
@@ -19,7 +19,7 @@ export function CoursewareModal({
   onOpenLesson?: () => void;
 }) {
   return (
-    <Modal open={open} title={title} onClose={onClose} width="1180px">
+    <Modal open={open} title={title} onClose={onClose} fullscreen>
       {url ? (
         <div className="courseware-player-shell">
           <div className="courseware-player-toolbar">
@@ -33,9 +33,6 @@ export function CoursewareModal({
                   <BookOpen size={15} /> 打开学习页
                 </Button>
               )}
-              <Button size="sm" variant="secondary" onClick={() => window.open(url, "_blank", "noopener,noreferrer")}>
-                <ExternalLink size={15} /> 新窗口打开
-              </Button>
             </div>
           </div>
           <iframe className="courseware-frame" src={url} title={title} />

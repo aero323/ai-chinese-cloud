@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { platform } from "../../lib/platform";
 import { useTranslation } from "react-i18next";
 import { AlertCircle, ArrowRight, CalendarPlus, CircleDollarSign, Layers3, TrendingUp, UserRoundCheck, UsersRound } from "lucide-react";
 import { usePlatformStore } from "../../store/usePlatformStore";
@@ -9,9 +10,10 @@ import { Badge, Button, Card, PageHeader, ProgressBar, StatCard } from "../../co
 export function OperatorDashboard() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const state = usePlatformStore((store) => store.state);
+  const { state, run } = usePlatformStore();
   const user = currentUser(state);
   const metrics = operatorMetrics(state);
+  const pendingReviews = state.bookings.filter((booking) => booking.status === "pending_review");
   const urgentSessions = metrics.published
     .filter((session) => getWaitlist(state, session.id).length > 0 || fillRate(state, session) >= 90)
     .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime())
@@ -51,6 +53,35 @@ export function OperatorDashboard() {
         <StatCard label={t("operator.studentTotal")} value={metrics.students} detail="完整学生档案" icon={<UserRoundCheck size={20} />} tone="mint" />
       </section>
 
+      {pendingReviews.length > 0 && (
+        <Card className="operator-subsection">
+          <div className="card-heading">
+            <div><span className="eyebrow">Booking review</span><h2>全校待审核报名</h2><p>学校教务处理本校待办；这里保留平台教学管理兜底入口。</p></div>
+            <AlertCircle size={20} />
+          </div>
+          <div className="attention-list">
+            {pendingReviews.map((booking) => {
+              const session = state.sessions.find((item) => item.id === booking.sessionId);
+              const student = state.users.find((item) => item.id === booking.studentId);
+              const school = state.schools.find((item) => item.id === session?.schoolId);
+              if (!session) return null;
+              return (
+                <div className="academic-review-row" key={booking.id}>
+                  <span><strong>{student?.name} · {session.title}</strong><small>{school?.name} · {session.className}</small></span>
+                  <span className="teacher-request-actions">
+                    <Button size="sm" variant="ghost" onClick={() => {
+                      const reason = window.prompt("请输入驳回原因");
+                      if (reason) run(() => platform.reviewBooking({ bookingId: booking.id, decision: "reject", reason, actorId: user.id }), "报名已驳回");
+                    }}>驳回</Button>
+                    <Button size="sm" onClick={() => run(() => platform.reviewBooking({ bookingId: booking.id, decision: "approve", reason: "平台教学管理审核通过", actorId: user.id }), "报名已通过")}>通过</Button>
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
+
       <div className="dashboard-columns">
         <Card>
           <div className="card-heading">
@@ -69,7 +100,7 @@ export function OperatorDashboard() {
                   <span className={`attention-dot ${waitlist > 0 ? "warning" : "success"}`} />
                   <span>
                     <strong>{session.title}</strong>
-                    <small>{lesson?.title} · {formatDateTime(session.startAt, state.ui.timeZone, state.ui.language)}</small>
+                    <small>{session.className} · {formatDateTime(session.startAt, state.ui.timeZone, state.ui.language)}</small>
                   </span>
                   <span className="attention-value">
                     <strong>{waitlist > 0 ? `${waitlist} 候补` : `${Math.round(fillRate(state, session))}% 满`}</strong>

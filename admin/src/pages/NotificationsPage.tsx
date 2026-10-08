@@ -5,6 +5,7 @@ import { relativeTime } from "../lib/format";
 import { platform } from "../lib/platform";
 import { usePlatformStore } from "../store/usePlatformStore";
 import { Button, Card, EmptyState, PageHeader } from "../components/ui";
+import { PmNote } from "../components/PmNote";
 
 export function NotificationsPage() {
   const navigate = useNavigate();
@@ -22,15 +23,18 @@ export function NotificationsPage() {
         title="消息中心"
         description={`${notices.filter((notice) => !notice.read).length} 条未读消息`}
         actions={
-          <Button
-            variant="secondary"
-            onClick={() => run(() => platform.markAllNotificationsRead(user.id), "已全部标记为已读")}
-          >
-            <CheckCheck size={17} /> 全部已读
-          </Button>
+          <PmNote kind="流程" note="点击后只把当前用户的消息全部标为已读，不删除记录。">
+            <Button
+              variant="secondary"
+              onClick={() => run(() => platform.markAllNotificationsRead(user.id), "已全部标记为已读")}
+            >
+              <CheckCheck size={17} /> 全部已读
+            </Button>
+          </PmNote>
         }
       />
-      <div className="notification-list">
+      <PmNote block kind="流程" note="点击查看会标记该消息已读，并回到对应课表、课节或处理页面。">
+        <div className="notification-list">
         {notices.length === 0 && <EmptyState title="暂无消息" description="预约、候补和内容更新会显示在这里。" />}
         {notices.map((notice) => (
           <Card className={`notification-card ${notice.read ? "" : "unread"}`} key={notice.id}>
@@ -57,7 +61,8 @@ export function NotificationsPage() {
             </Button>
           </Card>
         ))}
-      </div>
+        </div>
+      </PmNote>
     </>
   );
 }

@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { CalendarDays, Filter, Layers3, Search, UsersRound } from "lucide-react";
+import { CalendarDays, CheckCircle2, Filter, Layers3, Search, UsersRound, X } from "lucide-react";
 import { platform } from "../../lib/platform";
 import { usePlatformStore } from "../../store/usePlatformStore";
 import {
@@ -12,10 +12,15 @@ import {
   getSession,
   getWaitlist,
   isSessionBooked,
-  isSessionWaitlisted
+  isSessionPendingReview,
+  isSessionWaitlisted,
+  materialRefAppliesToSession
 } from "../../lib/domain";
 import { Badge, Button, Card, EmptyState, Field, Modal, PageHeader, Select, Tabs, TextInput } from "../../components/ui";
 import { ClassSessionCard } from "../../components/ClassSessionCard";
+import { SeriesSessionDots } from "../../components/SeriesSessionDots";
+import { PmNote } from "../../components/PmNote";
+import type { ClassSession } from "../../domain/types";
 import { MaterialCard } from "../../components/MaterialCard";
 import { useMaterialAudio } from "../../lib/useMaterialAudio";
 import { formatDate } from "../../lib/format";
@@ -34,6 +39,7 @@ export function StudentBook() {
   const [folderId, setFolderId] = useState("all");
   const [query, setQuery] = useState("");
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+  const [bookingFeedback, setBookingFeedback] = useState<string | null>(null);
 
   const upcomingSessions = state.sessions
     .filter((session) => session.status === "published" && new Date(session.endAt).getTime() > Date.now())
@@ -62,7 +68,7 @@ export function StudentBook() {
     const matchesDay = day === "all" || new Date(session.startAt).toDateString() === day;
     const matchesTeacher = teacherId === "all" || session.teacherId === teacherId;
     const matchesFolder = folderId === "all" || lesson?.folderId === folderId;
-    const matchesQuery = !query || session.title.toLowerCase().includes(query.toLowerCase()) || lesson?.title.toLowerCase().includes(query.toLowerCase());
+    const matchesQuery = !query || session.title.toLowerCase().includes(query.toLowerCase()) || session.className.toLowerCase().includes(query.toLowerCase()) || lesson?.title.toLowerCase().includes(query.toLowerCase());
     return matchesDay && matchesTeacher && matchesFolder && matchesQuery;
   });
 
@@ -71,10 +77,15 @@ export function StudentBook() {
   const selectedLesson = selectedSession ? getLesson(state, selectedSession.lessonId) : undefined;
 
   function bookSession(sessionId: string) {
+    const session = getSession(state, sessionId);
+    const successMessage = session?.approvalRequired
+      ? t("student.bookingPendingReviewSuccess")
+      : t("student.bookingSuccess");
     const result = run(
       () => platform.bookSession({ studentId: user.id, sessionId }),
-      t("student.bookingSuccess")
+      successMessage
     );
+    if (result.ok) setBookingFeedback(successMessage);
     if (result.code === "SESSION_FULL") {
       run(() => platform.joinWaitlist({ studentId: user.id, sessionId }), t("student.waitlistSuccess"));
     }
@@ -83,6 +94,9 @@ export function StudentBook() {
   function actionForSession(sessionId: string) {
     if (isSessionBooked(state, user.id, sessionId)) {
       return <Badge tone="mint">{t("student.bookedAlready")}</Badge>;
+    }
+    if (isSessionPendingReview(state, user.id, sessionId)) {
+      return <Badge tone="orange">{t("student.pendingReview")}</Badge>;
     }
     if (isSessionWaitlisted(state, user.id, sessionId)) {
       const entry = state.waitlist.find((item) => item.studentId === user.id && item.status === "waiting" && (item.sessionId === sessionId || item.sessionIds.includes(sessionId)));
@@ -112,16 +126,29 @@ export function StudentBook() {
         description={t("student.bookSubtitle")}
       />
 
-      <Card className="booking-filter-card">
+      {bookingFeedback && (
+        <div className="booking-feedback" role="status">
+          <CheckCircle2 size={18} />
+          <span>{bookingFeedback}</span>
+          <button type="button" aria-label="关闭报名提示" onClick={() => setBookingFeedback(null)}>
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
+      <PmNote block kind="规则" note="单次班按一节课报名；系列班必须整套报名、整套候补。">
+        <Card className="booking-filter-card">
         <div className="booking-tabs-row">
-          <Tabs
-            value={tab}
-            onChange={setTab}
-            items={[
-              { value: "single", label: t("student.single"), count: upcomingSessions.length },
-              { value: "series", label: t("student.series"), count: seriesList.length }
-            ]}
-          />
+          <PmNote kind="规则" note="课分两种，一种是单次的，一种是一个系列的，即一套课程有很多节课。">
+            <Tabs
+              value={tab}
+              onChange={setTab}
+              items={[
+                { value: "single", label: t("student.single"), count: upcomingSessions.length },
+                { value: "series", label: t("student.series"), count: seriesList.length }
+              ]}
+            />
+          </PmNote>
           <div className="search-box">
             <Search size={17} />
             <TextInput value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索课节、主题或教师" />
@@ -167,16 +194,18 @@ export function StudentBook() {
             </div>
           </>
         )}
-      </Card>
+        </Card>
+      </PmNote>
 
       {tab === "single" ? (
-        <div className="session-list">
+        <PmNote block kind="流程" note="详情查看时间与预习材料；满员时加入候补。需审核班次报名后显示「待审核」，审核通过后才加入班级。">
+          <div className="session-list">
           {filteredSessions.map((session) => {
             const remaining = Math.max(0, session.capacity - getBookedCount(state, session.id));
             const waitlist = getWaitlist(state, session.id).length;
-            return (
+            const pendingReview = isSessionPendingReview(state, user.id, session.id);
+            const card = (
               <ClassSessionCard
-                key={session.id}
                 state={state}
                 session={session}
                 actions={
@@ -186,19 +215,39 @@ export function StudentBook() {
                     </Button>
                     {actionForSession(session.id)}
                     <span className="action-caption">
-                      {remaining > 0 ? `${remaining} 个余位` : `${waitlist} 人候补`}
+                      {pendingReview
+                        ? t("student.pendingReviewHint")
+                        : remaining > 0
+                          ? `${remaining} 个余位`
+                          : `${waitlist} 人候补`}
                     </span>
                   </>
                 }
               />
             );
+            return session.id === "session-preview" ? (
+              <PmNote
+                key={session.id}
+                block
+                kind="口径"
+                note="一门课至少包含：系列课的系列名、本节课的课名、一句话简介、上课时间、地点、班级人数和主讲老师。"
+              >
+                {card}
+              </PmNote>
+            ) : (
+              <Fragment key={session.id}>{card}</Fragment>
+            );
           })}
           {filteredSessions.length === 0 && <EmptyState title="没有匹配的班次" description="换一个日期或清空筛选条件再试试。" />}
-        </div>
+          </div>
+        </PmNote>
       ) : (
-        <div className="series-grid">
+        <PmNote block kind="注意" note="系列班任一次课满员时整套进入候补；有名额后按排队顺序统一转正。">
+          <div className="series-grid">
           {seriesList.map((series) => {
-            const sessions = series.sessionIds.map((id) => getSession(state, id)).filter(Boolean);
+            const sessions = series.sessionIds
+              .map((id) => getSession(state, id))
+              .filter((session): session is ClassSession => Boolean(session));
             const enrolled = sessions.some((session) => session && isSessionBooked(state, user.id, session.id));
             const waitlisted = sessions.some((session) => session && isSessionWaitlisted(state, user.id, session.id));
             const full = sessions.some((session) => session && getBookedCount(state, session.id) >= session.capacity);
@@ -207,11 +256,16 @@ export function StudentBook() {
               <Card className="series-card" key={series.id}>
                 <div className="series-cover" style={{ background: `linear-gradient(145deg, ${lesson?.color ?? "#6552ff"}, #f3efff)` }}>
                   <span>{lesson?.coverEmoji ?? "📚"}</span>
-                  <Badge tone="purple">{series.sessionIds.length} 次课</Badge>
+                  <Badge tone="purple">
+                    {t("student.lessonCount", { count: series.lessonIds.length })} · {t("student.sessionCount", { count: series.sessionIds.length })}
+                  </Badge>
                 </div>
                 <div className="series-body">
                   <h2>{series.title}</h2>
                   <p>{series.description}</p>
+                  <p className="series-lesson-chain">
+                    {series.lessonIds.map((lessonId) => getLesson(state, lessonId)?.title).filter(Boolean).join(" → ")}
+                  </p>
                   <div className="series-meta">
                     <span>
                       <Layers3 size={16} /> {formatDate(sessions[0]?.startAt ?? series.createdAt, state.ui.timeZone, state.ui.language)}
@@ -221,14 +275,15 @@ export function StudentBook() {
                     </span>
                   </div>
                   <p className="series-dates-note">{t("student.seriesDatesNote")}</p>
-                  <div className="series-session-dots">
-                    {sessions.map((session) => (
-                      <button key={session!.id} onClick={() => setSelectedSessionId(session!.id)}>
-                        <strong>{new Intl.DateTimeFormat(state.ui.language, { timeZone: state.ui.timeZone, day: "2-digit" }).format(new Date(session!.startAt))}</strong>
-                        <small>{new Intl.DateTimeFormat(state.ui.language, { timeZone: state.ui.timeZone, month: "short" }).format(new Date(session!.startAt))}</small>
+                  <SeriesSessionDots
+                    sessions={sessions}
+                    renderSession={(session) => (
+                      <button key={session.id} onClick={() => setSelectedSessionId(session.id)}>
+                        <strong>{new Intl.DateTimeFormat(state.ui.language, { timeZone: state.ui.timeZone, day: "2-digit" }).format(new Date(session.startAt))}</strong>
+                        <small>{new Intl.DateTimeFormat(state.ui.language, { timeZone: state.ui.timeZone, month: "short" }).format(new Date(session.startAt))}</small>
                       </button>
-                    ))}
-                  </div>
+                    )}
+                  />
                   {enrolled ? (
                     <Badge tone="mint">{t("student.bookedAlready")}</Badge>
                   ) : (
@@ -249,7 +304,8 @@ export function StudentBook() {
               </Card>
             );
           })}
-        </div>
+          </div>
+        </PmNote>
       )}
 
       <Modal
@@ -268,17 +324,21 @@ export function StudentBook() {
                 <p>{selectedLesson.subtitle}</p>
               </div>
             </div>
-            <div className="detail-grid">
-              <div><small>上课时间</small><strong>{formatDate(selectedSession.startAt, state.ui.timeZone, state.ui.language)}</strong></div>
-              <div><small>当地时区</small><strong>{state.ui.timeZone}</strong></div>
-              <div><small>已预约</small><strong>{getBookedCount(state, selectedSession.id)} / {selectedSession.capacity}</strong></div>
-              <div><small>预约截止</small><strong>{formatDate(selectedSession.bookingCloseAt, state.ui.timeZone, state.ui.language)}</strong></div>
-            </div>
+            <PmNote block kind="口径" note="时间按当前学生时区显示，预约人数只统计有效预约。超过预约截止后不能再报名。">
+              <div className="detail-grid">
+                <div><small>上课时间</small><strong>{formatDate(selectedSession.startAt, state.ui.timeZone, state.ui.language)}</strong></div>
+                <div><small>当地时区</small><strong>{state.ui.timeZone}</strong></div>
+                <div><small>已预约</small><strong>{getBookedCount(state, selectedSession.id)} / {selectedSession.capacity}</strong></div>
+                <div><small>预约截止</small><strong>{formatDate(selectedSession.bookingCloseAt, state.ui.timeZone, state.ui.language)}</strong></div>
+                {selectedSession.approvalRequired && <div><small>报名方式</small><strong>提交后需教学管理审核</strong></div>}
+              </div>
+            </PmNote>
             <section className="modal-section">
               <h4>预习材料</h4>
               <div className="material-list compact-list">
                 {state.materialRefs
                   .filter((ref) => ref.lessonId === selectedLesson.id && ref.phase === "preview")
+                  .filter((ref) => materialRefAppliesToSession(ref, selectedSession.id))
                   .map((ref) => state.materials.find((material) => material.id === ref.materialId))
                   .filter(Boolean)
                   .map((material) => (
@@ -289,7 +349,9 @@ export function StudentBook() {
                       onPlay={() => toggleAudio(material!)}
                     />
                   ))}
-                {state.materialRefs.filter((ref) => ref.lessonId === selectedLesson.id && ref.phase === "preview").length === 0 && (
+                {state.materialRefs
+                  .filter((ref) => ref.lessonId === selectedLesson.id && ref.phase === "preview")
+                  .filter((ref) => materialRefAppliesToSession(ref, selectedSession.id)).length === 0 && (
                   <p className="muted-copy">{t("student.noMaterials")}</p>
                 )}
               </div>

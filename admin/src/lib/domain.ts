@@ -4,6 +4,8 @@ import type {
   InteractionSet,
   InteractionVersion,
   Lesson,
+  LessonMaterialRef,
+  Material,
   Phase,
   PlatformState,
   StudentProfile,
@@ -64,6 +66,21 @@ export function isSessionBooked(state: PlatformState, studentId: string, session
   return state.bookings.some((booking) => booking.studentId === studentId && booking.sessionId === sessionId && booking.status === "booked");
 }
 
+/** 已提交报名、仍在等待教学管理审核的课次。 */
+export function isSessionPendingReview(state: PlatformState, studentId: string, sessionId: string) {
+  return state.bookings.some((booking) => booking.studentId === studentId && booking.sessionId === sessionId && booking.status === "pending_review");
+}
+
+export function getStudentPendingReviewBookings(state: PlatformState, studentId: string): Booking[] {
+  return state.bookings
+    .filter((booking) => booking.studentId === studentId && booking.status === "pending_review")
+    .sort((a, b) => {
+      const aSession = getSession(state, a.sessionId);
+      const bSession = getSession(state, b.sessionId);
+      return new Date(aSession?.startAt ?? 0).getTime() - new Date(bSession?.startAt ?? 0).getTime();
+    });
+}
+
 export function isSessionWaitlisted(state: PlatformState, studentId: string, sessionId: string) {
   return state.waitlist.some((entry) => entry.studentId === studentId && entry.status === "waiting" && (entry.sessionId === sessionId || entry.sessionIds.includes(sessionId)));
 }
@@ -98,11 +115,50 @@ export function getCurrentInteractionVersion(state: PlatformState, set: Interact
       .sort((a, b) => b.version - a.version)[0];
 }
 
-/** 互动集是否作用于某个课次：未指定课次 = 该课节全部课次。 */
+/**
+ * 互动集是否作用于某个课次。
+ * sessionIds 未设置 = 作用于该课节全部课次；设置为数组时只出现在列出的课次（空数组 = 均不出现）。
+ * excludedSessionIds 用于把某一课次单独移出，不改变其它课次。
+ */
 export function setAppliesToSession(set: InteractionSet, sessionId?: string | null) {
   if (!sessionId) return true;
-  if (!set.sessionIds || set.sessionIds.length === 0) return true;
+  if ((set.excludedSessionIds ?? []).includes(sessionId)) return false;
+  if (!set.sessionIds) return true;
   return set.sessionIds.includes(sessionId);
+}
+
+/** 材料是否作用于某个课次：规则与互动集一致。 */
+export function materialRefAppliesToSession(ref: LessonMaterialRef, sessionId?: string | null) {
+  if (!sessionId) return true;
+  if ((ref.excludedSessionIds ?? []).includes(sessionId)) return false;
+  if (!ref.sessionIds) return true;
+  return ref.sessionIds.includes(sessionId);
+}
+
+/** 同一课节下的课次，按开始时间排序。 */
+export function getLessonSessions(state: PlatformState, lessonId: string, teacherId?: string) {
+  return state.sessions
+    .filter((session) => session.lessonId === lessonId && session.status !== "cancelled" && (!teacherId || session.teacherId === teacherId))
+    .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
+}
+
+/** 作用范围文案：全课节 / 指定课次。 */
+export function scopeLabel(scope: { sessionIds?: string[]; excludedSessionIds?: string[] }, sessionId?: string | null) {
+  if (sessionId && (scope.excludedSessionIds ?? []).includes(sessionId)) return "已从本节课移出";
+  if (!scope.sessionIds) return "全课次共用";
+  if (!scope.sessionIds.length) return "未配置到课次";
+  return sessionId && scope.sessionIds.length === 1 && scope.sessionIds.includes(sessionId)
+    ? "本节课专属"
+    : `指定 ${scope.sessionIds.length} 节课次`;
+}
+
+/** 某一课次在某阶段的材料清单（含来源课节信息）。 */
+export function sessionMaterials(state: PlatformState, session: ClassSession, phase: Phase) {
+  return state.materialRefs
+    .filter((ref) => ref.lessonId === session.lessonId && ref.phase === phase && materialRefAppliesToSession(ref, session.id))
+    .sort((a, b) => a.order - b.order)
+    .map((ref) => ({ ref, material: state.materials.find((material) => material.id === ref.materialId) }))
+    .filter((item): item is { ref: LessonMaterialRef; material: Material } => Boolean(item.material));
 }
 
 export function setsForSession(state: PlatformState, session: ClassSession) {
@@ -117,6 +173,7 @@ export function lessonContent(state: PlatformState, lessonId: string, phase?: Ph
     .sort((a, b) => a.order - b.order);
   const refs = state.materialRefs
     .filter((ref) => ref.lessonId === lessonId && ref.published && (!phase || ref.phase === phase))
+    .filter((ref) => materialRefAppliesToSession(ref, sessionId))
     .sort((a, b) => a.order - b.order);
   return {
     sets,
@@ -124,6 +181,118 @@ export function lessonContent(state: PlatformState, lessonId: string, phase?: Ph
       .map((ref) => state.materials.find((material) => material.id === ref.materialId))
       .filter((material) => material && material.status === "published")
   };
+}
+
+/* ---- 学生端任务推送窗口 ---- */
+
+/** 课前提前 48 小时推送、课中上课当天推送、课后在下课后 48 小时内可完成。 */
+export const TASK_PUSH_WINDOW_MS = 48 * 60 * 60 * 1000;
+
+/** 按学生所在时区取日期，用来判断“课中任务是不是今天”。 */
+export function dayStamp(value: string | Date, timeZone: string) {
+  const date = value instanceof Date ? value : new Date(value);
+  const parts = new Intl.DateTimeFormat("en-US", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(date);
+  const read = (type: string) => parts.find((part) => part.type === type)?.value ?? "";
+  return `${read("year")}-${read("month")}-${read("day")}`;
+}
+
+/**
+ * 课中互动改由学生端 App（移动端）承载，学生端网页不展示、也不推送这一档。
+ * 恢复时把开关改成 true 即可（下面的取数逻辑与窗口规则都不用动）。
+ */
+export const SHOW_LIVE_TASKS_ON_WEB = false;
+
+export interface StudentTaskEntry {
+  phase: Phase;
+  set: InteractionSet;
+  session: ClassSession;
+}
+
+/**
+ * 学习任务：按三个推送窗口列出学生当前该看到的互动。
+ * 同一条互动同时命中多个窗口时只保留靠前的那一档（课前 → 课中 → 课后）。
+ */
+export function studentPushedTasks(state: PlatformState, studentId: string, now: number, timeZone: string) {
+  const sessions = getStudentBookings(state, studentId)
+    .map((booking) => getSession(state, booking.sessionId))
+    .filter((session): session is ClassSession => Boolean(session));
+  const todayStamp = dayStamp(new Date(now), timeZone);
+  const sameDay = (session: ClassSession) => dayStamp(session.startAt, timeZone) === todayStamp;
+  const inProgress = (session: ClassSession) =>
+    new Date(session.startAt).getTime() <= now && new Date(session.endAt).getTime() >= now;
+
+  const windows: Array<{ phase: Phase; sessions: ClassSession[] }> = [
+    {
+      phase: "preview",
+      // 开课前 48 小时内推送，开课后收起。
+      sessions: sessions
+        .filter((session) => {
+          const startsIn = new Date(session.startAt).getTime() - now;
+          return startsIn > 0 && startsIn <= TASK_PUSH_WINDOW_MS;
+        })
+        .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime())
+    },
+    {
+      phase: "live",
+      // 上课当天推送；跨零点还在上的课也算当天。
+      sessions: sessions
+        .filter((session) => sameDay(session) || inProgress(session))
+        .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime())
+    },
+    {
+      phase: "review",
+      // 下课后 48 小时内可完成，最近下课的一节排前面。
+      sessions: sessions
+        .filter((session) => {
+          const endedAgo = now - new Date(session.endAt).getTime();
+          return endedAgo > 0 && endedAgo <= TASK_PUSH_WINDOW_MS;
+        })
+        .sort((a, b) => new Date(b.endAt).getTime() - new Date(a.endAt).getTime())
+    }
+  ];
+
+  const seenSetIds = new Set<string>();
+  return windows.map(({ phase, sessions: windowSessions }) => ({
+    phase,
+    tasks: windowSessions
+      .flatMap((session) =>
+        lessonContent(state, session.lessonId, phase, session.id).sets.map((set) => ({ phase, set, session }))
+      )
+      .filter((entry) => {
+        if (seenSetIds.has(entry.set.id)) return false;
+        seenSetIds.add(entry.set.id);
+        return true;
+      })
+  }));
+}
+
+/**
+ * 今日任务的取数规则：每个窗口先各占 1 个位置，再按窗口顺序补到每个窗口 2 条，
+ * 最后还有空位就继续往后补，总数不超过 max。
+ */
+export function pickTodayTasks(windows: StudentTaskEntry[][], max: number, perWindow: number) {
+  const counts = windows.map((tasks) => Math.min(1, tasks.length));
+  let used = counts.reduce((sum, count) => sum + count, 0);
+  while (used < max) {
+    let added = false;
+    windows.forEach((tasks, index) => {
+      if (used >= max) return;
+      const limit = counts[index] < perWindow ? Math.min(perWindow, tasks.length) : tasks.length;
+      if (counts[index] >= limit) return;
+      counts[index] += 1;
+      used += 1;
+      added = true;
+    });
+    if (!added) break;
+  }
+  return windows.flatMap((tasks, index) => tasks.slice(0, counts[index]));
+}
+
+/** 学生端网页要展示的今日任务：只看课前 / 课后，课中那一档交给 App。 */
+export function studentWebTasks(state: PlatformState, studentId: string, now: number, timeZone: string) {
+  const windows = studentPushedTasks(state, studentId, now, timeZone);
+  if (SHOW_LIVE_TASKS_ON_WEB) return windows;
+  return windows.filter((window) => window.phase !== "live");
 }
 
 export function average(values: number[]) {

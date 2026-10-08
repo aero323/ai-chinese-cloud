@@ -55,7 +55,6 @@ export function OperatorGovernance() {
                   <span>{owner?.name} 发布</span>
                 </div>
                 <h2>{set.title}</h2>
-                <p>{set.description}</p>
                 <div className="governance-meta">
                   <span><BookOpen size={15} /> {getLesson(state, set.lessonId)?.title}</span>
                   <span><Layers3 size={15} /> {currentVersion?.items.length ?? 0} 题</span>

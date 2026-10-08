@@ -287,10 +287,15 @@ function defaultSpeakingScores(): InteractionScoreItem[] {
 
 export function InteractionEditor({
   items,
-  onChange
+  onChange,
+  activeItemId = "",
+  onActiveItemChange
 }: {
   items: InteractionItem[];
   onChange: (items: InteractionItem[]) => void;
+  /** 当前高亮的题目：决定哪张题目卡片处于编辑态。 */
+  activeItemId?: string;
+  onActiveItemChange?: (itemId: string) => void;
 }) {
   function updateItem(itemId: string, patch: Partial<InteractionItem>) {
     onChange(items.map((item) => (item.id === itemId ? { ...item, ...patch } : item)));
@@ -298,6 +303,13 @@ export function InteractionEditor({
 
   function removeItem(itemId: string) {
     onChange(items.filter((item) => item.id !== itemId));
+  }
+
+  function addItem(type: InteractionType) {
+    const nextItem = createInteractionItem(type);
+    onChange([...items, nextItem]);
+    // 新加的题目直接成为当前编辑项，老师可以边填边改。
+    onActiveItemChange?.(nextItem.id);
   }
 
   return (
@@ -309,7 +321,7 @@ export function InteractionEditor({
         </div>
         <div className="editor-add-group">
           {typeOptions.map((option) => (
-            <Button key={option.type} size="sm" variant="secondary" onClick={() => onChange([...items, createInteractionItem(option.type)])} title={option.hint}>
+            <Button key={option.type} size="sm" variant="secondary" onClick={() => addItem(option.type)} title={option.hint}>
               <Plus size={15} /> {option.label}
             </Button>
           ))}
@@ -324,13 +336,21 @@ export function InteractionEditor({
       )}
 
       <div className="editor-item-list">
-        {items.map((item, index) => (
-          <article className="editor-item-card" key={item.id}>
+        {items.map((item, index) => {
+          const isActive = item.id === activeItemId;
+          return (
+          <article
+            className={`editor-item-card ${isActive ? "is-active" : ""}`}
+            key={item.id}
+            onClick={() => onActiveItemChange?.(item.id)}
+            onFocusCapture={() => onActiveItemChange?.(item.id)}
+          >
             <header>
               <span className="editor-index">{index + 1}</span>
               <div>
                 <strong>
                   {typeOptions.find((option) => option.type === item.type)?.label}
+                  {isActive && <span className="editor-active-chip">编辑中</span>}
                 </strong>
                 <small>{typeOptions.find((option) => option.type === item.type)?.hint}</small>
               </div>
@@ -447,7 +467,8 @@ export function InteractionEditor({
               <SpeakingEditor item={item} onChange={(patch) => updateItem(item.id, patch)} />
             )}
           </article>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

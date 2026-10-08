@@ -1,14 +1,17 @@
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   BarChart3,
   Bell,
   BookOpenCheck,
+  Building2,
   CalendarDays,
   CalendarOff,
   ChevronLeft,
   ClipboardList,
+  Eye,
+  EyeOff,
   FolderTree,
   GraduationCap,
   Home,
@@ -17,31 +20,33 @@ import {
   Menu,
   Radio,
   ShieldCheck,
-  SlidersHorizontal,
   Sparkles,
+  Trophy,
   Users,
   X
 } from "lucide-react";
 import { platform } from "../lib/platform";
-import { FEATURES } from "../config/features";
 import { roleHome, usePlatformStore } from "../store/usePlatformStore";
 import { currentUser } from "../lib/domain";
 import { setTeacherDemoMode, useTeacherDemoMode } from "../lib/teacherLiveDemo";
 import { timeZoneLabel } from "../lib/format";
 import type { Role } from "../domain/types";
 import { Avatar, Badge, Button, Select } from "./ui";
+import { getPmNoteVisibility, PmNote, setPmNoteVisibility } from "./PmNote";
 
 const navIcons = {
   dashboard: Home,
   booking: Sparkles,
   schedule: CalendarDays,
   results: BarChart3,
-  interactionDesign: SlidersHorizontal,
+  grades: GraduationCap,
   materials: LibraryBig,
   catalog: FolderTree,
   scheduling: ClipboardList,
   students: Users,
+  schools: Building2,
   governance: ShieldCheck,
+  performance: Trophy,
   audit: ListRestart,
   notifications: Bell
 };
@@ -52,7 +57,7 @@ function navItems(role: Role, t: (key: string) => string) {
       { to: "/student", end: true, key: "dashboard", label: t("nav.dashboard") },
       { to: "/student/book", key: "booking", label: t("nav.booking") },
       { to: "/student/schedule", key: "schedule", label: t("nav.schedule") },
-      ...(FEATURES.studentResults ? [{ to: "/student/results", key: "results", label: t("nav.results") }] : []),
+      { to: "/student/grades", key: "grades", label: t("nav.grades") },
       { to: "/notifications", key: "dashboard", label: t("common.notifications") }
     ];
   }
@@ -60,9 +65,19 @@ function navItems(role: Role, t: (key: string) => string) {
     return [
       { to: "/teacher", end: true, key: "dashboard", label: t("nav.dashboard") },
       { to: "/teacher/schedule", key: "schedule", label: t("nav.schedule") },
-      { to: "/teacher/interactions", key: "interactionDesign", label: t("nav.interactionDesign") },
       { to: "/teacher/materials", key: "materials", label: t("nav.materials") },
       { to: "/teacher/results", key: "results", label: t("nav.results") },
+      { to: "/teacher/grades", key: "grades", label: t("nav.studentGrades") },
+      { to: "/notifications", key: "dashboard", label: t("common.notifications") }
+    ];
+  }
+  if (role === "academic") {
+    return [
+      { to: "/academic", end: true, key: "dashboard", label: t("nav.dashboard") },
+      { to: "/academic/scheduling", key: "scheduling", label: t("nav.scheduling") },
+      { to: "/academic/students", key: "students", label: t("nav.students") },
+      { to: "/academic/performance", key: "performance", label: t("nav.performance") },
+      { to: "/academic/audit", key: "audit", label: t("nav.audit") },
       { to: "/notifications", key: "dashboard", label: t("common.notifications") }
     ];
   }
@@ -71,6 +86,7 @@ function navItems(role: Role, t: (key: string) => string) {
     { to: "/operator/catalog", key: "catalog", label: t("nav.catalog") },
     { to: "/operator/scheduling", key: "scheduling", label: t("nav.scheduling") },
     { to: "/operator/students", key: "students", label: t("nav.students") },
+    { to: "/operator/schools", key: "schools", label: t("nav.schools") },
     { to: "/operator/governance", key: "governance", label: t("nav.governance") },
     { to: "/operator/audit", key: "audit", label: t("nav.audit") },
     { to: "/notifications", key: "dashboard", label: t("common.notifications") }
@@ -83,13 +99,22 @@ export function AppShell() {
   const location = useLocation();
   const { state, refresh, switchUser, reset } = usePlatformStore();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [notesVisible, setNotesVisible] = useState(getPmNoteVisibility);
   const [teacherDemoMode] = useTeacherDemoMode();
   const user = currentUser(state);
   const role = user.role;
   const items = navItems(role, t);
   const unread = state.notifications.filter((notice) => notice.userId === user.id && !notice.read).length;
-  const activeUserOptions = useMemo(
-    () => [...state.users].sort((a, b) => a.role.localeCompare(b.role)),
+  // 角色预览把账号按角色分组，学生多的时候也能一眼看清结构。
+  const roleOrder: Role[] = ["academic", "operator", "teacher", "student"];
+  const userGroups = useMemo(
+    () =>
+      roleOrder
+        .map((role) => ({
+          role,
+          users: state.users.filter((item) => item.role === role).sort((a, b) => a.name.localeCompare(b.name, "zh-CN"))
+        }))
+        .filter((group) => group.users.length > 0),
     [state.users]
   );
 
@@ -101,6 +126,10 @@ export function AppShell() {
   useEffect(() => {
     setMobileOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    setPmNoteVisibility(notesVisible);
+  }, [notesVisible]);
 
   useEffect(() => {
     if (state.ui.language !== i18n.language) void i18n.changeLanguage(state.ui.language);
@@ -132,25 +161,53 @@ export function AppShell() {
         </div>
 
         <div className="role-summary">
-          <Avatar label={user.avatar} tone={role === "teacher" ? "orange" : role === "operator" ? "blue" : "purple"} />
+          <Avatar label={user.avatar} tone={role === "teacher" ? "orange" : role === "academic" ? "mint" : role === "operator" ? "blue" : "purple"} />
           <div>
             <strong>{user.name}</strong>
             <small>{t(`common.${role}`)}</small>
           </div>
-          <Badge tone={role === "teacher" ? "orange" : role === "operator" ? "blue" : "purple"}>{t(`common.${role}`)}</Badge>
+          <Badge tone={role === "teacher" ? "orange" : role === "operator" ? "blue" : role === "academic" ? "mint" : "purple"}>{t(`common.${role}`)}</Badge>
         </div>
 
         <nav className="sidebar-nav">
           {items.map((item) => {
             const Icon = navIcons[item.key as keyof typeof navIcons] ?? Home;
             const isNotification = item.to === "/notifications";
-            return (
-              <NavLink key={`${item.to}-${item.label}`} to={item.to} end={item.end}>
+            const link = (
+              <NavLink to={item.to} end={item.end}>
                 <Icon size={18} />
                 <span>{item.label}</span>
                 {isNotification && unread > 0 && <b className="nav-count">{unread}</b>}
               </NavLink>
             );
+            const itemKey = `${item.to}-${item.label}`;
+            if (role === "teacher" && item.to === "/teacher/schedule") {
+              return (
+                <PmNote
+                  key={itemKey}
+                  block
+                  kind="注意"
+                  className="sidebar-nav-note sidebar-nav-note-highlight"
+                  note="一期最重要的是做课中互动里的「添加互动设计」。保存发布后，学生端会在上课时实时调用。"
+                >
+                  {link}
+                </PmNote>
+              );
+            }
+            if (item.to === "/student/book") {
+              return (
+                <PmNote
+                  key={itemKey}
+                  block
+                  kind="注意"
+                  className="sidebar-nav-note"
+                  note="整套报名约课流程可以先不做，现阶段先了解产品逻辑。"
+                >
+                  {link}
+                </PmNote>
+              );
+            }
+            return <Fragment key={itemKey}>{link}</Fragment>;
           })}
         </nav>
 
@@ -176,21 +233,24 @@ export function AppShell() {
             <Menu size={20} />
           </Button>
 
-          <div className="demo-switcher">
+          <PmNote kind="流程" note="切换身份后重新加载对应工作区，并带上该账号默认的语言与时区。" className="demo-switcher">
             <span className="demo-dot" />
             <Select value={user.id} onChange={(event) => changeUser(event.target.value)} aria-label={t("common.switchRole")}>
-              {activeUserOptions.map((option) => (
-                <option key={option.id} value={option.id}>
-                  {option.name} · {t(`common.${option.role}`)}
-                </option>
+              {userGroups.map((group) => (
+                <optgroup key={group.role} label={t(`common.${group.role}`)}>
+                  {group.users.map((option) => (
+                    <option key={option.id} value={option.id}>{option.name}</option>
+                  ))}
+                </optgroup>
               ))}
             </Select>
-          </div>
+          </PmNote>
 
           <div className="topbar-spacer" />
 
           {role === "teacher" && (
-            <div className="teacher-demo-mode" role="group" aria-label="教师端演示数据">
+            <PmNote kind="规则" className="teacher-demo-mode" note="课堂视图只决定工作台展示实时态还是空闲态，不会修改真实排课。">
+              <div role="group" aria-label="课堂视图">
               <span className="teacher-demo-mode-label">演示数据</span>
               <button className={teacherDemoMode === "live" ? "active live" : ""} onClick={() => setTeacherDemoMode("live")} type="button">
                 <Radio size={14} /> 有课
@@ -198,27 +258,44 @@ export function AppShell() {
               <button className={teacherDemoMode === "empty" ? "active empty" : ""} onClick={() => setTeacherDemoMode("empty")} type="button">
                 <CalendarOff size={14} /> 没课
               </button>
-            </div>
+              </div>
+            </PmNote>
           )}
 
-          <Select
-            className="timezone-select"
-            value={state.ui.language}
-            onChange={(event) => {
-              const language = event.target.value as "zh-CN" | "id-ID";
-              platform.updatePreferences({ language });
-              refresh();
-              void i18n.changeLanguage(language);
-            }}
-            aria-label={t("common.language")}
+          <Button
+            className={`pm-note-toggle ${notesVisible ? "is-on" : ""}`}
+            variant="secondary"
+            size="sm"
+            aria-pressed={notesVisible}
+            title={notesVisible ? "隐藏全部研发标注" : "显示全部研发标注"}
+            onClick={() => setNotesVisible((value) => !value)}
           >
-            <option value="zh-CN">中文</option>
-            <option value="id-ID">Bahasa Indonesia</option>
-          </Select>
+            {notesVisible ? <Eye size={15} /> : <EyeOff size={15} />}
+            <span className="pm-note-toggle-label">标注：{notesVisible ? "开" : "关"}</span>
+          </Button>
 
-          <button className="timezone-chip" title={t("common.timezone")}>
-            {timeZoneLabel(user.timeZone)}
-          </button>
+          <PmNote kind="规则" note="语言和时区属于查看者偏好。切换后立即影响当前工作区，不改业务数据。">
+            <Select
+              className="timezone-select"
+              value={state.ui.language}
+              onChange={(event) => {
+                const language = event.target.value as "zh-CN" | "id-ID";
+                platform.updatePreferences({ language });
+                refresh();
+                void i18n.changeLanguage(language);
+              }}
+              aria-label={t("common.language")}
+            >
+              <option value="zh-CN">中文</option>
+              <option value="id-ID">Bahasa Indonesia</option>
+            </Select>
+          </PmNote>
+
+          <PmNote kind="口径" className="pm-note-timezone" note="课次仍按统一时间存储，页面只按当前用户时区展示。">
+            <button className="timezone-chip" title={t("common.timezone")}>
+              {timeZoneLabel(user.timeZone)}
+            </button>
+          </PmNote>
 
           <Button size="icon" variant="ghost" className="notification-button" onClick={() => navigate("/notifications")}>
             <Bell size={19} />

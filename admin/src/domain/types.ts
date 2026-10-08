@@ -1,8 +1,12 @@
-export type Role = "student" | "teacher" | "operator";
+export type Role = "student" | "teacher" | "operator" | "academic";
+export type SchoolRole = "student" | "teacher" | "academic";
 export type Phase = "preview" | "live" | "review";
 export type SessionStatus = "published" | "cancelled" | "draft";
-export type BookingStatus = "booked" | "cancelled";
+export type BookingStatus = "booked" | "pending_review" | "cancelled";
 export type WaitlistStatus = "waiting" | "promoted" | "cancelled";
+export type GradeCategory = "interaction" | "homework" | "exam";
+export type AssessmentCategory = Exclude<GradeCategory, "interaction">;
+export type AssessmentScoreStatus = "pending" | "graded" | "absent" | "excused";
 export type InteractionType =
   | "match"
   | "memory"
@@ -29,6 +33,24 @@ export interface InteractionScoreItem {
   label: string;
   stars: number;
 }
+export interface School {
+  id: string;
+  name: string;
+  code: string;
+  status: "active" | "archived";
+  createdAt: string;
+}
+
+export interface SchoolMembership {
+  id: string;
+  schoolId: string;
+  userId: string;
+  role: SchoolRole;
+  status: "active" | "left";
+  joinedAt: string;
+  leftAt?: string;
+}
+
 export interface PlatformUser {
   id: string;
   role: Role;
@@ -49,12 +71,35 @@ export interface StudentProfile {
   userId: string;
   program: string;
   level: string;
+  /** 学生所在班级，例如「周三晚 A 班」。 */
+  className?: string;
+  /** 学生主班级的稳定 id；约课加入的其他班级通过 ClassEnrollment 记录。 */
+  primaryClassId?: string;
   learningGoal: string;
   preferredTeacherId: string;
   preferredTimeZone: string;
   joinedAt: string;
   tags: string[];
   notes: string;
+}
+
+export interface ClassGroup {
+  id: string;
+  schoolId: string;
+  name: string;
+  teacherId: string;
+  status: "active" | "archived";
+  createdAt: string;
+}
+
+export interface ClassEnrollment {
+  id: string;
+  classId: string;
+  studentId: string;
+  status: "active" | "left";
+  joinedAt: string;
+  leftAt?: string;
+  source: "profile" | "booking" | "manual";
 }
 
 export interface CourseFolder {
@@ -81,6 +126,12 @@ export interface Lesson {
 
 export interface ClassSeries {
   id: string;
+  schoolId: string;
+  /** 系列主题对应的课程目录；同一系列内的课节来自同一目录。 */
+  folderId: string;
+  /** 系列包含的课节，按开课顺序排列。 */
+  lessonIds: string[];
+  /** 第一个课节，保留用于封面色、图标等展示。 */
   lessonId: string;
   title: string;
   description: string;
@@ -95,10 +146,15 @@ export interface ClassSeries {
 
 export interface ClassSession {
   id: string;
+  schoolId: string;
   lessonId: string;
   seriesId: string | null;
   teacherId: string;
   title: string;
+  /** 该课次所属班级，例如“印尼圣心学校7年级A班”。 */
+  className: string;
+  /** 稳定班级 id，班级名称修改后仍保持不变。 */
+  classId: string;
   startAt: string;
   endAt: string;
   capacity: number;
@@ -108,6 +164,8 @@ export interface ClassSession {
   language: string;
   roomLabel: string;
   source: "single" | "series";
+  /** 预约后需要教学管理审核，审核通过才占用名额并加入班级。 */
+  approvalRequired?: boolean;
   cancelledAt?: string;
   cancelReason?: string;
 }
@@ -117,9 +175,12 @@ export interface Booking {
   sessionId: string;
   studentId: string;
   status: BookingStatus;
-  source: "student" | "operator" | "waitlist";
+  source: "student" | "operator" | "academic" | "waitlist";
   createdAt: string;
   enrollmentId: string | null;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  reviewNote?: string;
   cancelledAt?: string;
   cancelledBy?: string;
   cancelReason?: string;
@@ -277,7 +338,6 @@ export interface InteractionSet {
   id: string;
   lessonId: string;
   title: string;
-  description: string;
   phase: Phase;
   status: "draft" | "published";
   currentVersionId: string;
@@ -285,6 +345,49 @@ export interface InteractionSet {
   updatedAt: string;
   /** 为空 = 作用于该课节的所有课次；否则只在列出的课次出现。 */
   sessionIds?: string[];
+  /** 从这里列出的课次中排除；用于「全课节」范围下单独移出某一课次。 */
+  excludedSessionIds?: string[];
+  /** 是否把该互动的成绩计入互动练习分类；纯投票和语音占位默认关闭。 */
+  countsTowardGrade: boolean;
+}
+
+export interface GradePolicy {
+  id: string;
+  /** null = 平台默认规则；有值 = 指定学校覆盖规则。 */
+  schoolId: string | null;
+  effectiveFrom: string;
+  weights: Record<GradeCategory, number>;
+  updatedBy: string;
+  updatedAt: string;
+}
+
+export interface GradeAssessment {
+  id: string;
+  schoolId: string;
+  classId: string;
+  title: string;
+  category: AssessmentCategory;
+  maxScore: number;
+  assessedAt: string;
+  teacherId: string;
+  createdBy: string;
+  createdAt: string;
+  status: "published" | "archived";
+  /** 创建时锁定的班级成员，后续成员变化不回写。 */
+  rosterStudentIds: string[];
+}
+
+export interface AssessmentScore {
+  id: string;
+  assessmentId: string;
+  studentId: string;
+  score: number | null;
+  normalizedScore: number | null;
+  status: AssessmentScoreStatus;
+  gradedBy?: string;
+  gradedAt?: string;
+  updatedAt: string;
+  updatedBy: string;
 }
 
 export type InteractionTemplateLevel = "beginner" | "intermediate" | "advanced";
@@ -367,6 +470,10 @@ export interface LessonMaterialRef {
   phase: Phase;
   order: number;
   published: boolean;
+  /** 为空 = 作用于该课节的所有课次；否则只在列出的课次出现。 */
+  sessionIds?: string[];
+  /** 从这里列出的课次中排除；用于「全课节」范围下单独移出某一课次。 */
+  excludedSessionIds?: string[];
 }
 
 export type ChangeRequestKind = "reschedule" | "add_session" | "new_lesson_plan" | "teacher_swap" | "cancel";
@@ -397,6 +504,7 @@ export interface NotificationItem {
 
 export interface AuditEvent {
   id: string;
+  schoolId?: string;
   actorId: string;
   action: string;
   targetType: string;
@@ -416,7 +524,11 @@ export interface PlatformState {
     sidebarCollapsed: boolean;
   };
   users: PlatformUser[];
+  schools: School[];
+  schoolMemberships: SchoolMembership[];
   students: StudentProfile[];
+  classes: ClassGroup[];
+  classEnrollments: ClassEnrollment[];
   folders: CourseFolder[];
   lessons: Lesson[];
   series: ClassSeries[];
@@ -427,6 +539,9 @@ export interface PlatformState {
   interactionVersions: InteractionVersion[];
   interactionTemplates: InteractionTemplate[];
   interactionAttempts: InteractionAttempt[];
+  gradePolicies: GradePolicy[];
+  assessments: GradeAssessment[];
+  assessmentScores: AssessmentScore[];
   materials: Material[];
   materialRefs: LessonMaterialRef[];
   notifications: NotificationItem[];
@@ -449,28 +564,45 @@ export interface PlatformStoreApi {
   subscribe(listener: (state: PlatformState) => void): () => void;
   resetDemo(): StoreResult<PlatformState>;
   setCurrentUser(userId: string): StoreResult<PlatformUser>;
+  createSchool(input: { name: string; code: string; actorId?: string }): StoreResult<School>;
+  updateSchool(input: { schoolId: string; patch: Partial<Pick<School, "name" | "code" | "status">>; actorId?: string }): StoreResult<School>;
+  saveSchoolMembership(input: { schoolId: string; userId: string; role: SchoolRole; status?: "active" | "left"; actorId?: string }): StoreResult<SchoolMembership>;
   updatePreferences(patch: { language?: "zh-CN" | "id-ID"; timeZone?: string; sidebarCollapsed?: boolean }): StoreResult<PlatformState["ui"]>;
   bookSession(input: { studentId: string; sessionId: string; force?: boolean; reason?: string; source?: string; actorId?: string }): StoreResult<Booking>;
   joinWaitlist(input: { studentId: string; sessionId: string; seriesId?: string | null; sessionIds?: string[] }): StoreResult<WaitlistEntry>;
   leaveWaitlist(input: { waitlistId: string; actorId?: string; reason?: string }): StoreResult<WaitlistEntry>;
   cancelBooking(input: { bookingId: string; actorId?: string; force?: boolean; reason?: string }): StoreResult<Booking[]>;
+  reviewBooking(input: { bookingId: string; decision: "approve" | "reject"; reason: string; actorId?: string }): StoreResult<Booking>;
   enrollSeries(input: { studentId: string; seriesId: string; joinAsWaitlist?: boolean; force?: boolean; reason?: string; actorId?: string }): StoreResult<Booking[] | WaitlistEntry>;
+  createClass(input: { name: string; teacherId: string; status?: "active" | "archived"; schoolId?: string; actorId?: string }): StoreResult<ClassGroup>;
+  updateClass(input: { classId: string; patch: Partial<Pick<ClassGroup, "name" | "teacherId" | "status">>; actorId?: string; reason?: string }): StoreResult<ClassGroup>;
+  addClassMembers(input: { classId: string; studentIds: string[]; actorId?: string }): StoreResult<ClassEnrollment[]>;
+  removeClassMember(input: { classId: string; studentId: string; actorId?: string }): StoreResult<ClassEnrollment>;
   createSession(input: Partial<ClassSession> & { title: string; lessonId: string; teacherId: string; startAt: string; endAt: string; capacity: number; actorId?: string; reason?: string }): StoreResult<ClassSession>;
-  createSeries(input: { title: string; description?: string; lessonId: string; teacherId: string; startAt: string; sessionCount: number; intervalWeeks: number; durationMinutes: number; capacity: number; roomLabel?: string; actorId?: string; reason?: string }): StoreResult<ClassSeries>;
+  createSeries(input: { title: string; description?: string; className?: string; classId?: string; folderId?: string; lessonIds: string[]; sessionSchedule?: Array<{ lessonId: string; startAt: string }>; teacherId: string; startAt: string; intervalWeeks: number; durationMinutes: number; capacity: number; roomLabel?: string; schoolId?: string; actorId?: string; reason?: string }): StoreResult<ClassSeries>;
   updateSession(input: { sessionId: string; patch: Partial<ClassSession>; actorId?: string; reason?: string }): StoreResult<ClassSession>;
+  updateSeriesSchedule(input: { seriesId: string; schedule: Array<{ sessionId: string; startAt: string; durationMinutes?: number }>; actorId?: string; reason?: string }): StoreResult<ClassSeries>;
   cancelSession(input: { sessionId: string; actorId: string; reason: string }): StoreResult<ClassSession>;
-  saveInteractionSet(input: Partial<InteractionSet> & { setId?: string; lessonId: string; title: string; description: string; phase: Phase; items: InteractionItem[]; actorId?: string; publishNote?: string }): StoreResult<{ set: InteractionSet; version: InteractionVersion }>;
+  saveInteractionSet(input: Partial<InteractionSet> & { setId?: string; lessonId: string; title: string; phase: Phase; items: InteractionItem[]; countsTowardGrade?: boolean; actorId?: string; publishNote?: string }): StoreResult<{ set: InteractionSet; version: InteractionVersion }>;
   rollbackInteractionVersion(input: { setId: string; versionId: string; actorId?: string }): StoreResult<{ set: InteractionSet; version: InteractionVersion }>;
   assignInteractionSessions(input: { setId: string; sessionIds: string[]; actorId?: string }): StoreResult<InteractionSet>;
+  excludeInteractionSession(input: { setId: string; sessionId: string; excluded: boolean; actorId?: string }): StoreResult<InteractionSet>;
+  unassignInteractionSet(input: { setId: string; actorId?: string }): StoreResult<InteractionSet>;
   createFolder(input: { parentId?: string; name: string; description?: string; color?: string; actorId?: string }): StoreResult<CourseFolder>;
   createLesson(input: { folderId: string; title: string; subtitle?: string; description?: string; durationMinutes?: number; tags?: string[]; color?: string; coverEmoji?: string; actorId?: string }): StoreResult<Lesson>;
-  createStudent(input: { name: string; phone?: string; timeZone?: string; locale?: string; program?: string; level?: string; learningGoal?: string; preferredTeacherId?: string; actorId?: string }): StoreResult<{ user: PlatformUser; profile: StudentProfile }>;
+  createStudent(input: { name: string; phone?: string; timeZone?: string; locale?: string; program?: string; level?: string; className?: string; learningGoal?: string; preferredTeacherId?: string; schoolId?: string; actorId?: string }): StoreResult<{ user: PlatformUser; profile: StudentProfile }>;
   addMockMaterial(input: { title: string; description: string; fileType?: string; language?: string; ownerId?: string; phase?: Phase; lessonId?: string; fileName?: string; sizeLabel?: string }): StoreResult<Material>;
-  attachMaterial(input: { materialId: string; lessonId: string; phase: Phase; order?: number; actorId?: string }): StoreResult<Material>;
+  attachMaterial(input: { materialId: string; lessonId: string; phase: Phase; order?: number; sessionIds?: string[]; actorId?: string }): StoreResult<Material>;
+  detachMaterial(input: { materialId: string; lessonId: string; phase: Phase; actorId?: string }): StoreResult<Material>;
+  excludeMaterialSession(input: { materialId: string; lessonId: string; phase: Phase; sessionId: string; excluded: boolean; actorId?: string }): StoreResult<Material>;
   addMaterialVersion(input: { materialId: string; fileName: string; sizeLabel: string; actorId?: string }): StoreResult<Material>;
   setMaterialStatus(input: { materialId: string; status: "published" | "unpublished"; actorId?: string; reason?: string }): StoreResult<Material>;
   trackDownload(materialId: string): StoreResult<Material>;
   recordAttempt(input: { setId: string; studentId: string; sessionId?: string | null; phase: Phase; answers: Record<string, unknown>; score: number; timeSpentSeconds: number; wrongItemIds?: string[]; pollAnswers?: Record<string, string> }): StoreResult<InteractionAttempt>;
+  createAssessment(input: { classId: string; title: string; category: AssessmentCategory; maxScore?: number; assessedAt: string; actorId?: string }): StoreResult<GradeAssessment>;
+  saveAssessmentScores(input: { assessmentId: string; entries: Array<{ studentId: string; score?: number | null; status: AssessmentScoreStatus }>; actorId?: string }): StoreResult<AssessmentScore[]>;
+  archiveAssessment(input: { assessmentId: string; actorId?: string; reason?: string }): StoreResult<GradeAssessment>;
+  saveGradePolicy(input: { effectiveFrom: string; weights: Record<GradeCategory, number>; schoolId?: string | null; actorId?: string }): StoreResult<GradePolicy>;
   updateStudent(input: { studentId: string; patch: Partial<PlatformUser & StudentProfile>; actorId?: string; reason?: string }): StoreResult<{ user: PlatformUser; profile: StudentProfile }>;
   requestSessionChange(input: { sessionId: string; kind: ChangeRequestKind; reason: string; actorId?: string }): StoreResult<ChangeRequest>;
   resolveChangeRequest(input: { requestId: string; status?: "handled" | "rejected"; resolutionNote?: string; actorId?: string }): StoreResult<ChangeRequest>;

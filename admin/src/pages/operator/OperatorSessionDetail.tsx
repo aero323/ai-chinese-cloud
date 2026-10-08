@@ -1,19 +1,27 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, CalendarClock, Clock3, MapPin, Pencil, Plus, UsersRound, XCircle } from "lucide-react";
+import { ArrowLeft, CalendarClock, Clock3, GraduationCap, MapPin, Pencil, Plus, UsersRound, XCircle } from "lucide-react";
 import { platform } from "../../lib/platform";
 import { usePlatformStore } from "../../store/usePlatformStore";
 import { currentUser, getBookedCount, getLesson, getSession, getStudent, getWaitlist, getUser } from "../../lib/domain";
+import { getAcademicSchoolId, workspaceState } from "../../lib/academicScope";
 import { formatDate, formatRange, inputDateTime } from "../../lib/format";
 import { Avatar, Badge, Button, Card, EmptyState, Field, Modal, PageHeader, ProgressBar, Select, SourceBadge, TextInput } from "../../components/ui";
 
-export function OperatorSessionDetail() {
+export function OperatorSessionDetail({
+  academic = false,
+  basePath = "/operator"
+}: {
+  academic?: boolean;
+  basePath?: string;
+} = {}) {
   const { sessionId = "" } = useParams();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { state, run } = usePlatformStore();
-  const user = currentUser(state);
+  const { state: rawState, run } = usePlatformStore();
+  const user = currentUser(rawState);
+  const state = academic ? workspaceState(rawState, getAcademicSchoolId(rawState, user)) : rawState;
   const session = getSession(state, sessionId);
   const lesson = session ? getLesson(state, session.lessonId) : undefined;
   const [proxyOpen, setProxyOpen] = useState(false);
@@ -22,13 +30,14 @@ export function OperatorSessionDetail() {
   const [reason, setReason] = useState("");
   const [proxyForm, setProxyForm] = useState({ studentId: "", force: false, reason: "" });
   const [editForm, setEditForm] = useState(() => ({
+    classId: session?.classId ?? "",
     capacity: session?.capacity ?? 30,
     teacherId: session?.teacherId ?? "",
     startAt: inputDateTime(session?.startAt ?? new Date()),
     durationMinutes: session ? Math.round((new Date(session.endAt).getTime() - new Date(session.startAt).getTime()) / 60_000) : 40
   }));
 
-  if (!session || !lesson) return <EmptyState title="班次不存在" action={<Button onClick={() => navigate("/operator/scheduling")}>返回排课</Button>} />;
+  if (!session || !lesson) return <EmptyState title="班次不存在" action={<Button onClick={() => navigate(`${basePath}/scheduling`)}>返回排课</Button>} />;
 
   const bookings = state.bookings.filter((booking) => booking.sessionId === session.id && booking.status === "booked");
   const waitlist = getWaitlist(state, session.id);
@@ -62,6 +71,7 @@ export function OperatorSessionDetail() {
         platform.updateSession({
           sessionId: session!.id,
           patch: {
+            classId: editForm.classId,
             capacity: Number(editForm.capacity),
             teacherId: editForm.teacherId,
             startAt: start.toISOString(),
@@ -70,7 +80,7 @@ export function OperatorSessionDetail() {
             cancelCloseAt: new Date(start.getTime() - 2 * 60 * 60_000).toISOString()
           },
           actorId: user.id,
-          reason: "教学管理调整班次"
+          reason: academic ? "学校教务调整本校班次" : "教学管理调整班次"
         }),
       "班次信息已更新"
     );
@@ -85,6 +95,7 @@ export function OperatorSessionDetail() {
         description={`${lesson.title} · ${formatDate(session.startAt, state.ui.timeZone, state.ui.language)}`}
         actions={
           <>
+            <Button variant="ghost" onClick={() => navigate(`${basePath}/scheduling`)}><ArrowLeft size={16} /> 返回排课</Button>
             <Button variant="secondary" onClick={() => setEditOpen(true)}><Pencil size={16} /> 编辑班次</Button>
             <Button variant="danger" onClick={() => setCancelOpen(true)}><XCircle size={16} /> 取消课堂</Button>
           </>
@@ -102,6 +113,7 @@ export function OperatorSessionDetail() {
           <h2>{lesson.title}</h2>
           <p>{lesson.description}</p>
           <div className="session-meta">
+            <span><GraduationCap size={15} /> {session.className}</span>
             <span><CalendarClock size={15} /> {formatRange(session.startAt, session.endAt, state.ui.timeZone, state.ui.language)}</span>
             <span><MapPin size={15} /> {session.roomLabel}</span>
             <span><UsersRound size={15} /> {waitlist.length} 人候补</span>
@@ -120,7 +132,7 @@ export function OperatorSessionDetail() {
             <div>
               <span className="eyebrow">Bookings</span>
               <h2>预约名单</h2>
-              <p>教学管理可以代学生预约、改约或取消，并留下操作原因。</p>
+              <p>{academic ? "学校教务可以为本校学生代约、改约或取消，并留下操作原因。" : "教学管理可以代学生预约、改约或取消，并留下操作原因。"}</p>
             </div>
             <Button onClick={() => setProxyOpen(true)}><Plus size={16} /> {t("operator.forceBook")}</Button>
           </div>
@@ -238,6 +250,11 @@ export function OperatorSessionDetail() {
         footer={<div className="modal-footer-split"><small>已有学生会收到课程变更通知</small><div><Button variant="ghost" onClick={() => setEditOpen(false)}>取消</Button><Button onClick={saveEdit}>保存修改</Button></div></div>}
       >
         <div className="editor-grid">
+          <Field label="班级名称" className="field-span-2">
+            <Select value={editForm.classId} onChange={(event) => setEditForm((value) => ({ ...value, classId: event.target.value }))}>
+              {state.classes.filter((item) => item.status === "active").map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+            </Select>
+          </Field>
           <Field label="开始时间" className="field-span-2">
             <TextInput type="datetime-local" value={editForm.startAt} onChange={(event) => setEditForm((value) => ({ ...value, startAt: event.target.value }))} />
           </Field>

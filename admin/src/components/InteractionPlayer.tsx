@@ -19,8 +19,9 @@ import { CSS } from "@dnd-kit/utilities";
 import { Check, GripVertical, RotateCcw, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { InteractionItem, InteractionMedia } from "../domain/types";
-import { INTERACTION_TYPE_SHORT_LABELS } from "../lib/interactionTypes";
+import { INTERACTION_TYPE_LABELS, INTERACTION_TYPE_SHORT_LABELS } from "../lib/interactionTypes";
 import { Badge, Button, ProgressBar } from "./ui";
+import { StudentPhoneMock } from "./StudentPhoneMock";
 
 export interface PlayerResult {
   score: number;
@@ -37,6 +38,10 @@ interface InteractionPlayerProps {
   preview?: boolean;
   /** 投影原题场景：只演示当前这一题，底部不显示“关闭”和“下一题/完成”。 */
   projection?: boolean;
+  /** app = 学生端手机画面：隐藏后台用的题号、题型角标、进度条和底部操作，只留题目与反馈。 */
+  variant?: "default" | "app";
+  /** 手机壳预览从第几题开始（编辑器里预览当前编辑的那一题）。 */
+  initialIndex?: number;
 }
 
 const LETTERS = ["A", "B", "C", "D", "E", "F"];
@@ -50,13 +55,26 @@ function shuffle<T>(items: T[]) {
   return next;
 }
 
-export function InteractionPlayer({ items, onComplete, onClose, preview = false, projection = false }: InteractionPlayerProps) {
+export function InteractionPlayer({
+  items,
+  onComplete,
+  onClose,
+  preview = false,
+  projection = false,
+  variant = "default",
+  initialIndex = 0
+}: InteractionPlayerProps) {
+  const appMode = variant === "app";
   const { t } = useTranslation();
-  const [index, setIndex] = useState(0);
+  const [index, setIndex] = useState(() =>
+    Math.min(Math.max(initialIndex, 0), Math.max(0, items.length - 1))
+  );
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
   const [results, setResults] = useState<Record<string, boolean | null>>({});
   const [pollAnswers, setPollAnswers] = useState<Record<string, string>>({});
   const [startedAt] = useState(() => Date.now());
+  /** 手机壳预览答完最后一题后的结果页，只在 app 模式使用。 */
+  const [finalResult, setFinalResult] = useState<PlayerResult | null>(null);
   const current = items[index];
 
   function resolveItem(itemId: string, correct: boolean, answer: unknown) {
@@ -73,13 +91,24 @@ export function InteractionPlayer({ items, onComplete, onClose, preview = false,
     const correctCount = scored.filter((item) => results[item.id] === true).length;
     const score = scored.length ? Math.round((correctCount / scored.length) * 100) : 100;
     const wrongItemIds = scored.filter((item) => results[item.id] !== true).map((item) => item.id);
-    onComplete?.({
+    const payload = {
       score,
       answers,
       wrongItemIds,
       pollAnswers,
       elapsedSeconds: Math.max(1, Math.round((Date.now() - startedAt) / 1000))
-    });
+    };
+    setFinalResult(payload);
+    onComplete?.(payload);
+  }
+
+  /** 手机壳预览的「重做」：清空作答，从第一题重新开始。 */
+  function resetRun() {
+    setResults({});
+    setAnswers({});
+    setPollAnswers({});
+    setIndex(0);
+    setFinalResult(null);
   }
 
   if (!current) {
@@ -105,22 +134,38 @@ export function InteractionPlayer({ items, onComplete, onClose, preview = false,
             ? `${current.sentence ?? ""}（${current.promptPinyin ?? ""}）`
             : "";
 
-  return (
-    <section className="interaction-player">
+  const done = appMode && finalResult !== null;
+  const player = (
+    <section className={`interaction-player ${appMode ? "player-app-mode" : ""} ${done ? "is-done" : ""}`}>
       <header className="player-header">
         <div>
-          <span className="eyebrow">
-            互动 {index + 1} / {items.length}
-          </span>
+          {!appMode && (
+            <span className="eyebrow">
+              互动 {index + 1} / {items.length}
+            </span>
+          )}
           <h2>{current.prompt}</h2>
         </div>
-        <Badge tone={current.type === "poll" ? "blue" : "purple"}>
-          {INTERACTION_TYPE_SHORT_LABELS[current.type]}
-        </Badge>
+        {!appMode && (
+          <Badge tone={current.type === "poll" ? "blue" : "purple"}>
+            {INTERACTION_TYPE_SHORT_LABELS[current.type]}
+          </Badge>
+        )}
       </header>
 
-      <ProgressBar value={((index + (isResolved ? 1 : 0)) / Math.max(1, items.length)) * 100} />
+      {!appMode && (
+        <ProgressBar value={((index + (isResolved ? 1 : 0)) / Math.max(1, items.length)) * 100} />
+      )}
 
+      {done ? (
+        <div className="player-app-done">
+          <span className="player-app-score">{finalResult?.score}</span>
+          <strong>本节互动已完成</strong>
+          <p>得分 {finalResult?.score} · 用时 {finalResult?.elapsedSeconds} 秒 · 错题 {finalResult?.wrongItemIds.length} 道</p>
+          <Button onClick={resetRun}><RotateCcw size={15} /> 重做一遍</Button>
+        </div>
+      ) : (
+        <>
       <div className="player-stage">
         {current.type === "match" && (
           <PairingStage
@@ -269,6 +314,20 @@ export function InteractionPlayer({ items, onComplete, onClose, preview = false,
         </div>
       )}
 
+      {appMode && !projection && (
+        <div className="player-app-actions">
+          <Button variant="ghost" size="sm" onClick={resetRun}>
+            <RotateCcw size={14} /> 重做
+          </Button>
+          <Button disabled={!isResolved} onClick={next}>
+            {index === items.length - 1 ? "完成" : "下一题"}
+          </Button>
+        </div>
+      )}
+        </>
+      )}
+
+      {!appMode && (
       <footer className="player-footer">
         {!projection && (
           <Button variant="ghost" onClick={onClose}>
@@ -277,16 +336,7 @@ export function InteractionPlayer({ items, onComplete, onClose, preview = false,
         )}
         <div className="player-actions">
           {preview && (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => {
-                setResults({});
-                setAnswers({});
-                setPollAnswers({});
-                setIndex(0);
-              }}
-            >
+            <Button variant="secondary" size="sm" onClick={resetRun}>
               <RotateCcw size={16} /> 重置预览
             </Button>
           )}
@@ -297,7 +347,36 @@ export function InteractionPlayer({ items, onComplete, onClose, preview = false,
           )}
         </div>
       </footer>
+      )}
     </section>
+  );
+
+  if (!appMode) return player;
+
+  return (
+    <StudentPhoneMock
+      typeLabel={INTERACTION_TYPE_LABELS[current.type]}
+      current={index + 1}
+      total={items.length}
+    >
+      {player}
+    </StudentPhoneMock>
+  );
+}
+
+/** 「预览全部互动」弹窗内容：手机壳 + 说明，按学生做题顺序连播。 */
+export function StudentPhonePreview({
+  items,
+  onClose
+}: {
+  items: InteractionItem[];
+  onClose?: () => void;
+}) {
+  return (
+    <div className="student-preview-modal">
+      <InteractionPlayer items={items} preview variant="app" onClose={onClose} />
+      <p className="student-preview-modal-hint">按学生在 APP 里做题的顺序预览，不计分、不写作答记录。</p>
+    </div>
   );
 }
 

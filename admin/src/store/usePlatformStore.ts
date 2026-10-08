@@ -52,5 +52,6 @@ export const usePlatformStore = create<PlatformStore>((set, get) => ({
 export function roleHome(role: Role) {
   if (role === "student") return "/student";
   if (role === "teacher") return "/teacher";
+  if (role === "academic") return "/academic";
   return "/operator";
 }

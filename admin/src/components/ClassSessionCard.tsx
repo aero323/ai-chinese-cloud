@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { CalendarClock, MapPin, UsersRound } from "lucide-react";
+import { CalendarClock, GraduationCap, MapPin, UsersRound } from "lucide-react";
 import type { ClassSession, PlatformState } from "../domain/types";
 import { fillRate, getBookedCount, getLesson, getTeacherSessions, getUser, getWaitlist } from "../lib/domain";
 import { formatDateTime, formatRange } from "../lib/format";
@@ -44,6 +44,10 @@ export function ClassSessionCard({
           {session.source === "series" && <Badge tone="blue">系列班</Badge>}
         </div>
         <h3>{session.title}</h3>
+        <div className="session-class-name">
+          <GraduationCap size={14} />
+          <span>{session.className}</span>
+        </div>
         <p className="session-subtitle">
           {lesson?.coverEmoji} {lesson?.title} · {lesson?.subtitle}
         </p>

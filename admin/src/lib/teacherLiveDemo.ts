@@ -6,7 +6,7 @@ import type {
   Material,
   PlatformState
 } from "../domain/types";
-import { getCurrentInteractionVersion, getLesson, setsForSession } from "./domain";
+import { getCurrentInteractionVersion, getLesson, materialRefAppliesToSession, setsForSession } from "./domain";
 
 export type TeacherDemoMode = "live" | "empty";
 export type LiveInteractionStatus = "completed" | "live" | "upcoming";
@@ -32,7 +32,6 @@ export interface LiveItemMetric {
 export interface LiveInteractionMetric {
   id: string;
   title: string;
-  description: string;
   status: LiveInteractionStatus;
   answered: number;
   participantCount: number;
@@ -151,9 +150,10 @@ function buildRanking(participantCount: number, index: number, status: LiveInter
   }));
 }
 
-function coursewareMetrics(state: PlatformState, lessonId: string, now: number): LiveCoursewareMetric[] {
+function coursewareMetrics(state: PlatformState, lessonId: string, sessionId: string, now: number): LiveCoursewareMetric[] {
   const materialIds = state.materialRefs
     .filter((ref) => ref.lessonId === lessonId && ref.published && ref.phase === "live")
+    .filter((ref) => materialRefAppliesToSession(ref, sessionId))
     .sort((a, b) => a.order - b.order)
     .map((ref) => state.materials.find((material) => material.id === ref.materialId))
     .filter((material): material is Material => Boolean(material && material.status === "published"));
@@ -232,7 +232,6 @@ export function buildTeacherLiveDemo(state: PlatformState, teacherId: string, re
     return {
       id: set.id,
       title: set.title,
-      description: set.description,
       status,
       answered,
       participantCount: presentCount,
@@ -270,7 +269,7 @@ export function buildTeacherLiveDemo(state: PlatformState, teacherId: string, re
     answeredCount: answeredItemCount,
     activeInteractionId,
     interactions,
-    courseware: coursewareMetrics(state, lesson.id, now),
+    courseware: coursewareMetrics(state, lesson.id, session.id, now),
     teachingSteps,
     activityFeed: [
       { id: "feed-1", label: "Anisa 提交了连线互动", detail: "12 秒前", tone: "mint" },

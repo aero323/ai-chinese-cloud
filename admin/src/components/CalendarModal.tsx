@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, GraduationCap } from "lucide-react";
 import type { ClassSession, PlatformState } from "../domain/types";
 import { getLesson, getUser } from "../lib/domain";
 import { Badge, Button, Modal } from "./ui";
@@ -223,6 +223,7 @@ export function CalendarModal({
                   </div>
                   <div className="calendar-session-copy">
                     <strong>{session.title}</strong>
+                    <small><GraduationCap size={12} /> {session.className}</small>
                     <small>
                       {lesson?.coverEmoji} {lesson?.title}
                       {detailSubtitle ? <> · {detailSubtitle(session)}</> : <> · {teacher?.name}</>}
